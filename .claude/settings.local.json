@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npx vitest:*)",
+      "mcp__MiniMax__understand_image",
+      "mcp__MiniMax__web_search",
+      "Bash(npx vite:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)"
+    ]
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true
+  }
+}

@@ -1,0 +1,1163 @@
+
+ ▐▛███▜▌   Claude Code v2.1.63
+▝▜█████▛▘  Opus 4.6 · API Usage Billing
+  ▘▘ ▝▝    D:\3D-Home-Design
+
+  Welcome to Opus 4.6
+
+❯ /init 
+
+● Let me explore the codebase first.
+
+● Explore(Explore codebase structure)
+  ⎿  Done (51 tool uses · 54.0k tokens · 1m 38s)
+  (ctrl+o to expand)
+
+● Now I have a thorough understanding of the codebase. Let me create the
+  CLAUDE.md file.
+
+● Write(CLAUDE.md)
+  ⎿  Wrote 85 lines to CLAUDE.md
+      1 # CLAUDE.md
+      2 
+      3 This file provides guidance to Claude Code (claude.ai/code) when 
+        working with code in this repository.
+      4 
+      5 ## Project Overview
+      6 
+      7 3D interior home design tool built with React + Three.js. Users n
+        avigate in first-person (FPS controls), create rooms, upload GLB 
+        furniture models, and arrange them in 3D space. All data persists
+         to IndexedDB.
+      8 
+      9 ## Commands
+     … +75 lines (ctrl+o to expand)
+
+● CLAUDE.md has been created. It covers the build/test commands, tech stack,
+  store architecture with the 5 Zustand slices, component layer organization,
+  service modules, hooks, key patterns (room geometry, quaternion transforms,
+  pointer lock), theme constants, and pointers to the Chinese-language design
+  docs.
+
+✻ Churned for 2m 25s
+
+❯ 你在文件里记录了什么 
+
+● CLAUDE.md 记录了以下内容：
+
+  - 项目概述 — 基于 React + Three.js 的 3D 室内设计工具
+  - 常用命令 — dev、build、lint、单元测试、E2E
+  测试的运行方式，包括如何跑单个测试文件
+  - 技术栈 — React 19、TypeScript strict、Vite
+  7、R3F、Zustand+Immer+Zundo、Tailwind CSS 4、IndexedDB、Vitest+Playwright
+  - 状态管理架构 — Zustand 的 5 个
+  slice（room、furniture、asset、camera、ui），undo/redo 只追踪 rooms 和
+  items，IndexedDB 2 秒防抖自动保存
+  - 组件分层 — canvas（Three.js 3D 场景）、layout（HTML
+  布局）、panels（标签页内容）、overlays（HUD 元素）
+  - Services — 纯函数业务逻辑：墙体邻接计算、碰撞检测、房间创建验证、GLB
+  自动缩放、四元数变换、IndexedDB 持久化
+  - Hooks — 全局快捷键、键盘状态追踪、指针锁定、自动保存、地板射线检测
+  - 关键模式 — 房间是轴对齐盒体、家具旋转用四元数、Alt 键临时解锁鼠标、@
+  路径别名
+  - 主题 — 暗色翡翠配色方案，引用 src/theme.ts 中的常量
+  - 文档指引 — 指向 docs/plans/ 下的需求文档和设计文档
+
+❯ /superpowers:brainstorm ok 我们现在讨论一下后端存储模型和图片的问题 
+
+● Skill(superpowers:brainstorming)
+  ⎿  Successfully loaded skill
+
+● Read 2 files (ctrl+o to expand)
+
+● 好的，我已经了解了当前项目的情况。现在的状态是：
+
+  - 资产（GLB 模型）只存在内存中（Asset 有 file: Blob 和 url: 
+  string），刷新就丢失
+  - 持久化只保存了 rooms 和 items，assets 保存时去掉了 file 和 url
+  字段（只存元数据）
+  - 没有缩略图/预览图，资产列表里显示的是通用图标（Armchair）
+  - 需求文档 P1 里明确写了"后端数据库存储家具"和"家具分类"
+
+  第一个问题：
+
+● User answered Claude's questions:
+  ⎿  · 你说的「后端」是指什么？是想搭一个真正的服务端（比如 Node.js/Python 
+     后端 + 云存储），还是先在浏览器本地用 IndexedDB 把 GLB 
+     文件也持久化下来，解决刷新丢失的问题？ → 真正的后端服务
+
+● 明白，要搭真正的后端服务。下一个问题：
+
+● User answered Claude's questions:
+  ⎿  · 后端服务用什么技术栈？考虑到前端已经是 TypeScript，Node.js 
+     可以保持全栈统一。你有偏好吗？ → Node.js (推荐)
+
+● 好，Node.js 全栈。接下来：
+
+● User answered Claude's questions:
+  ⎿  · GLB 模型文件和缩略图存在哪里？考虑到这是个人装修设计工具，本地磁盘最
+     简单。还是你希望直接上云存储？ → 本地磁盘 (推荐)
+
+● 好，本地磁盘存储。下一个问题：
+
+● User answered Claude's questions:
+  ⎿  · 元数据（资产名称、分类、bbox 
+     等）用什么数据库存？考虑到是个人工具，SQLite 零配置最简单。 → 
+     PostgreSQL
+
+● 好，PostgreSQL。下一个问题：
+
+● User answered Claude's questions:
+  ⎿  · 家具资产的缩略图/预览图怎么处理？现在资产列表里显示的是通用图标，没
+     有实际预览。 → 服务端自动生成 (推荐)
+
+● 好，服务端自动生成缩略图。下一个问题：
+
+● User answered Claude's questions:
+  ⎿  · 
+     需求文档提到了「家具分类（沙发/桌椅/灯具/装饰等）」，分类体系怎么做？ 
+     → 固定分类 (推荐)
+
+● 好，固定分类。最后一个关键问题：
+
+● User answered Claude's questions:
+  ⎿  · Node.js 后端用哪个框架？这个项目 API 不多（资产 CRUD + 
+     文件上传下载），不需要太重的框架。 → 你来选吧 我不了解 选完给我理由
+
+● 我推荐用 Fastify，理由：
+
+  1. 这个项目 API 很少（资产 CRUD + 文件上传下载），Express 和 Fastify
+  都能胜任，NestJS 太重了
+  2. Fastify 比 Express 性能好 2-3 倍，原生支持 TypeScript，schema 校验内置（用
+  JSON Schema），插件体系干净
+  3. Fastify 的 @fastify/multipart 处理文件上传比 Express 的 multer 更现代
+  4. 和前端一样用 TypeScript，类型可以共享
+
+  Express 也行，但它设计比较老（2010
+  年代），中间件模式容易写出混乱的代码。Fastify
+  是更现代的选择，学习成本几乎一样。
+
+  ---
+  现在需求已经清晰了，我来总结一下整体方案，提出几个架构方向供你选择：
+
+  方案 A：单体服务（推荐）
+  - 一个 Fastify 服务同时提供 API + 静态文件服务
+  - PostgreSQL 存元数据，本地磁盘存 GLB/缩略图
+  - 上传 GLB 时服务端用 headless Three.js（three +
+  node-canvas/gl）自动渲染缩略图
+  - 前端改为从 API 获取资产列表和文件，不再用 IndexedDB 存资产
+  - 简单直接，一个进程搞定
+
+  方案 B：前后端分离 + 独立文件服务
+  - Fastify API 服务只处理元数据 CRUD
+  - 文件通过 nginx 或独立静态服务提供
+  - 缩略图生成作为异步任务（上传后排队处理）
+  - 更适合大规模部署，但对个人工具来说过度设计
+
+  方案 C：BFF 模式
+  - 用 Vite 的 server middleware 把 API 嵌入开发服务器
+  - 生产环境再拆分
+  - 开发体验好但架构不清晰，后续维护麻烦
+
+  我推荐 方案 A（单体服务）。理由：API 就那么几个，个人工具不需要微服务架构，一
+  个进程管理最简单。后续如果要扩展，从单体拆分比一开始就过度设计要容易。
+
+  你觉得方案 A 可以吗？还是想调整？
+
+✻ Crunched for 2m 32s
+
+❯ ok 
+
+● 等你确认方案方向，我再展开详细设计。方案 A（单体 Fastify 服务）可以吗？
+
+❯ 可以 
+
+● 好，方案 A 确认。我分几个部分展开设计，每部分确认后再继续。
+
+  ---
+  第一部分：数据模型 / 数据库 Schema
+
+  PostgreSQL 里需要两张表：
+
+  -- 家具分类（固定枚举，用表方便后续扩展）
+  CREATE TABLE categories (
+    id    SERIAL PRIMARY KEY,
+    name  VARCHAR(50) NOT NULL UNIQUE,  -- 如 '沙发', '桌子', '椅子'
+    slug  VARCHAR(50) NOT NULL UNIQUE   -- 如 'sofa', 'table', 'chair'
+  );
+
+  -- 预置分类
+  INSERT INTO categories (name, slug) VALUES
+    ('沙发', 'sofa'), ('桌子', 'table'), ('椅子', 'chair'),
+    ('床', 'bed'), ('灯具', 'light'), ('柜子', 'cabinet'),
+    ('装饰', 'decoration'), ('其他', 'other');
+
+  -- 家具资产
+  CREATE TABLE assets (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name         VARCHAR(200) NOT NULL,
+    category_id  INT NOT NULL REFERENCES categories(id),
+    file_path    VARCHAR(500) NOT NULL,    -- GLB 文件相对路径
+    thumb_path   VARCHAR(500),             -- 缩略图相对路径
+    file_size    BIGINT NOT NULL,          -- 字节数
+    bbox_x       REAL NOT NULL,            -- 包围盒尺寸
+    bbox_y       REAL NOT NULL,
+    bbox_z       REAL NOT NULL,
+    auto_scale   REAL NOT NULL DEFAULT 1,  -- 自动缩放系数
+    created_at   TIMESTAMPTZ DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ DEFAULT NOW()
+  );
+
+  关键设计决策：
+  - 资产 ID 用 UUID，方便前后端传递，不暴露自增序号
+  - bbox 和 auto_scale 在上传时由服务端计算（复用现有 asset.ts 的逻辑）
+  - 分类用独立表而非枚举类型，方便以后加分类不用改 schema
+  - 文件路径存相对路径，实际存储目录可配置
+
+  这部分看起来合理吗？
+
+❯ 我判断这是“方案评审”意图：你要确认这套Postgresschema是否健壮、可扩展、    
+  方便前后端使用。                                                          
+  整体合理，关键决策（uuID资产主键、分类表而非enum、bbox/auto_scale服务端计 
+  算、                                                                      
+  路径存相对）都站得住。建议补几处容易踩坑/后期返工的点：                   
+  gen_random_uuid()：需要pgcrypto扩展（否则线上建表就会报错）               
+  CREATE EXTENSION IF NOT EXISTS pgCrypto;                                  
+  －updated_at不会自动更新：DEFAULTNOw(）只在插入时生效；要么应用层每次UPDA 
+  TE                                                                        
+  写入，要么加触发器自动维护。                                              
+  －约束与数据质量（强烈建议加）                                            
+  - file_size >0、bbox_x/y/z >0、auto_scale >0的CHECK                       
+  -created_at/updated_at设为NOTNULL                                         
+  －索引/唯一性                                                             
+  -assets(category_id)普通索引（按分类列表会用到）                          
+  -如果你希望“同一个存储key只入库一次”，给file_path（或更推荐storage_key/   
+  sha256)加UNIQUE                                                           
+  -bbox字段形态：只存size（x/y/z）通常够做缩放，但很多放置逻辑还会用到      
+  bbox_min（你们前端现在就有min用来算落地的Y偏移）。                        
+  后端如果也要完全复用那套逻辑，建议一起存bbox_min_x/y/z（或存min+max)。    
+  －数值类型：REAL可以用，但如果你想减少浮点误差（尤其bbox/scale            
+  做比较或累计），可以用DOUBLEPRECISION；至少auto_scale建议DOUBLEPRECISION  
+  。                                                                        
+  删除语义也建议明确一下（不一定要改表，但要定规则)：categories被引用时是否 
+  允许删？                                                                  
+  通常用ONDELETERESTRICT（默认行为）或禁止删，只允许新增/改名。             
+  按你现在这份schema，作为“资产库                                           
+  MVP”是完全可落地的；把上面几条补齐，会更接近长期可维护的版本。            
+
+● 非常好的审查，全部采纳。修订后的 schema：
+
+  CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+  -- 家具分类
+  CREATE TABLE categories (
+    id    SERIAL PRIMARY KEY,
+    name  VARCHAR(50) NOT NULL UNIQUE,
+    slug  VARCHAR(50) NOT NULL UNIQUE
+  );
+
+  INSERT INTO categories (name, slug) VALUES
+    ('沙发', 'sofa'), ('桌子', 'table'), ('椅子', 'chair'),
+    ('床', 'bed'), ('灯具', 'light'), ('柜子', 'cabinet'),
+    ('装饰', 'decoration'), ('其他', 'other');
+
+  -- 家具资产
+  CREATE TABLE assets (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name         VARCHAR(200) NOT NULL,
+    category_id  INT NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+    file_path    VARCHAR(500) NOT NULL UNIQUE,
+    thumb_path   VARCHAR(500),
+    file_size    BIGINT NOT NULL CHECK (file_size > 0),
+    -- 包围盒 min + size，用于落地偏移和缩放
+    bbox_min_x   DOUBLE PRECISION NOT NULL,
+    bbox_min_y   DOUBLE PRECISION NOT NULL,
+    bbox_min_z   DOUBLE PRECISION NOT NULL,
+    bbox_size_x  DOUBLE PRECISION NOT NULL CHECK (bbox_size_x > 0),
+    bbox_size_y  DOUBLE PRECISION NOT NULL CHECK (bbox_size_y > 0),
+    bbox_size_z  DOUBLE PRECISION NOT NULL CHECK (bbox_size_z > 0),
+    auto_scale   DOUBLE PRECISION NOT NULL DEFAULT 1 CHECK (auto_scale > 0),
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE INDEX idx_assets_category ON assets(category_id);
+
+  -- updated_at 自动更新触发器
+  CREATE OR REPLACE FUNCTION update_updated_at()
+  RETURNS TRIGGER AS $$
+  BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+  END;
+  $$ LANGUAGE plpgsql;
+
+  CREATE TRIGGER trg_assets_updated_at
+    BEFORE UPDATE ON assets
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+  改动点：pgcrypto 扩展、ON DELETE RESTRICT、file_path UNIQUE、所有 CHECK
+  约束、bbox 改为 min + size 双组（DOUBLE PRECISION）、updated_at
+  触发器、category_id 索引。
+
+  这部分确认的话，我继续讲第二部分：API 设计和文件存储结构。
+
+❯ 这版已经很扎实了：你补的pgcrypto、ON DELETERESTRICT、file_path            
+  UNIQUE、CHECK、                                                           
+  bbox_min+size、updated_at触发器、category_id索引都对，而且能直接支撑“落地 
+  偏移+                                                                     
+  自动缩放”的服务端计算。                                                   
+  再给几条可选的“工程化小修”，不是必须但能省后续麻烦：                      
+  -SERIAL建议换成新语法：idINTGENERATED BY DEFAULT ASIDENTITYPRIMARY        
+  KEY（避免序列对象管理坑）                                                 
+  预置分类插入建议幂等INSERT·.ONCONFLICTDONOTHING（重复跑迁移不会炸）       
+  -slug/name的唯一性是否需要大小写不敏感？如果需要，考虑citext或在唯一索引  
+  上用                                                                      
+  lower(slug)                                                               
+  slug建议加格式约束：CHECK(slug～'^[a-z0-9-]+）                            
+  触发器函数名尽量更具体（避免全库复用时冲突），比如set_updated_at）/assets 
+  _set_updated_at()；另外如果未来categories也要更新时间，同样加一套trigger  
+
+● 好建议，全部收入。最终版 schema 就是：
+
+  - SERIAL → GENERATED BY DEFAULT AS IDENTITY
+  - INSERT ... ON CONFLICT DO NOTHING 幂等插入
+  - slug 加 CHECK (slug ~ '^[a-z0-9-]+$')，用 lower() 唯一索引
+  - 触发器函数改名 assets_set_updated_at()
+
+  Schema 部分锁定，进入第二部分。
+
+  ---
+  第二部分：API 设计 + 文件存储结构
+
+  API 路由（RESTful，前缀 /api）：
+
+  GET    /api/categories              -- 获取所有分类
+  GET    /api/assets                  -- 资产列表（支持 ?category=sofa 筛选）
+  GET    /api/assets/:id              -- 单个资产详情
+  POST   /api/assets                  -- 上传资产（multipart: glb文件 + name +
+  category_slug）
+  DELETE /api/assets/:id              -- 删除资产（同时删磁盘文件）
+  PATCH  /api/assets/:id              -- 更新资产元数据（改名、换分类）
+
+  GET    /api/assets/:id/model        -- 下载 GLB 文件（或重定向到静态路径）
+  GET    /api/assets/:id/thumbnail    -- 获取缩略图
+
+  文件存储目录结构：
+
+  server/
+    uploads/
+      models/
+        {uuid}.glb              -- GLB 文件，用资产 ID 命名
+      thumbnails/
+        {uuid}.png              -- 缩略图，PNG 格式
+
+  关键设计点：
+  - 文件用 UUID 命名而非原始文件名，避免冲突和路径注入
+  - 上传流程：前端 POST multipart → Fastify 接收 GLB → 存磁盘 → 解析
+  bbox/auto_scale → 生成缩略图 → 写入 PostgreSQL → 返回完整资产对象
+  - 模型和缩略图可以直接通过 Fastify 的 @fastify/static
+  提供静态服务，不需要每次都走 API handler
+  - 删除资产时同步删除磁盘上的 GLB + 缩略图文件
+  - 上传大小限制建议 50MB（单个 GLB），通过 Fastify multipart 配置
+
+  这部分 OK 吗？
+
+❯ 我建议的修订点：-                                                         
+  模型/缩略图分发二选一做权威路径：要么只静态直出（推荐，@fastify/static +  
+  严格 root/allowedPath/dotfiles:'deny'），要么只走 GET /api/assets/:id/mod 
+  el|thumbnail（便于鉴权/统计）；不要两套都做成一等公民。                   
+  - 上传必须做：multipart limits（50MB + parts/files/fields                 
+  上限）、始终消费流、超限/错误时清理临时文件；不要只信 mimetype。          
+  - 落盘要 staging + 原子 rename，DB 写入走事务；任一步失败要回滚并删除     
+  staging 文件。                                                            
+  - 删除要有一致性策略：先 DB                                               
+  再磁盘，并对磁盘删除失败做可重试的补偿（至少记录任务/日志）。             
+  - API 返回资产对象要包含 bbox(min+size) + auto_scale +                    
+  modelUrl/thumbUrl，这样前端可以从现在的 objectURL                         
+  模式平滑迁到服务端资源。                                                  
+
+● 全部采纳，都是关键的工程细节。确认：
+
+  - 文件分发只走 @fastify/static 静态直出，API 返回 modelUrl / thumbUrl
+  完整路径，不做重复的 /api/assets/:id/model 端点
+  - 上传：multipart limits 全配（50MB、parts/files/fields
+  上限）、始终消费流、超限清理临时文件、不信 mimetype 要校验 GLB magic bytes
+  - 落盘：staging 目录 → 原子 rename，DB 写入走事务，任一步失败回滚 + 清理
+  staging
+  - 删除：先 DB 删除 → 再磁盘删除，磁盘失败记日志 + 可重试补偿
+  - API 返回完整资产对象含 bbox(min+size) + autoScale + modelUrl + thumbUrl
+
+  修订后的 API：
+
+  GET    /api/categories              -- 所有分类
+  GET    /api/assets?category=sofa    -- 资产列表（含 modelUrl/thumbUrl）
+  GET    /api/assets/:id              -- 单个资产详情
+  POST   /api/assets                  -- 上传（multipart: file + name +
+  category）
+  PATCH  /api/assets/:id              -- 改名/换分类
+  DELETE /api/assets/:id              -- 删除（DB + 磁盘）
+
+  # 静态文件（@fastify/static）
+  /uploads/models/{uuid}.glb
+  /uploads/thumbnails/{uuid}.png
+
+  上传流程：
+
+  前端 POST multipart
+    → Fastify 校验 limits + 消费流
+    → 写入 staging/tmp_{uuid}.glb
+    → 校验 GLB magic bytes (0x46546C67)
+    → 解析 bbox_min + bbox_size + auto_scale
+    → 生成缩略图 → staging/tmp_{uuid}.png
+    → BEGIN 事务
+      → rename staging → uploads/models/{uuid}.glb
+      → rename staging → uploads/thumbnails/{uuid}.png
+      → INSERT assets 记录
+    → COMMIT
+    → 返回完整资产对象
+    （任一步失败 → ROLLBACK + 清理 staging 文件）
+
+  这部分确认的话，进入第三部分：缩略图生成方案。
+
+❯  DB 事务不能回滚 rename/unlink：一旦 staging rename                       
+  到最终路径后，后续任何失败都要做“补偿删除最终文件”（而不是只              
+  ROLLBACK）。同理，先 INSERT 再 rename 失败就要补偿删除 DB                 
+  行；两种顺序都要写清楚补偿策略。                                          
+  - rename 原子性前提：staging 目录必须和最终 uploads/                      
+  在同一文件系统/挂载点，否则会退化成 copy+delete（不再原子）。             
+  - GLB 校验别只验 magic：至少再校验 header 的                              
+  version/length，并对解析失败/超限一律清理 staging；缩略图生成是最大不确定 
+  项，建议明确“缩略图失败是否允许资产入库（thumb_path 可空）”这一条。       
+  其余你列的 limits、消费流、静态 @fastify/static 直出、返回                
+  bbox(min+size)+autoScale+modelUrl+thumbUrl 都 OK                          
+
+● 好，关键修正：
+
+  - 落盘顺序改为：先 INSERT DB（thumb_path 可空）→ 再 rename
+  文件到最终路径。rename 失败则补偿删除 DB 行 + 清理 staging
+  - staging 目录放在 uploads/.staging/，保证同一文件系统，rename 原子性成立
+  - GLB 校验：magic bytes + version（必须为 2）+ length 与实际文件大小一致
+  - 缩略图生成失败允许资产入库，thumb_path 为
+  NULL，前端降级显示通用图标（和现在行为一致）
+
+  修订后的上传流程：
+
+  1. 接收 multipart，校验 limits，写入 uploads/.staging/tmp_{uuid}.glb
+  2. 校验 GLB：magic(0x46546C67) + version(2) + length == fileSize
+     失败 → 清理 staging → 返回 400
+  3. 解析 bbox_min + bbox_size + auto_scale
+  4. 尝试生成缩略图 → uploads/.staging/tmp_{uuid}.png
+     失败 → 记日志，thumb_path = NULL，继续
+  5. BEGIN 事务
+     → INSERT assets（thumb_path 可能为 NULL）
+     → COMMIT
+  6. rename .staging/tmp_{uuid}.glb → uploads/models/{uuid}.glb
+     失败 → 补偿：DELETE FROM assets WHERE id = {uuid} + 清理 staging
+  7. 如果有缩略图：rename .staging/tmp_{uuid}.png →
+  uploads/thumbnails/{uuid}.png
+     失败 → UPDATE assets SET thumb_path = NULL + 清理 staging（资产仍保留）
+  8. 返回完整资产对象
+
+  这部分锁定，进入第三部分：缩略图生成方案。
+
+  ---
+  第三部分：缩略图生成
+
+  服务端渲染 GLB 缩略图有几个技术路线：
+
+  1. node-gl + Three.js headless 渲染
+    - 用 gl (headless-gl) + three 在 Node.js 里创建 WebGLRenderer
+    - 加载 GLB，设置相机和灯光，渲染一帧，导出 PNG
+    - 优点：复用前端同一套 Three.js，渲染效果一致
+    - 缺点：headless-gl 在 Windows 上安装有坑（需要 node-gyp + VS Build
+  Tools），且只支持 WebGL1
+  2. Puppeteer/Playwright 截图
+    - 启动无头浏览器，加载一个最小化的 Three.js 页面，传入 GLB 路径，截图
+    - 优点：完整 WebGL2 支持，渲染质量最好
+    - 缺点：重，每次截图要启动浏览器页面，内存开销大
+  3. gltf-to-image CLI 工具
+    - 用现成的 CLI 工具如 screenshot-glb 或自己包装一个
+    - 优点：简单，进程隔离
+    - 缺点：依赖外部工具，可控性差
+
+  我推荐方案 1（headless Three.js），但考虑到你在 Windows 上开发，headless-gl
+  可能有安装问题。备选是方案 2（Playwright，项目里已经有了）。
+
+  你倾向哪个？或者你觉得缩略图生成失败可以接受的话，我们可以先用方案
+  1，装不上就降级为无缩略图。
+
+❯ & 'c:\Users\19609\Desktop\Screenshots\屏幕截图 2026-03-01 200406.png' 
+
+● Read 1 file (ctrl+o to expand)
+
+● 感谢这些非常细致的审查意见，全部采纳。让我确认一下最终锁定的要点：
+
+  上传流程（最终版）：
+  1. 接收 multipart → 写入 uploads/.staging/tmp_{uuid}.glb
+  2. 校验 GLB：magic(0x46546C67) + version(2) + length == fileSize
+  3. 解析 bbox_min + bbox_size + auto_scale
+  4. 尝试生成缩略图（失败则 thumb_path = NULL，继续）
+  5. BEGIN → INSERT assets → COMMIT
+  6. rename staging → 最终路径（失败则补偿 DELETE DB 行 + 清理 staging）
+
+  Schema 最终版修订：
+  - SERIAL → GENERATED BY DEFAULT AS IDENTITY
+  - INSERT ... ON CONFLICT DO NOTHING 幂等
+  - slug CHECK (slug ~ '^[a-z0-9-]+$')，唯一索引用 lower(slug)
+  - 触发器函数改名 assets_set_updated_at()
+  - categories 也加 updated_at + trigger
+
+  文件分发： 只走 @fastify/static 静态直出，不做重复 API 端点
+
+  ---
+  回到刚才的问题——缩略图生成方案，你倾向哪个？
+
+● User answered Claude's questions:
+  ⎿  · 缩略图生成用哪个方案？headless Three.js 最轻量但 Windows 
+     上可能有安装问题，Playwright 项目已有但较重，也可以延后处理。 → 
+     Playwright 截图
+
+● 好，Playwright 截图。项目里已经有 Playwright 依赖，不用额外装东西。
+
+  缩略图生成方案：
+
+  - 服务端维护一个最小化的 HTML 页面（server/thumbnail/viewer.html），内嵌
+  Three.js + GLTFLoader
+  - 上传时启动 Playwright 无头 Chromium，打开这个页面，传入 GLB 文件路径
+  - 页面加载模型 → 自动居中 → 设置相机角度（45° 俯视）→ 渲染一帧 → 通知 ready
+  - Playwright 截图 → 裁剪为 256x256 PNG → 保存到 staging
+  - 超时 10 秒，失败则 thumb_path = NULL，资产照常入库
+
+  为了避免每次上传都启动浏览器，可以：
+  - 服务启动时预启动一个 Playwright browser 实例，复用
+  - 每次截图只开一个新 page，用完关掉
+  - 服务关闭时关闭 browser
+
+  这部分 OK 的话，我来展开最后一部分：前端改造（怎么从 IndexedDB 切到后端
+  API）。
+
+● User answered Claude's questions:
+  ⎿  · Playwright 缩略图方案（预启动 browser 复用、每次开 page 截图、10 
+     秒超时、失败降级）这部分确认吗？ → OK 继续
+
+● 好，最后一部分：前端改造
+
+  核心变化是 assetSlice 从纯内存/IndexedDB 切到后端 API。
+
+  改动范围：
+
+  1. 新增 src/services/api.ts — 封装后端请求
+    - fetchCategories() → GET /api/categories
+    - fetchAssets(category?) → GET /api/assets
+    - uploadAsset(file, name, categorySlug) → POST /api/assets (multipart)
+    - deleteAsset(id) → DELETE /api/assets/:id
+    - updateAsset(id, patch) → PATCH /api/assets/:id
+  2. 改造 assetSlice.ts
+    - 去掉 file: Blob 和 url: string（objectURL），改为 modelUrl 和
+  thumbUrl（服务端返回的静态路径）
+    - addAsset 改为异步：调 API 上传 → 服务端返回完整资产对象（含
+  bbox、autoScale、URLs）→ 写入 store
+    - 新增 loadAssets action：启动时从 API 拉取资产列表
+    - 新增 categories 状态 + loadCategories action
+  3. 改造 AssetPanel.tsx
+    - 上传按钮改为调 uploadAsset（显示上传进度）
+    - 资产列表用 thumbUrl 显示缩略图，无缩略图降级为通用图标
+    - 新增分类筛选 tab/下拉
+  4. 改造 FurnitureModel.tsx（加载 GLB 的组件）
+    - useGLTF(asset.url) 改为 useGLTF(asset.modelUrl)
+    - modelUrl 指向服务端静态路径，R3F 的 loader 直接支持
+  5. 去掉 persistence.ts 中资产相关逻辑
+    - IndexedDB 只保留 rooms + items 的持久化
+    - 资产完全由后端管理
+  6. Asset 类型更新
+  interface Asset {
+    id: string           // UUID from server
+    name: string
+    categorySlug: string
+    modelUrl: string     // /uploads/models/{uuid}.glb
+    thumbUrl: string | null  // /uploads/thumbnails/{uuid}.png
+    fileSize: number
+    bboxMin: [number, number, number]
+    bboxSize: [number, number, number]
+    autoScale: number
+  }
+
+  不变的部分：
+  - rooms 和 items 仍然用 IndexedDB 持久化（后续可以再迁移到后端）
+  - undo/redo 不受影响（只追踪 rooms + items）
+  - FPS 控制、快捷键等完全不变
+
+  开发时代理：
+  - Vite dev server 配置 proxy，把 /api 和 /uploads 代理到 Fastify 服务（默认
+  3001 端口）
+  - 生产环境 Fastify 同时 serve 前端 build 产物 + API + 静态文件
+
+  ---
+  整个设计到这里就完整了。总结一下全部确认的决策：
+
+  - Fastify 单体服务 + PostgreSQL + 本地磁盘存储
+  - Schema：categories + assets 两张表，UUID 主键，bbox_min+size，IDENTITY
+  主键，幂等插入，CHECK 约束，触发器
+  - API：RESTful CRUD，文件走 @fastify/static 静态直出
+  - 上传：staging + 原子 rename，先 INSERT 后 rename，补偿策略明确
+  - 缩略图：Playwright 预启动 browser，每次开 page 截图，失败降级
+  - 前端：assetSlice 改为 API 驱动，Asset 类型加 modelUrl/thumbUrl，分类筛选
+
+  全部设计确认的话，我写设计文档然后进入实施计划。
+
+● User answered Claude's questions:
+  ⎿  · 前端改造方案 + 
+     整体设计全部确认吗？确认后我写设计文档并进入实施计划。 → 全部确认
+
+● 好，写设计文档。
+
+● Read 1 file (ctrl+o to expand)
+
+● 设计文档已经存在且内容完整，涵盖了我们讨论确认的所有决策。
+
+● 设计文档已完整，所有决策已锁定。现在进入实施计划阶段。
+
+● Skill(superpowers:writing-plans)
+  ⎿  Successfully loaded skill
+
+● I'm using the writing-plans skill to create the implementation plan.
+
+  Let me first thoroughly understand the current codebase to write precise file
+  paths and code.
+
+● Searched for 1 pattern, read 3 files (ctrl+o to expand)
+
+● Now I have a thorough understanding of the codebase. Let me write the
+  implementation plan.
+
+● Write(docs\plans\2026-03-01-backend-storage-plan.md)
+  ⎿  Wrote 166 lines to docs\plans\2026-03-01-backend-storage-plan.md
+       1 # 资产库后端实施计划
+       2 
+       3 > 设计文档：`docs/plans/2026-03-01-asset-library-backend-design.
+         md`
+       4 
+       5 ## 步骤总览
+       6 
+       7 1. 后端项目初始化（server/ 目录、依赖、tsconfig、启动脚本）
+       8 2. 数据库 schema 迁移脚本 + 连接池
+       9 3. 文件存储目录结构 + GLB 校验工具
+      10 4. API 路由：categories CRUD
+     … +156 lines (ctrl+o to expand)
+
+● Update(docs\plans\2026-03-01-backend-storage-plan.md)
+  ⎿  Added 120 lines
+      164  - `curl http://localhost:3001/api/categories` 返回 8 条分类 JS
+           ON
+      165  
+      166  ---
+      167 +                                                              
+      168 +## 步骤 5：API 路由 - assets 上传                             
+      169 +                                                              
+      170 +### 目标                                                      
+      171 +`POST /api/assets` 接收 multipart 上传，执行完整的 staging →  
+          +校验 → DB → rename 流程。                                     
+      172 +                                                              
+      173 +### 要改的文件                                                
+      174 +- 新建 `server/src/routes/assets.ts`                          
+      175 +- 修改 `server/src/index.ts`：注册 multipart 插件 + assets 路 
+          +由                                                            
+      176 +                                                              
+      177 +### 详细说明                                                  
+      178 +                                                              
+      179 +注册 `@fastify/multipart`：                                   
+      180 +```ts                                                         
+      181 +app.register(multipart, {                                     
+      182 +  limits: { fileSize: 50 * 1024 * 1024, files: 1, fields: 3 } 
+      183 +});                                                           
+      184 +```                                                           
+      185 +                                                              
+      186 +`POST /api/assets` handler 流程（严格按设计文档 §5.2）：      
+      187 +                                                              
+      188 +1. 从 multipart 读取 `file`（stream）、`name`、`categorySlug` 
+          +字段                                                          
+      189 +2. 查询 category_id（slug 不存在 → 400）                      
+      190 +3. 生成 uuid，将 file stream 写入 `uploads/.staging/tmp_{uuid}
+          +.glb`                                                         
+      191 +4. `validateGlb(stagingPath)` → 失败则清理 staging + 返回 400 
+      192 +5. `parseGlbBBox(stagingPath)` → 获取 bbox_min, bbox_size, aut
+          +o_scale                                                       
+      193 +6. 尝试生成缩略图（步骤 8 实现，此步骤先跳过，thumb_path = nul
+          +l）                                                           
+      194 +7. BEGIN → INSERT assets → COMMIT                             
+      195 +8. rename staging GLB → final path（失败 → 补偿 DELETE DB + 清
+          +理 staging）                                                  
+      196 +9. 如有缩略图：rename staging PNG → final path（失败 → UPDATE 
+          +thumb_path = NULL）                                           
+      197 +10. 返回 AssetDto                                             
+      198 +                                                              
+      199 +关键：所有错误路径都必须消费完 multipart stream 并清理 staging
+          + 文件。                                                       
+      200 +                                                              
+      201 +### 验证                                                      
+      202 +- `curl -F "file=@test.glb" -F "name=测试椅子" -F "categorySlu
+          +g=chair" http://localhost:3001/api/assets`                    
+      203 +- 返回完整 AssetDto，文件出现在 uploads/models/               
+      204 +- 上传非 GLB 文件返回 400                                     
+      205 +- 上传超过 50MB 返回 413                                      
+      206 +                                                              
+      207 +---                                                           
+      208 +                                                              
+      209 +## 步骤 6：API 路由 - assets 查询/更新/删除                   
+      210 +                                                              
+      211 +### 目标                                                      
+      212 +实现 GET（列表+详情）、PATCH、DELETE 端点。                   
+      213 +                                                              
+      214 +### 要改的文件                                                
+      215 +- 修改 `server/src/routes/assets.ts`：添加路由                
+      216 +                                                              
+      217 +### 详细说明                                                  
+      218 +                                                              
+      219 +`GET /api/assets?category=sofa`：                             
+      220 +```sql                                                        
+      221 +SELECT a.*, c.slug as category_slug FROM assets a             
+      222 +JOIN categories c ON a.category_id = c.id                     
+      223 +WHERE ($1::text IS NULL OR c.slug = $1)                       
+      224 +ORDER BY a.created_at DESC                                    
+      225 +```                                                           
+      226 +- 将 DB 行映射为 AssetDto（拼接 modelUrl/thumbUrl）           
+      227 +                                                              
+      228 +`GET /api/assets/:id`：                                       
+      229 +- 按 UUID 查询，不存在 → 404                                  
+      230 +                                                              
+      231 +`PATCH /api/assets/:id`：                                     
+      232 +- 允许更新 `name` 和/或 `categorySlug`                        
+      233 +- categorySlug 变更时查询新 category_id，不存在 → 400         
+      234 +- 不存在资产 → 404                                            
+      235 +                                                              
+      236 +`DELETE /api/assets/:id`：                                    
+      237 +- 先查询获取 file_path / thumb_path                           
+      238 +- DELETE FROM assets                                          
+      239 +- 删除磁盘文件（失败记日志，不阻塞响应）                      
+      240 +- 返回 204                                                    
+      241 +                                                              
+      242 +新建 `server/src/dto.ts`：                                    
+      243 +```ts                                                         
+      244 +// rowToAssetDto(row): 将 DB 行转换为 AssetDto                
+      245 +// 拼接 modelUrl: `/uploads/${row.file_path}`                 
+      246 +// 拼接 thumbUrl: row.thumb_path ? `/uploads/${row.thumb_path}
+          +` : null                                                      
+      247 +```                                                           
+      248 +                                                              
+      249 +### 验证                                                      
+      250 +- GET 列表返回已上传的资产，含 modelUrl/thumbUrl              
+      251 +- GET 带 category 筛选正确                                    
+      252 +- PATCH 改名成功                                              
+      253 +- DELETE 后资产消失，磁盘文件被删除                           
+      254 +                                                              
+      255 +---                                                           
+      256 +                                                              
+      257 +## 步骤 7：@fastify/static 静态文件服务                       
+      258 +                                                              
+      259 +### 目标                                                      
+      260 +挂载 `/uploads` 前缀，提供 GLB 和缩略图的静态访问。           
+      261 +                                                              
+      262 +### 要改的文件                                                
+      263 +- 修改 `server/src/index.ts`：注册 @fastify/static            
+      264 +                                                              
+      265 +### 详细说明                                                  
+      266 +                                                              
+      267 +```ts                                                         
+      268 +app.register(fastifyStatic, {                                 
+      269 +  root: config.uploadsDir,                                    
+      270 +  prefix: '/uploads/',                                        
+      271 +  dotfiles: 'deny',                                           
+      272 +  maxAge: '30d',                                              
+      273 +  immutable: true,                                            
+      274 +  allowedPath: (pathName) => {                                
+      275 +    return /^\/models\/[a-f0-9-]+\.glb$/.test(pathName)       
+      276 +        || /^\/thumbnails\/[a-f0-9-]+\.png$/.test(pathName);  
+      277 +  },                                                          
+      278 +});                                                           
+      279 +```                                                           
+      280 +                                                              
+      281 +### 验证                                                      
+      282 +- 上传资产后，浏览器访问 `http://localhost:3001/uploads/models
+          +/{uuid}.glb` 可下载                                           
+      283 +- 访问 `/uploads/.staging/` 返回 403                          
+      284 +- 访问不存在的路径返回 404                                    
+      285 +                                                              
+      286 +---                                                           
+
+● Read 1 file (ctrl+o to expand)
+
+● Now let me append the remaining steps (8-14).
+
+● Update(docs\plans\2026-03-01-backend-storage-plan.md)
+  ⎿  Added 131 lines
+      284  - 访问不存在的路径返回 404
+      285  
+      286  ---
+      287 +                                                              
+      288 +## 步骤 8：Playwright 缩略图生成服务                          
+      289 +                                                              
+      290 +### 目标                                                      
+      291 +服务启动时预启动 Playwright browser，上传时调用生成 256x256 PN
+          +G 缩略图。                                                    
+      292 +                                                              
+      293 +### 要改的文件                                                
+      294 +- 新建 `server/src/thumbnail.ts`（缩略图服务）                
+      295 +- 新建 `server/src/thumbnail-viewer.html`（最小 Three.js 渲染 
+          +页）                                                          
+      296 +- 修改 `server/src/routes/assets.ts`：上传流程步骤 6 调用缩略 
+          +图生成                                                        
+      297 +- 修改 `server/src/index.ts`：启动/关闭时管理 browser 生命周期
+      298 +- 修改 `server/package.json`：添加 `playwright` 依赖          
+      299 +                                                              
+      300 +### 详细说明                                                  
+      301 +                                                              
+      302 +`server/src/thumbnail.ts`：                                   
+      303 +```ts                                                         
+      304 +// let browser: Browser | null                                
+      305 +// initBrowser(): 启动 chromium（headless）                   
+      306 +// closeBrowser(): 关闭                                       
+      307 +// generateThumbnail(glbAbsPath, outputPngPath): Promise<boole
+          +an>                                                           
+      308 +//   - 创建 page，设置 viewport 256x256                       
+      309 +//   - page.goto(thumbnail-viewer.html?model=file:///{glbAbsPa
+          +th})                                                          
+      310 +//   - 等待页面 window.__ready === true（最多 10 秒）         
+      311 +//   - page.screenshot({ path: outputPngPath, type: 'png' })  
+      312 +//   - page.close()                                           
+      313 +//   - 返回 true；任何异常返回 false + 记日志                 
+      314 +```                                                           
+      315 +                                                              
+      316 +`server/src/thumbnail-viewer.html`：                          
+      317 +- 内联 Three.js（从 CDN 或 node_modules）                     
+      318 +- 加载 GLB → 自动居中 → 45° 俯视相机 → 环境光 + 方向光 → 渲染 
+          +1 帧                                                          
+      319 +- 渲染完成后设置 `window.__ready = true`                      
+      320 +                                                              
+      321 +并发控制：用简单的 Promise 队列限制同时只有 1 个 page 在渲染。
+      322 +                                                              
+      323 +`server/src/index.ts` 生命周期：                              
+      324 +```ts                                                         
+      325 +app.addHook('onReady', async () => { await initBrowser(); }); 
+      326 +app.addHook('onClose', async () => { await closeBrowser(); });
+      327 +```                                                           
+      328 +                                                              
+      329 +### 验证                                                      
+      330 +- 上传 GLB 后，`uploads/thumbnails/{uuid}.png` 存在且为有效 PN
+          +G                                                             
+      331 +- 上传损坏的 GLB，缩略图生成失败但资产仍入库（thumb_path = NUL
+          +L）                                                           
+      332 +- 并发上传 2 个文件，不会崩溃                                 
+      333 +                                                              
+      334 +---                                                           
+      335 +                                                              
+      336 +## 步骤 9：前端 - Asset 类型 + API client                     
+      337 +                                                              
+      338 +### 目标                                                      
+      339 +更新 Asset 接口，新建 API client 封装所有后端请求。           
+      340 +                                                              
+      341 +### 要改的文件                                                
+      342 +- 修改 `src/types/furniture.ts`：更新 Asset 接口              
+      343 +- 新建 `src/services/api.ts`：API client                      
+      344 +                                                              
+      345 +### 详细说明                                                  
+      346 +                                                              
+      347 +`src/types/furniture.ts` Asset 改为：                         
+      348 +```ts                                                         
+      349 +export interface Asset {                                      
+      350 +  id: string;                                                 
+      351 +  name: string;                                               
+      352 +  categorySlug: string;                                       
+      353 +  modelUrl: string;                                           
+      354 +  thumbUrl: string | null;                                    
+      355 +  fileSize: number;                                           
+      356 +  bboxMin: [number, number, number];                          
+      357 +  bboxSize: [number, number, number];                         
+      358 +  autoScale: number;                                          
+      359 +}                                                             
+      360 +```                                                           
+      361 +- 删除 `file: Blob` 和 `url: string`                          
+      362 +- `FurnitureItem` 不变                                        
+      363 +                                                              
+      364 +`src/services/api.ts`：                                       
+      365 +```ts                                                         
+      366 +const BASE = '/api';                                          
+      367 +export async function fetchCategories(): Promise<Category[]>  
+      368 +export async function fetchAssets(category?: string): Promise<
+          +Asset[]>                                                      
+      369 +export async function uploadAsset(file: File, name: string, ca
+          +tegorySlug: string): Promise<Asset>                           
+      370 +  // 用 FormData，POST multipart                              
+      371 +export async function deleteAsset(id: string): Promise<void>  
+      372 +export async function updateAsset(id: string, patch: { name?: 
+          +string; categorySlug?: string }): Promise<Asset>              
+      373 +```                                                           
+      374 +                                                              
+      375 +### 验证                                                      
+      376 +- TypeScript 编译通过（`npm run lint`）                       
+      377 +- 注意：此步骤后 AssetPanel 和 FurnitureModel 会有类型错误，在
+          +步骤 10-12 修复                                               
+      378 +                                                              
+      379 +---                                                           
+      380 +                                                              
+      381 +## 步骤 10：前端 - assetSlice 改造                            
+      382 +                                                              
+      383 +### 目标                                                      
+      384 +assetSlice 从纯内存同步操作改为 API 驱动的异步操作。          
+      385 +                                                              
+      386 +### 要改的文件                                                
+      387 +- 修改 `src/store/slices/assetSlice.ts`                       
+      388 +                                                              
+      389 +### 详细说明                                                  
+      390 +                                                              
+      391 +新的 state 和 actions：                                       
+      392 +```ts                                                         
+      393 +export interface AssetSlice {                                 
+      394 +  assets: Asset[];                                            
+      395 +  categories: Category[];                                     
+      396 +  selectedAssetId: string | null;                             
+      397 +  assetsLoading: boolean;                                     
+      398 +  uploadProgress: 'idle' | 'uploading' | 'error';             
+      399 +  // 异步 actions                                             
+      400 +  loadCategories: () => Promise<void>;                        
+      401 +  loadAssets: (category?: string) => Promise<void>;           
+      402 +  uploadAsset: (file: File, name: string, categorySlug: string
+          +) => Promise<void>;                                           
+      403 +  removeAsset: (id: string) => Promise<void>;                 
+      404 +  selectAsset: (id: string | null) => void;                   
+      405 +}                                                             
+      406 +```                                                           
+      407 +                                                              
+      408 +- `loadCategories`：调 `api.fetchCategories()`，写入 `state.ca
+          +tegories`                                                     
+      409 +- `loadAssets`：调 `api.fetchAssets(category)`，写入 `state.as
+          +sets`                                                         
+      410 +- `uploadAsset`：设 uploadProgress='uploading' → 调 `api.uploa
+          +dAsset()` → push 到 assets → 设 'idle'；失败设 'error'        
+      411 +- `removeAsset`：调 `api.deleteAsset()` → 从 assets 中移除    
+      412 +                                                              
+      413 +### 验证                                                      
+      414 +- TypeScript 编译通过                                         
+      415 +- store 的 assets 数据来自 API 返回                           
+      416 +                                                              
+      417 +---                                                           
+
+● Read 1 file (ctrl+o to expand)
+
+● Now append steps 11-14.
+
+● Update(docs\plans\2026-03-01-backend-storage-plan.md)
+  ⎿  Added 130 lines
+      415  - store 的 assets 数据来自 API 返回
+      416  
+      417  ---
+      418 +                                                              
+      419 +## 步骤 11：前端 - AssetPanel 改造                            
+      420 +                                                              
+      421 +### 目标                                                      
+      422 +AssetPanel 显示缩略图、分类筛选、异步上传状态。               
+      423 +                                                              
+      424 +### 要改的文件                                                
+      425 +- 修改 `src/components/panels/AssetPanel.tsx`                 
+      426 +                                                              
+      427 +### 详细说明                                                  
+      428 +                                                              
+      429 +启动时加载：                                                  
+      430 +- 组件挂载时调 `loadCategories()` + `loadAssets()`            
+      431 +                                                              
+      432 +分类筛选：                                                    
+      433 +- 顶部添加分类 tab 栏（水平滚动），点击切换调 `loadAssets(slug
+          +)`                                                            
+      434 +- "全部" tab 调 `loadAssets()`（无参数）                      
+      435 +                                                              
+      436 +上传改造：                                                    
+      437 +- 上传按钮点击后弹出简单表单：选文件 + 输入名称 + 选分类      
+      438 +- 或简化：文件选择后自动用文件名作为 name，默认分类 "其他"，上
+          +传后可在 PropertyPanel 改                                     
+      439 +- 上传中显示 loading 状态（uploadProgress === 'uploading'）   
+      440 +- 上传失败显示错误提示                                        
+      441 +                                                              
+      442 +资产卡片：                                                    
+      443 +- `thumbUrl` 存在时显示 `<img src={asset.thumbUrl} />` 替代 Ar
+          +mchair 图标                                                   
+      444 +- `thumbUrl === null` 时降级显示 Armchair 图标（现有行为）    
+      445 +                                                              
+      446 +删除：                                                        
+      447 +- 调 `removeAsset(id)`（异步，走 API）                        
+      448 +                                                              
+      449 +### 验证                                                      
+      450 +- 分类 tab 切换正确筛选资产                                   
+      451 +- 上传后缩略图正确显示                                        
+      452 +- 无缩略图的资产显示通用图标                                  
+      453 +- 删除后资产从列表消失                                        
+      454 +                                                              
+      455 +---                                                           
+      456 +                                                              
+      457 +## 步骤 12：前端 - FurnitureModel / GhostPreview 迁移         
+      458 +                                                              
+      459 +### 目标                                                      
+      460 +将 `asset.url`（objectURL）替换为 `asset.modelUrl`（服务端静态
+          +路径）。                                                      
+      461 +                                                              
+      462 +### 要改的文件                                                
+      463 +- 修改 `src/components/canvas/FurnitureModel.tsx`             
+      464 +- 修改 `src/components/canvas/GhostPreview.tsx`               
+      465 +                                                              
+      466 +### 详细说明                                                  
+      467 +                                                              
+      468 +`FurnitureModel.tsx`（第 17 行）：                            
+      469 +```ts                                                         
+      470 +// 之前：url={asset.url}                                      
+      471 +// 之后：url={asset.modelUrl}                                 
+      472 +```                                                           
+      473 +                                                              
+      474 +`GhostPreview.tsx`（第 84 行）：                              
+      475 +```ts                                                         
+      476 +// 之前：<GhostModel url={asset.url} />                       
+      477 +// 之后：<GhostModel url={asset.modelUrl} />                  
+      478 +```                                                           
+      479 +                                                              
+      480 +两个组件内部的 `useGLTF(url)` 调用不需要改，R3F 的 loader 支持
+          +任意 URL。                                                    
+      481 +                                                              
+      482 +同时检查是否有其他地方引用 `asset.url` 或 `asset.file`，全部替
+          +换。                                                          
+      483 +                                                              
+      484 +### 验证                                                      
+      485 +- 放置家具后 3D 模型正确加载（从服务端 URL）                  
+      486 +- GhostPreview 预览正常                                       
+      487 +- `npm run lint` 无类型错误                                   
+      488 +                                                              
+      489 +---                                                           
+      490 +                                                              
+      491 +## 步骤 13：Vite proxy + persistence.ts 清理                  
+      492 +                                                              
+      493 +### 目标                                                      
+      494 +开发环境代理 API 请求到后端；清理 persistence.ts 中的资产相关 
+          +逻辑。                                                        
+      495 +                                                              
+      496 +### 要改的文件                                                
+      497 +- 修改 `vite.config.ts`：添加 proxy                           
+      498 +- 修改 `src/services/persistence.ts`：移除 assets 相关        
+      499 +- 修改 `src/hooks/usePersistence.ts`（如果存在）：移除 assets 
+          +保存逻辑                                                      
+      500 +                                                              
+      501 +### 详细说明                                                  
+      502 +                                                              
+      503 +`vite.config.ts`：                                            
+      504 +```ts                                                         
+      505 +export default defineConfig({                                 
+      506 +  // ...existing                                              
+      507 +  server: {                                                   
+      508 +    proxy: {                                                  
+      509 +      '/api': 'http://localhost:3001',                        
+      510 +      '/uploads': 'http://localhost:3001',                    
+      511 +    },                                                        
+      512 +  },                                                          
+      513 +});                                                           
+      514 +```                                                           
+      515 +                                                              
+      516 +`src/services/persistence.ts`：                               
+      517 +- `PersistData` 接口移除 `assets` 字段                        
+      518 +- 只保留 `rooms` 和 `items`                                   
+      519 +                                                              
+      520 +### 验证                                                      
+      521 +- `npm run dev` 启动前端，`/api/categories` 正确代理到后端    
+      522 +- `/uploads/models/{uuid}.glb` 正确代理                       
+      523 +- IndexedDB 中不再保存 assets 数据                            
+      524 +- rooms/items 持久化不受影响                                  
+      525 +                                                              
+      526 +---                                                           
+      527 +                                                              
+      528 +## 步骤 14：集成测试                                          
+      529 +                                                              
+      530 +### 目标                                                      
+      531 +端到端验证完整流程。                                          
+      532 +                                                              
+      533 +### 测试场景                                                  
+      534 +                                                              
+      535 +1. 启动后端 + 前端                                            
+      536 +2. 打开页面，分类 tab 显示 8 个分类                           
+      537 +3. 上传一个 GLB 文件 → 资产出现在列表中，缩略图显示           
+      538 +4. 点击分类筛选 → 列表正确过滤                                
+      539 +5. 选中资产 → 点击地板放置 → 3D 模型正确加载                  
+      540 +6. 删除资产 → 从列表消失，磁盘文件被清理                      
+      541 +7. 刷新页面 → 资产仍然存在（来自后端）                        
+      542 +8. rooms/items 的 IndexedDB 持久化 + undo/redo 不受影响       
+      543 +                                                              
+      544 +### 验证                                                      
+      545 +- 所有场景通过                                                
+      546 +- `npm run lint` 无错误                                       
+      547 +- `npx vitest run` 单元测试通过（可能需要 mock API）          
+
+● 实施计划已写入 docs/plans/2026-03-01-backend-storage-plan.md，共 14 个步骤：
+
+  - 步骤 1-3：后端基础设施（Fastify 项目初始化、PostgreSQL schema 迁移、文件存储
+   + GLB 校验）
+  - 步骤 4-7：API 层（categories 路由、assets
+  上传含完整补偿策略、查询/更新/删除、@fastify/static 静态服务）
+  - 步骤 8：Playwright 缩略图生成服务
+  - 步骤 9-12：前端迁移（Asset 类型 + API client、assetSlice 异步化、AssetPanel
+  缩略图+分类筛选、FurnitureModel/GhostPreview URL 替换）
+  - 步骤 13：Vite proxy + persistence.ts 清理
+  - 步骤 14：集成测试
+
+  每个步骤都列出了要改的文件、详细说明和验证标准。准备好的话可以开始实施。
+
+✻ Worked for 5m 43s
+
+❯ 通读了一遍，整体结构清晰、顺序合理，且大部分点和你们已锁定的设计一致（静  
+  态直出、staging/补偿、Playwright 缩略图、前端 assetSlice API 化）。       
+  但我会卡 3                                                                
+  个“会直接实现翻车/返工”的点，建议你在计划里先修掉，再进入执行。           
+  Critical（必须改，不然大概率卡住）                                        
+  - server/src/glb.ts 里用 Node 环境 GLTFLoader 解析                        
+  bbox：这条路很容易被纹理/图片加载、浏览器 API                             
+  缺失、相对路径资源等问题搞崩（即使你只想要 bbox）。建议二选一：           
+    - 方案 A（推荐）：bbox/autoScale 也放到 Playwright                      
+  渲染页里算（同一次加载 GLB：算 bbox + 截图），Node 侧只做 GLB header      
+  校验与 DB 写入。                                                          
+    - 方案 B：用纯解析库（例如 glTF Transform 一类）在 Node 里计算          
+  bounds（不走 WebGL/图片加载），再复用你们 autoScale 公式。                
+  - Playwright viewer 加载 GLB 的方式写成                                   
+  thumbnail-viewer.html?model=file:///{glbAbsPath}：Windows 路径/URL 编码 + 
+   浏览器对 file:// fetch 的限制会非常脆弱。建议改为：                      
+    - Fastify 增加一个内部路由（例如                                        
+  /__thumb/model/:uuid?token=...）只用于缩略图生成，从 .staging             
+  读文件流返回；Playwright 页面用 http://127.0.0.1:3001/__thumb/...         
+  加载（不通过 @fastify/static，也不会暴露 .staging）。                     
+  - server/src/config.ts 示例用 import.meta.dirname：这在 Node ESM/TS       
+  下不一定可用；建议计划里明确用 fileURLToPath(import.meta.url) +           
+  path.dirname 来算目录，避免启动即炸。                                     
+  Important（建议改，不然体验/稳定性差）                                    
+  - 前端“上传进度”：你计划里写“显示上传进度”，但 fetch + FormData           
+  默认拿不到上传进度。要么改成“上传中 spinner/状态”（最省事），要么在       
+  src/services/api.ts 用 XMLHttpRequest 专门做上传并回调进度。              
+  - multipart limits：你配置了 fileSize/files/fields，但建议补上 parts      
+  上限，并在计划里写清楚“超限错误如何映射到 413 /                           
+  400”，以及所有错误路径都要把流消费完并清理                                
+  staging（你提到了，但可以再落到具体实现策略上）。                         
+  - 静态 URL 拼接：你在 rowToAssetDto 写 modelUrl:                          
+  /uploads/${row.file_path}，要保证 DB 存的是 models/{uuid}.glb             
+  这种不带前导斜杠的相对路径，否则会出现 //uploads//models...               
+  之类的混乱；建议计划里固定约定。                                          
+  Minor（可后置）                                                           
+  - 根 package.json 的 dev:server：cd server && ... 在 Windows              
+  OK，但跨平台更稳的是 npm --prefix server run dev。                        
+  - 步骤 4 标题写 categories CRUD，但实际只做 GET 列表；如果只需要          
+  GET，就把标题改成“categories list”。                                      
+  把上面 Critical 三点修进计划后，这份实施计划就可以进入执行阶段了。        
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ 继续 
+  ⎿  API Error: 500 {"error":{"type":"<nil>","message":"Service configuration 
+     error. Please try again later. (request id: 
+     20260301123539988907069Z3HgIFF6)"},"type":"error"}
+
+✻ Churned for 3m 19s
+
+❯ 继续 
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ 继续 
+  ⎿  Interrupted · What should Claude do instead?

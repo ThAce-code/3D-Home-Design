@@ -1,0 +1,43 @@
+{
+  "name": "3d-home-design",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port=3000 --host=0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit",
+    "test:unit": "vitest",
+    "test:e2e": "playwright test",
+    "dev:server": "npm --prefix server run dev",
+    "db:migrate": "psql $DATABASE_URL -f server/migrations/001-init.sql"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@tailwindcss/vite": "^4.2.1",
+    "@vitejs/plugin-react": "^5.1.1",
+    "idb": "^8.0.3",
+    "immer": "^11.1.4",
+    "lucide-react": "^0.575.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "three": "^0.183.1",
+    "uuid": "^13.0.0",
+    "vite": "^7.3.1",
+    "zundo": "^2.3.0",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.183.1",
+    "jsdom": "^27.4.0",
+    "tailwindcss": "^4.2.1",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
