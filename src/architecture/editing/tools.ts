@@ -1,4 +1,8 @@
 import type { Point2 } from '../topology/math.js';
+import {
+  createDefaultWallToolState,
+  type WallToolState,
+} from './wallTool.js';
 
 export type ArchitectureTool = 'select' | 'wall' | 'pan' | 'delete';
 
@@ -26,6 +30,10 @@ export interface ArchitectureViewportState {
   snapTolerance: number;
 }
 
+export interface ArchitectureToolState {
+  wall: WallToolState;
+}
+
 export const DEFAULT_ARCHITECTURE_TOOL: ArchitectureTool = 'select';
 export const DEFAULT_GRID_SIZE = 1;
 export const DEFAULT_SNAP_TOLERANCE = 0.05;
@@ -51,5 +59,11 @@ export function createDefaultViewport(): ArchitectureViewportState {
     gridSize: DEFAULT_GRID_SIZE,
     snapEnabled: true,
     snapTolerance: DEFAULT_SNAP_TOLERANCE,
+  };
+}
+
+export function createDefaultArchitectureToolState(): ArchitectureToolState {
+  return {
+    wall: createDefaultWallToolState(),
   };
 }

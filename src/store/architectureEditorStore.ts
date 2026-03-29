@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Point2 } from '../architecture/topology/math.js';
 import {
+  createDefaultArchitectureToolState,
   createDefaultViewport,
   createEmptyHover,
   createEmptySelection,
@@ -8,12 +9,22 @@ import {
   type ArchitectureHover,
   type ArchitectureSelection,
   type ArchitectureTool,
+  type ArchitectureToolState,
   type DraftWallState,
 } from '../architecture/editing/tools.js';
+import {
+  armWallTool,
+  createDefaultWallToolState,
+  previewWallClosure,
+  setWallNumericEntryEnabled,
+  updateWallToolModifiers,
+  type WallClosurePreviewCandidate,
+} from '../architecture/editing/wallTool.js';
 
 export interface ArchitectureEditorState {
   activeTool: ArchitectureTool;
   draftWall: DraftWallState | null;
+  toolState: ArchitectureToolState;
   selection: ArchitectureSelection;
   hover: ArchitectureHover;
   viewport: ReturnType<typeof createDefaultViewport>;
@@ -29,17 +40,25 @@ export interface ArchitectureEditorState {
   setGridSize: (gridSize: number) => void;
   setSnapEnabled: (snapEnabled: boolean) => void;
   setSnapTolerance: (snapTolerance: number) => void;
+  setWallToolModifiers: (modifiers: { shiftKey?: boolean; altKey?: boolean }) => void;
+  setWallNumericEntryEnabled: (numericEntryEnabled: boolean) => void;
+  setWallClosurePreview: (candidate: WallClosurePreviewCandidate | null) => void;
 }
 
 export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set) => ({
   activeTool: DEFAULT_ARCHITECTURE_TOOL,
   draftWall: null,
+  toolState: createDefaultArchitectureToolState(),
   selection: createEmptySelection(),
   hover: createEmptyHover(),
   viewport: createDefaultViewport(),
   setActiveTool: (tool) => set((state) => ({
     activeTool: tool,
     draftWall: tool === 'wall' ? state.draftWall : null,
+    toolState: {
+      ...state.toolState,
+      wall: tool === 'wall' ? state.toolState.wall : createDefaultWallToolState(),
+    },
   })),
   startDraftWall: (startPoint, snappedVertexId = null) => set({
     activeTool: 'wall',
@@ -47,6 +66,9 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
       startPoint,
       currentPoint: startPoint,
       snappedVertexId,
+    },
+    toolState: {
+      wall: armWallTool(createDefaultWallToolState()),
     },
   }),
   updateDraftWall: (currentPoint, snappedVertexId = null) => set((state) => ({
@@ -60,9 +82,15 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
   })),
   commitDraftWall: () => set({
     draftWall: null,
+    toolState: {
+      wall: createDefaultWallToolState(),
+    },
   }),
   cancelDraftWall: () => set({
     draftWall: null,
+    toolState: {
+      wall: createDefaultWallToolState(),
+    },
   }),
   setSelection: (selection) => set({
     selection,
@@ -92,6 +120,24 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
     viewport: {
       ...state.viewport,
       snapTolerance,
+    },
+  })),
+  setWallToolModifiers: (modifiers) => set((state) => ({
+    toolState: {
+      ...state.toolState,
+      wall: updateWallToolModifiers(state.toolState.wall, modifiers),
+    },
+  })),
+  setWallNumericEntryEnabled: (numericEntryEnabled) => set((state) => ({
+    toolState: {
+      ...state.toolState,
+      wall: setWallNumericEntryEnabled(state.toolState.wall, numericEntryEnabled),
+    },
+  })),
+  setWallClosurePreview: (candidate) => set((state) => ({
+    toolState: {
+      ...state.toolState,
+      wall: previewWallClosure(state.toolState.wall, candidate),
     },
   })),
 }));
