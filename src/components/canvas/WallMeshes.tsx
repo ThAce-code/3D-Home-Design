@@ -24,13 +24,19 @@ export default function WallMeshes() {
               return;
             }
 
-            const groundIntersection = 'intersections' in event && Array.isArray(event.intersections)
-              ? event.intersections.find((intersection) => {
+            const intersections = ('intersections' in event && Array.isArray(event.intersections))
+              ? event.intersections
+              : ('nativeEvent' in event
+                && event.nativeEvent
+                && 'intersections' in event.nativeEvent
+                && Array.isArray(event.nativeEvent.intersections)
+                ? event.nativeEvent.intersections
+                : []);
+            const groundIntersection = intersections.find((intersection) => {
                 const name = intersection.object?.name ?? '';
 
                 return name === 'architecture-interaction-plane' || name === 'floor-plane';
-              })
-              : null;
+              });
             const groundPoint = groundIntersection
               ? [groundIntersection.point.x, groundIntersection.point.z] as [number, number]
               : null;

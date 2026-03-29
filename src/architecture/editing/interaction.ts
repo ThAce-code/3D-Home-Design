@@ -1,19 +1,26 @@
 import type { ArchitectureDocument } from '../domain/document.js';
-import type { DraftWallState, ArchitectureTool } from './tools.js';
+import type { DraftWallState, ArchitectureTool, ArchitectureViewportState } from './tools.js';
 import type { Point2 } from '../topology/math.js';
+import type { WallToolAxisLock, WallToolState, WallClosurePreviewCandidate } from './wallTool.js';
 import { reduceArchitectureCommand } from './reducers.js';
+import { resolveWallDraftSnap } from '../geometry/wallDraftSnap.js';
 
 interface AdvanceWallDraftInteractionArgs {
   activeTool: ArchitectureTool;
   document: ArchitectureDocument;
   draftWall: DraftWallState | null;
   point: Point2;
+  viewport: ArchitectureViewportState;
+  wallTool: WallToolState;
 }
 
 interface UpdateWallDraftPointerArgs {
   activeTool: ArchitectureTool;
+  document: ArchitectureDocument;
   draftWall: DraftWallState | null;
   point: Point2;
+  viewport: ArchitectureViewportState;
+  wallTool: WallToolState;
 }
 
 export function advanceWallDraftInteraction({
@@ -21,14 +28,20 @@ export function advanceWallDraftInteraction({
   document,
   draftWall,
   point,
+  viewport,
+  wallTool,
 }: AdvanceWallDraftInteractionArgs): {
   document: ArchitectureDocument;
   draftWall: DraftWallState | null;
+  closureCandidate: WallClosurePreviewCandidate | null;
+  axisLock: WallToolAxisLock;
 } {
   if (activeTool !== 'wall') {
     return {
       document,
       draftWall,
+      closureCandidate: null,
+      axisLock: 'free',
     };
   }
 
@@ -40,31 +53,66 @@ export function advanceWallDraftInteraction({
         currentPoint: point,
         snappedVertexId: null,
       },
+      closureCandidate: null,
+      axisLock: 'free',
     };
   }
+
+  const snap = resolveWallDraftSnap({
+    document,
+    draftWall,
+    rawPoint: point,
+    viewport,
+    wallTool,
+  });
 
   return {
     document: reduceArchitectureCommand(document, {
       type: 'DRAW_WALL',
       start: draftWall.startPoint,
-      end: point,
+      end: snap.point,
     }),
     draftWall: null,
+    closureCandidate: snap.closureCandidate,
+    axisLock: snap.axisLock,
   };
 }
 
 export function updateWallDraftPointer({
   activeTool,
+  document,
   draftWall,
   point,
-}: UpdateWallDraftPointerArgs): DraftWallState | null {
+  viewport,
+  wallTool,
+}: UpdateWallDraftPointerArgs): {
+  draftWall: DraftWallState | null;
+  closureCandidate: WallClosurePreviewCandidate | null;
+  axisLock: WallToolAxisLock;
+} {
   if (activeTool !== 'wall' || !draftWall) {
-    return draftWall;
+    return {
+      draftWall,
+      closureCandidate: null,
+      axisLock: 'free',
+    };
   }
 
+  const snap = resolveWallDraftSnap({
+    document,
+    draftWall,
+    rawPoint: point,
+    viewport,
+    wallTool,
+  });
+
   return {
-    ...draftWall,
-    currentPoint: point,
-    snappedVertexId: null,
+    draftWall: {
+      ...draftWall,
+      currentPoint: snap.point,
+      snappedVertexId: snap.snappedVertexId,
+    },
+    closureCandidate: snap.closureCandidate,
+    axisLock: snap.axisLock,
   };
 }

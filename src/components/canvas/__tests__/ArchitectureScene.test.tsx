@@ -12,6 +12,8 @@ import {
   advanceWallDraftInteraction,
   updateWallDraftPointer,
 } from '../../../architecture/editing/interaction';
+import { createDefaultViewport } from '../../../architecture/editing/tools';
+import { armWallTool, createDefaultWallToolState, updateWallToolModifiers } from '../../../architecture/editing/wallTool';
 
 function createDocumentWithWallAndZone(): ArchitectureDocument {
   const document = createEmptyArchitectureDocument();
@@ -119,26 +121,56 @@ describe('ArchitectureScene', () => {
       document,
       draftWall: null,
       point: [0, 0],
+      viewport: createDefaultViewport(),
+      wallTool: createDefaultWallToolState(),
     });
 
     expect(started.draftWall?.startPoint).toEqual([0, 0]);
 
     const updatedDraft = updateWallDraftPointer({
       activeTool: 'wall',
+      document,
       draftWall: started.draftWall,
       point: [4, 0],
+      viewport: createDefaultViewport(),
+      wallTool: armWallTool(createDefaultWallToolState()),
     });
 
-    expect(updatedDraft?.currentPoint).toEqual([4, 0]);
+    expect(updatedDraft.draftWall?.currentPoint).toEqual([4, 0]);
 
     const committed = advanceWallDraftInteraction({
       activeTool: 'wall',
       document,
-      draftWall: updatedDraft,
+      draftWall: updatedDraft.draftWall,
       point: [4, 0],
+      viewport: createDefaultViewport(),
+      wallTool: armWallTool(createDefaultWallToolState()),
     });
 
     expect(committed.draftWall).toBeNull();
     expect(committed.document.wallOrder).toHaveLength(1);
+  });
+
+  it('updates the wall draft using the constrained snap result instead of the raw pointer', () => {
+    const started = advanceWallDraftInteraction({
+      activeTool: 'wall',
+      document: useArchitectureDocumentStore.getState().document,
+      draftWall: null,
+      point: [0, 0],
+      viewport: createDefaultViewport(),
+      wallTool: createDefaultWallToolState(),
+    });
+
+    const updatedDraft = updateWallDraftPointer({
+      activeTool: 'wall',
+      document: useArchitectureDocumentStore.getState().document,
+      draftWall: started.draftWall,
+      point: [3, 1],
+      viewport: createDefaultViewport(),
+      wallTool: updateWallToolModifiers(armWallTool(createDefaultWallToolState()), { shiftKey: true }),
+    });
+
+    expect(updatedDraft.draftWall?.currentPoint).toEqual([3, 0]);
+    expect(updatedDraft.axisLock).toBe('horizontal');
   });
 });

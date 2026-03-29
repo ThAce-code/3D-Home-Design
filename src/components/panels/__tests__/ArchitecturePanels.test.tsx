@@ -140,4 +140,44 @@ describe('architecture shell panels', () => {
     expect(mountNode.querySelector('[data-testid="zone-property-panel"]')).not.toBeNull();
     expect(mountNode.textContent).toContain('z1');
   });
+
+  it('prefers the zone panel when a wall ray hit resolves to an interior ground point', () => {
+    act(() => {
+      useArchitectureDocumentStore.getState().replaceDocument(createDocumentWithWallAndZone());
+      root.render(
+        <>
+          <ArchitectureScene />
+          <PropertyPanel architectureModeEnabled />
+        </>
+      );
+    });
+
+    const wallMesh = mountNode.querySelector('[data-testid="architecture-wall-w1"]');
+
+    if (!wallMesh) {
+      throw new Error('missing wall mesh');
+    }
+
+    const event = new MouseEvent('pointerdown', { bubbles: true });
+    Object.defineProperty(event, 'intersections', {
+      value: [
+        {
+          object: { name: 'wall:w1' },
+          point: { x: 2, y: 1.5, z: 0 },
+        },
+        {
+          object: { name: 'floor-plane' },
+          point: { x: 2, y: 0, z: 1.5 },
+        },
+      ],
+    });
+
+    act(() => {
+      wallMesh.dispatchEvent(event);
+    });
+
+    expect(mountNode.querySelector('[data-testid="zone-property-panel"]')).not.toBeNull();
+    expect(mountNode.querySelector('[data-testid="wall-property-panel"]')).toBeNull();
+    expect(mountNode.textContent).toContain('z1');
+  });
 });

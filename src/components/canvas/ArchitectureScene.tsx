@@ -14,11 +14,14 @@ export default function ArchitectureScene() {
   const replaceDocument = useArchitectureDocumentStore((state) => state.replaceDocument);
   const activeTool = useArchitectureEditorStore((state) => state.activeTool);
   const draftWall = useArchitectureEditorStore((state) => state.draftWall);
+  const wallTool = useArchitectureEditorStore((state) => state.toolState.wall);
+  const viewport = useArchitectureEditorStore((state) => state.viewport);
   const startDraftWall = useArchitectureEditorStore((state) => state.startDraftWall);
   const updateDraftWall = useArchitectureEditorStore((state) => state.updateDraftWall);
   const commitDraftWall = useArchitectureEditorStore((state) => state.commitDraftWall);
   const cancelDraftWall = useArchitectureEditorStore((state) => state.cancelDraftWall);
   const setSelection = useArchitectureEditorStore((state) => state.setSelection);
+  const setWallClosurePreview = useArchitectureEditorStore((state) => state.setWallClosurePreview);
 
   const getPoint = (event: { point?: { x: number; z: number } }) => {
     if (!event.point) {
@@ -60,14 +63,18 @@ export default function ArchitectureScene() {
       document,
       draftWall,
       point,
+      viewport,
+      wallTool,
     });
 
     if (!draftWall && next.draftWall) {
+      setWallClosurePreview(null);
       startDraftWall(next.draftWall.startPoint, next.draftWall.snappedVertexId);
       return;
     }
 
     if (!next.draftWall) {
+      setWallClosurePreview(null);
       replaceDocument(next.document);
       commitDraftWall();
     }
@@ -85,12 +92,17 @@ export default function ArchitectureScene() {
 
     const nextDraftWall = updateWallDraftPointer({
       activeTool,
+      document,
       draftWall,
       point,
+      viewport,
+      wallTool,
     });
 
-    if (nextDraftWall) {
-      updateDraftWall(nextDraftWall.currentPoint, nextDraftWall.snappedVertexId);
+    setWallClosurePreview(nextDraftWall.closureCandidate);
+
+    if (nextDraftWall.draftWall) {
+      updateDraftWall(nextDraftWall.draftWall.currentPoint, nextDraftWall.draftWall.snappedVertexId);
     }
   };
 
@@ -105,6 +117,7 @@ export default function ArchitectureScene() {
         onPointerMove={handlePointerMove}
         onContextMenu={(event) => {
           event.stopPropagation?.();
+          setWallClosurePreview(null);
           cancelDraftWall();
         }}
       >
