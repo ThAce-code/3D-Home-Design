@@ -3,7 +3,7 @@ import {
   createEmptyArchitectureDocument,
   type ArchitectureDocument,
 } from '../../domain/document';
-import { repairTopology } from '../repair';
+import { applyDrawWall, repairTopology } from '../repair';
 import { rebuildZones } from '../zones';
 
 function createDocumentWithWalls(args: {
@@ -354,5 +354,16 @@ describe('rebuildZones', () => {
 
     expect(result.zoneOrder).toHaveLength(1);
     expect(result.zoneOrder[0]).not.toBe(previousZoneId);
+  });
+
+  it('creates a zone when the final wall closes the loop near an existing corner', () => {
+    let document = createEmptyArchitectureDocument();
+    document = applyDrawWall(document, [0, 0], [4, 0]);
+    document = applyDrawWall(document, [4, 0], [4, 3]);
+    document = applyDrawWall(document, [4, 3], [0, 3]);
+
+    const result = applyDrawWall(document, [0, 3], [0.08, 0.04]);
+
+    expect(result.zoneOrder).toHaveLength(1);
   });
 });

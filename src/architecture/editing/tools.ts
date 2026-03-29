@@ -36,7 +36,7 @@ export interface ArchitectureToolState {
 
 export const DEFAULT_ARCHITECTURE_TOOL: ArchitectureTool = 'select';
 export const DEFAULT_GRID_SIZE = 1;
-export const DEFAULT_SNAP_TOLERANCE = 0.05;
+export const DEFAULT_SNAP_TOLERANCE = 0.1;
 
 export function createEmptySelection(): ArchitectureSelection {
   return {

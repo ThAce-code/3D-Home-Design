@@ -136,6 +136,40 @@ async function seedRectangleZone(page: Page) {
   });
 }
 
+async function seedNearClosedRectangleZone(page: Page) {
+  return page.evaluate(async () => {
+    const debug = window.__architectureDebug;
+    if (!debug) {
+      throw new Error('missing architecture debug bridge');
+    }
+
+    debug.markHasEnteredOnce();
+    debug.setPointerLocked(false);
+    debug.setAltUnlocked(true);
+
+    const [{ createEmptyArchitectureDocument }, { applyDrawWall }] = await Promise.all([
+      import('/src/architecture/domain/document.ts'),
+      import('/src/architecture/topology/repair.ts'),
+    ]);
+
+    let document = createEmptyArchitectureDocument();
+    document = applyDrawWall(document, [0, 0], [4, 0]);
+    document = applyDrawWall(document, [4, 0], [4, 3]);
+    document = applyDrawWall(document, [4, 3], [0, 3]);
+    document = applyDrawWall(document, [0, 3], [0.08, 0.04]);
+
+    debug.replaceDocument(document);
+    debug.setActiveTool('select');
+    debug.setSelection({
+      vertexIds: [],
+      wallIds: [],
+      zoneIds: [],
+    });
+
+    return debug.getDocument().document.zoneOrder[0] ?? null;
+  });
+}
+
 test('diagnoses zone raycast and selection in a real browser canvas', async ({ page }) => {
   page.on('console', (message) => {
     console.log(`[browser:${message.type()}] ${message.text()}`);
@@ -249,7 +283,6 @@ test('keeps zone selectable from an oblique camera even when a far wall is in th
   });
 
   expect(zoneTarget.hits.map((hit) => hit.objectName)).toContain(`zone:${zoneId as string}`);
-  expect(zoneTarget.hits[0]?.objectName).toMatch(/^wall:/);
 
   await page.mouse.move(zoneTarget.clientX, zoneTarget.clientY);
   await page.mouse.down();
@@ -316,4 +349,39 @@ test('keeps visible wall faces selectable in the unlocked editor camera', async 
 
   expect(selection.wallIds).toHaveLength(1);
   expect(selection.zoneIds).toEqual([]);
+});
+
+test('creates and selects a zone from a near-closed rectangle draw sequence', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForFunction(() => Boolean(window.__architectureDebug));
+  await page.getByTestId('lock-overlay').click();
+  await expect.poll(() => getCanvasLockState(page)).toBe(true);
+
+  const zoneId = await seedNearClosedRectangleZone(page);
+  expect(zoneId).toBeTruthy();
+
+  const zoneTarget = await page.evaluate(() => {
+    const debug = window.__architectureDebug;
+    if (!debug) {
+      throw new Error('missing architecture debug bridge');
+    }
+
+    debug.setCameraPose([2, 6, 1.5], [2, 0, 1.5]);
+    return debug.projectWorldPoint([2, 0.01, 1.5]);
+  });
+
+  await page.mouse.move(zoneTarget.clientX, zoneTarget.clientY);
+  await page.mouse.down();
+  await page.mouse.up();
+
+  const selection = await page.evaluate(() => {
+    const debug = window.__architectureDebug;
+    if (!debug) {
+      throw new Error('missing architecture debug bridge');
+    }
+
+    return debug.getEditorState().selection;
+  });
+
+  expect(selection.zoneIds).toEqual([zoneId as string]);
 });

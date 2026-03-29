@@ -207,4 +207,21 @@ describe('repairTopology', () => {
     ]);
     expect(Object.keys(next.vertices)).toHaveLength(2);
   });
+
+  it('snaps a near-closing endpoint onto the existing rectangle corner by default', () => {
+    let document = createEmptyArchitectureDocument();
+    document = applyDrawWall(document, [0, 0], [4, 0]);
+    document = applyDrawWall(document, [4, 0], [4, 3]);
+    document = applyDrawWall(document, [4, 3], [0, 3]);
+
+    const next = applyDrawWall(document, [0, 3], [0.08, 0.04]);
+
+    expect(Object.values(next.vertices).some((vertex) => vertex.x === 0.08 || vertex.y === 0.04)).toBe(false);
+    expect(listNormalizedWallSegments(next)).toEqual([
+      '0,0->0,3',
+      '0,0->4,0',
+      '0,3->4,3',
+      '4,0->4,3',
+    ]);
+  });
 });

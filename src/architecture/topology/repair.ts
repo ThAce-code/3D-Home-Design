@@ -11,7 +11,7 @@ import { splitIntersectingWalls } from './splitWalls.js';
 import type { Point2 } from './math.js';
 import { rebuildZones } from './zones.js';
 
-const DEFAULT_SNAP_TOLERANCE = 0.05;
+const DEFAULT_SNAP_TOLERANCE = 0.1;
 const DEFAULT_REPAIR_EPSILON = 1e-6;
 
 function ensureVertexIdForPoint(
