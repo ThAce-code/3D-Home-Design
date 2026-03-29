@@ -3,7 +3,7 @@ import { useStore } from '../store/useStore.js';
 import type { DockTab, TransformTool } from '../types/camera.js';
 
 const dockKeys: Record<string, DockTab> = {
-  '1': 'rooms',
+  '1': 'building',
   '2': 'furniture',
   '3': 'materials',
   '4': 'measure',

@@ -12,7 +12,7 @@ export interface UiSlice {
 }
 
 export const createUiSlice: StateCreator<UiSlice, [['zustand/immer', never]], [], UiSlice> = (set) => ({
-  activeTab: 'rooms',
+  activeTab: 'building',
   dockOpen: false,
   transformTool: 'translate',
   setActiveTab: (tab) => set((s) => { s.activeTab = tab; s.dockOpen = true; }),

@@ -1,12 +1,15 @@
 import { Canvas } from '@react-three/fiber';
 import { Grid } from '@react-three/drei';
 import type { ReactNode } from 'react';
+import ArchitectureScene from './ArchitectureScene.js';
+import SceneDebugBridge from './SceneDebugBridge.js';
 
 interface Props {
   children: ReactNode;
+  showArchitectureScene?: boolean;
 }
 
-export default function SceneRoot({ children }: Props) {
+export default function SceneRoot({ children, showArchitectureScene = false }: Props) {
   return (
     <Canvas data-testid="scene-canvas" camera={{ position: [0, 1.7, 5], fov: 60 }} shadows>
       <color attach="background" args={['#111111']} />
@@ -31,6 +34,8 @@ export default function SceneRoot({ children }: Props) {
         cellColor="#0f1f1a"
         position={[0, -0.01, 0]}
       />
+      <SceneDebugBridge />
+      {showArchitectureScene ? <ArchitectureScene /> : null}
       {children}
     </Canvas>
   );

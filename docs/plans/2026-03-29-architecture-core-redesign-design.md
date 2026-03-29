@@ -139,6 +139,7 @@ interface Zone {
 
 - `Vertex` 与 `Wall` 是真实源数据
 - `Zone` 由墙图派生，但在 V1 中落库，便于后续挂接名称、属性、面积与材质
+- `Zone` 的 V1 提取仅覆盖 disconnected simple loops，不处理共享墙/多房间共墙，也不等同于最终 face extraction
 - 单层场景中 `Vertex.y` 暂时固定为 `0`，但字段保留，避免后续扩展时再次改模型
 - 任何“房间”概念都由 `Zone` 承担，不再回到 `Room` 作为建模源头
 
