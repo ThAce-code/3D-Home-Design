@@ -1,23 +1,27 @@
 import { useStore } from '../../store/useStore.js';
-import RoomPanel from '../panels/RoomPanel.js';
 import AssetPanel from '../panels/AssetPanel.js';
 import MaterialPanel from '../panels/MaterialPanel.js';
 import MeasurePanel from '../panels/MeasurePanel.js';
 import ExportPanel from '../panels/ExportPanel.js';
+import BuildingToolPanel from '../panels/BuildingToolPanel.js';
 
 const panelMap = {
-  rooms: RoomPanel,
+  building: BuildingToolPanel,
   furniture: AssetPanel,
   materials: MaterialPanel,
   measure: MeasurePanel,
   export: ExportPanel,
 } as const;
 
-export default function LeftPanel() {
+interface Props {
+  architectureModeEnabled?: boolean;
+}
+
+export default function LeftPanel({ architectureModeEnabled = false }: Props) {
   const activeTab = useStore((s) => s.activeTab);
   const dockOpen = useStore((s) => s.dockOpen);
 
-  const Panel = panelMap[activeTab];
+  const Panel = architectureModeEnabled ? BuildingToolPanel : panelMap[activeTab];
 
   return (
     <div

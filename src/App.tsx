@@ -1,7 +1,5 @@
 import { Suspense, useEffect } from 'react';
 import SceneRoot from './components/canvas/SceneRoot.js';
-import BuildGrid from './components/canvas/BuildGrid.js';
-import RoomMesh from './components/canvas/RoomMesh.js';
 import FloorPlane from './components/canvas/FloorPlane.js';
 import FurnitureModel from './components/canvas/FurnitureModel.js';
 import GhostPreview from './components/canvas/GhostPreview.js';
@@ -17,10 +15,10 @@ import TopActions from './components/overlays/TopActions.js';
 import { useStore } from './store/useStore.js';
 import { useGlobalHotkeys } from './hooks/useGlobalHotkeys.js';
 import { usePersistence } from './hooks/usePersistence.js';
+import { useArchitecturePersistence } from './hooks/useArchitecturePersistence.js';
 import { autoScale as computeAutoScale } from './services/asset.js';
 
 function SceneContent() {
-  const rooms = useStore((s) => s.rooms);
   const items = useStore((s) => s.items);
   const selectedAssetId = useStore((s) => s.selectedAssetId);
   const assets = useStore((s) => s.assets);
@@ -45,10 +43,6 @@ function SceneContent() {
 
   return (
     <>
-      <BuildGrid />
-      {rooms.map((room) => (
-        <RoomMesh key={room.id} room={room} onFloorClick={handleFloorClick} />
-      ))}
       <FloorPlane onFloorClick={handleFloorClick} />
       <Suspense fallback={null}>
         {items.map((item) => (
@@ -64,6 +58,7 @@ function SceneContent() {
 export default function App() {
   useGlobalHotkeys();
   usePersistence();
+  useArchitecturePersistence();
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -76,7 +71,7 @@ export default function App() {
   return (
     <div className="h-screen w-screen overflow-hidden" style={{ background: '#111111' }}>
       {/* Full-screen 3D canvas */}
-      <SceneRoot>
+      <SceneRoot showArchitectureScene>
         <SceneContent />
       </SceneRoot>
 
@@ -91,10 +86,10 @@ export default function App() {
 
       {/* Floating UI layer — opacity controlled by pointer lock state */}
       <OverlayRoot>
-        <TopActions />
+        <TopActions architectureModeEnabled />
         <DockBar />
-        <LeftPanel />
-        <PropertyPanel />
+        <LeftPanel architectureModeEnabled />
+        <PropertyPanel architectureModeEnabled />
       </OverlayRoot>
     </div>
   );
