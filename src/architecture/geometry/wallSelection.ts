@@ -2,7 +2,7 @@ import type { ArchitectureDocument } from '../domain/document.js';
 import type { Point2 } from '../topology/math.js';
 import { distanceBetweenPoints, dot2D, subtractPoints } from '../topology/math.js';
 
-function distancePointToSegment(point: Point2, start: Point2, end: Point2): number {
+export function distancePointToSegment(point: Point2, start: Point2, end: Point2): number {
   const segment = subtractPoints(end, start);
   const pointOffset = subtractPoints(point, start);
   const lengthSquared = dot2D(segment, segment);
@@ -44,4 +44,44 @@ export function isPointNearWallFootprint(
     [startVertex.x, startVertex.y],
     [endVertex.x, endVertex.y]
   ) <= ((wall.thickness / 2) + epsilon);
+}
+
+export function findNearestWallIdByFootprint(
+  document: ArchitectureDocument,
+  wallIds: string[],
+  point: Point2,
+  epsilon = 1e-6
+): string | null {
+  let nearestWallId: string | null = null;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+
+  for (const wallId of wallIds) {
+    const wall = document.walls[wallId];
+
+    if (!wall) {
+      continue;
+    }
+
+    const startVertex = document.vertices[wall.startVertexId];
+    const endVertex = document.vertices[wall.endVertexId];
+
+    if (!startVertex || !endVertex) {
+      continue;
+    }
+
+    const distance = distancePointToSegment(
+      point,
+      [startVertex.x, startVertex.y],
+      [endVertex.x, endVertex.y]
+    );
+
+    if (distance > ((wall.thickness / 2) + epsilon) || distance >= nearestDistance) {
+      continue;
+    }
+
+    nearestDistance = distance;
+    nearestWallId = wallId;
+  }
+
+  return nearestWallId;
 }
