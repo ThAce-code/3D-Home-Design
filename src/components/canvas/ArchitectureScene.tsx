@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import {
@@ -8,6 +9,7 @@ import { findZoneIdContainingPoint } from '../../architecture/geometry/zoneSelec
 import WallMeshes from './WallMeshes.js';
 import ZoneMeshes from './ZoneMeshes.js';
 import DraftWallPreview from './DraftWallPreview.js';
+import WallDraftHud from './WallDraftHud.js';
 
 export default function ArchitectureScene() {
   const document = useArchitectureDocumentStore((state) => state.document);
@@ -22,6 +24,63 @@ export default function ArchitectureScene() {
   const cancelDraftWall = useArchitectureEditorStore((state) => state.cancelDraftWall);
   const setSelection = useArchitectureEditorStore((state) => state.setSelection);
   const setWallClosurePreview = useArchitectureEditorStore((state) => state.setWallClosurePreview);
+  const setWallToolModifiers = useArchitectureEditorStore((state) => state.setWallToolModifiers);
+  const setWallNumericEntryEnabled = useArchitectureEditorStore((state) => state.setWallNumericEntryEnabled);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (activeTool !== 'wall') {
+        return;
+      }
+
+      if (event.key === 'Shift') {
+        setWallToolModifiers({ shiftKey: true });
+      }
+
+      if (event.key === 'Alt') {
+        setWallToolModifiers({ altKey: true });
+      }
+
+      if (event.key === 'Tab') {
+        event.preventDefault();
+        setWallNumericEntryEnabled(true);
+      }
+
+      if (event.key === 'Escape') {
+        setWallClosurePreview(null);
+        setWallNumericEntryEnabled(false);
+        cancelDraftWall();
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (activeTool !== 'wall') {
+        return;
+      }
+
+      if (event.key === 'Shift') {
+        setWallToolModifiers({ shiftKey: false });
+      }
+
+      if (event.key === 'Alt') {
+        setWallToolModifiers({ altKey: false });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [
+    activeTool,
+    cancelDraftWall,
+    setWallClosurePreview,
+    setWallNumericEntryEnabled,
+    setWallToolModifiers,
+  ]);
 
   const getPoint = (event: { point?: { x: number; z: number } }) => {
     if (!event.point) {
@@ -127,6 +186,7 @@ export default function ArchitectureScene() {
       <ZoneMeshes />
       <WallMeshes />
       <DraftWallPreview />
+      <WallDraftHud />
     </group>
   );
 }

@@ -173,4 +173,30 @@ describe('ArchitectureScene', () => {
     expect(updatedDraft.draftWall?.currentPoint).toEqual([3, 0]);
     expect(updatedDraft.axisLock).toBe('horizontal');
   });
+
+  it('writes wall tool keyboard modifiers into the editor store during drafting', () => {
+    act(() => {
+      useArchitectureEditorStore.getState().setActiveTool('wall');
+      useArchitectureEditorStore.getState().startDraftWall([0, 0], null);
+      root.render(<ArchitectureScene />);
+    });
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift' }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+    });
+
+    expect(useArchitectureEditorStore.getState().toolState.wall.modifiers.shiftKey).toBe(true);
+    expect(useArchitectureEditorStore.getState().toolState.wall.modifiers.altKey).toBe(true);
+    expect(useArchitectureEditorStore.getState().toolState.wall.constraints.numericEntryEnabled).toBe(true);
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Shift' }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt' }));
+    });
+
+    expect(useArchitectureEditorStore.getState().toolState.wall.modifiers.shiftKey).toBe(false);
+    expect(useArchitectureEditorStore.getState().toolState.wall.modifiers.altKey).toBe(false);
+  });
 });
