@@ -5,17 +5,18 @@ import {
   advanceWallDraftInteraction,
   updateWallDraftPointer,
 } from '../../architecture/editing/interaction.js';
+import { resolveWallDraftSnap } from '../../architecture/geometry/wallDraftSnap.js';
 import { findZoneIdContainingPoint } from '../../architecture/geometry/zoneSelection.js';
 import WallMeshes from './WallMeshes.js';
 import ZoneMeshes from './ZoneMeshes.js';
 import DraftWallPreview from './DraftWallPreview.js';
-import WallDraftHud from './WallDraftHud.js';
 
 export default function ArchitectureScene() {
   const document = useArchitectureDocumentStore((state) => state.document);
   const replaceDocument = useArchitectureDocumentStore((state) => state.replaceDocument);
   const activeTool = useArchitectureEditorStore((state) => state.activeTool);
   const draftWall = useArchitectureEditorStore((state) => state.draftWall);
+  const setCursorPoint = useArchitectureEditorStore((state) => state.setCursorPoint);
   const wallTool = useArchitectureEditorStore((state) => state.toolState.wall);
   const viewport = useArchitectureEditorStore((state) => state.viewport);
   const startDraftWall = useArchitectureEditorStore((state) => state.startDraftWall);
@@ -140,12 +141,30 @@ export default function ArchitectureScene() {
   };
 
   const handlePointerMove = (event: { point?: { x: number; z: number } }) => {
-    if (activeTool !== 'wall' || !draftWall) {
+    const point = getPoint(event);
+    if (!point) {
       return;
     }
 
-    const point = getPoint(event);
-    if (!point) {
+    if (activeTool === 'wall') {
+      const previewSnap = updateWallDraftPointer({
+        activeTool,
+        document,
+        draftWall,
+        point,
+        viewport,
+        wallTool,
+      });
+      setCursorPoint(previewSnap.draftWall ? previewSnap.draftWall.currentPoint : resolveWallDraftSnap({
+        document,
+        draftWall: null,
+        rawPoint: point,
+        viewport,
+        wallTool,
+      }).point);
+    }
+
+    if (activeTool !== 'wall' || !draftWall) {
       return;
     }
 
@@ -166,10 +185,9 @@ export default function ArchitectureScene() {
   };
 
   return (
-    <group data-testid="architecture-scene">
+    <group name="architecture-scene">
       <mesh
         name="architecture-interaction-plane"
-        data-testid="architecture-interaction-plane"
         rotation={[-Math.PI / 2, 0, 0]}
         position={[0, -0.01, 0]}
         onPointerDown={handlePointerDown}
@@ -186,7 +204,6 @@ export default function ArchitectureScene() {
       <ZoneMeshes />
       <WallMeshes />
       <DraftWallPreview />
-      <WallDraftHud />
     </group>
   );
 }

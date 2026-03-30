@@ -24,6 +24,7 @@ import {
 export interface ArchitectureEditorState {
   activeTool: ArchitectureTool;
   draftWall: DraftWallState | null;
+  cursorPoint: Point2 | null;
   toolState: ArchitectureToolState;
   selection: ArchitectureSelection;
   hover: ArchitectureHover;
@@ -33,6 +34,7 @@ export interface ArchitectureEditorState {
   updateDraftWall: (currentPoint: Point2, snappedVertexId?: string | null) => void;
   commitDraftWall: () => void;
   cancelDraftWall: () => void;
+  setCursorPoint: (point: Point2 | null) => void;
   setSelection: (selection: ArchitectureSelection) => void;
   clearSelection: () => void;
   setHover: (hover: ArchitectureHover) => void;
@@ -48,6 +50,7 @@ export interface ArchitectureEditorState {
 export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set) => ({
   activeTool: DEFAULT_ARCHITECTURE_TOOL,
   draftWall: null,
+  cursorPoint: null,
   toolState: createDefaultArchitectureToolState(),
   selection: createEmptySelection(),
   hover: createEmptyHover(),
@@ -55,6 +58,7 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
   setActiveTool: (tool) => set((state) => ({
     activeTool: tool,
     draftWall: tool === 'wall' ? state.draftWall : null,
+    cursorPoint: tool === 'wall' ? state.cursorPoint : null,
     toolState: {
       ...state.toolState,
       wall: tool === 'wall' ? state.toolState.wall : createDefaultWallToolState(),
@@ -62,6 +66,7 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
   })),
   startDraftWall: (startPoint, snappedVertexId = null) => set({
     activeTool: 'wall',
+    cursorPoint: startPoint,
     draftWall: {
       startPoint,
       currentPoint: startPoint,
@@ -79,6 +84,7 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
         snappedVertexId,
       }
       : state.draftWall,
+    cursorPoint: currentPoint,
   })),
   commitDraftWall: () => set({
     draftWall: null,
@@ -91,6 +97,9 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
     toolState: {
       wall: createDefaultWallToolState(),
     },
+  }),
+  setCursorPoint: (cursorPoint) => set({
+    cursorPoint,
   }),
   setSelection: (selection) => set({
     selection,

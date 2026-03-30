@@ -112,7 +112,7 @@ describe('rebuildZones', () => {
     expect(result.zoneOrder).toHaveLength(2);
   });
 
-  it('rejects shared-wall graphs as invalid zone candidates', () => {
+  it('creates zones for shared-wall graphs that partition space into multiple rooms', () => {
     const sharedWallDocument = createDocumentWithWalls({
       vertices: [
         { id: 'v1', x: 0, y: 0 },
@@ -135,7 +135,7 @@ describe('rebuildZones', () => {
 
     const result = rebuildZones(sharedWallDocument);
 
-    expect(result.zoneOrder).toEqual([]);
+    expect(result.zoneOrder).toHaveLength(2);
   });
 
   it('removes an existing zone after one wall is deleted from a valid rectangle', () => {
@@ -365,5 +365,86 @@ describe('rebuildZones', () => {
     const result = applyDrawWall(document, [0, 3], [0.08, 0.04]);
 
     expect(result.zoneOrder).toHaveLength(1);
+  });
+
+  it('preserves the outer zone when a dangling T-wall is added to an otherwise closed rectangle', () => {
+    let document = createEmptyArchitectureDocument();
+    document = applyDrawWall(document, [0, 0], [4, 0]);
+    document = applyDrawWall(document, [4, 0], [4, 3]);
+    document = applyDrawWall(document, [4, 3], [0, 3]);
+    document = applyDrawWall(document, [0, 3], [0, 0]);
+
+    expect(document.zoneOrder).toHaveLength(1);
+
+    const result = applyDrawWall(document, [2, 3], [2, 1]);
+
+    expect(result.zoneOrder).toHaveLength(1);
+    expect(result.zones[result.zoneOrder[0]].boundaryVertexIds).toHaveLength(5);
+  });
+
+  it('creates two zones when an inner rectangle is drawn inside an outer rectangle sequentially', () => {
+    let document = createEmptyArchitectureDocument();
+    document = applyDrawWall(document, [0, 0], [8, 0]);
+    document = applyDrawWall(document, [8, 0], [8, 8]);
+    document = applyDrawWall(document, [8, 8], [0, 8]);
+    document = applyDrawWall(document, [0, 8], [0, 0]);
+
+    expect(document.zoneOrder).toHaveLength(1);
+
+    document = applyDrawWall(document, [2, 2], [6, 2]);
+    document = applyDrawWall(document, [6, 2], [6, 6]);
+    document = applyDrawWall(document, [6, 6], [2, 6]);
+    document = applyDrawWall(document, [2, 6], [2, 2]);
+
+    expect(document.zoneOrder).toHaveLength(2);
+  });
+
+  it('creates zones for connected inner walls that subdivide an outer rectangle into multiple rooms', () => {
+    let document = createEmptyArchitectureDocument();
+    document = applyDrawWall(document, [0, 0], [8, 0]);
+    document = applyDrawWall(document, [8, 0], [8, 8]);
+    document = applyDrawWall(document, [8, 8], [0, 8]);
+    document = applyDrawWall(document, [0, 8], [0, 0]);
+    document = applyDrawWall(document, [4, 8], [4, 5]);
+    document = applyDrawWall(document, [4, 5], [6, 5]);
+    document = applyDrawWall(document, [6, 5], [6, 3]);
+    document = applyDrawWall(document, [6, 3], [8, 3]);
+
+    const result = rebuildZones(document);
+
+    expect(result.zoneOrder).toHaveLength(2);
+  });
+
+  it('keeps both zones when an inner rectangle is connected to the outer boundary by a single wall', () => {
+    let document = createEmptyArchitectureDocument();
+    document = applyDrawWall(document, [0, 0], [10, 0]);
+    document = applyDrawWall(document, [10, 0], [10, 10]);
+    document = applyDrawWall(document, [10, 10], [0, 10]);
+    document = applyDrawWall(document, [0, 10], [0, 0]);
+    document = applyDrawWall(document, [3, 3], [7, 3]);
+    document = applyDrawWall(document, [7, 3], [7, 7]);
+    document = applyDrawWall(document, [7, 7], [3, 7]);
+    document = applyDrawWall(document, [3, 7], [3, 3]);
+    document = applyDrawWall(document, [5, 10], [5, 7]);
+
+    const result = rebuildZones(document);
+
+    expect(result.zoneOrder).toHaveLength(2);
+  });
+
+  it('creates zones for a screenshot-like inner enclosure graph with a stem and shelf walls', () => {
+    let document = createEmptyArchitectureDocument();
+    document = applyDrawWall(document, [0, 0], [10, 0]);
+    document = applyDrawWall(document, [10, 0], [10, 10]);
+    document = applyDrawWall(document, [10, 10], [0, 10]);
+    document = applyDrawWall(document, [0, 10], [0, 0]);
+    document = applyDrawWall(document, [2, 3], [2, 10]);
+    document = applyDrawWall(document, [2, 3], [5, 3]);
+    document = applyDrawWall(document, [5, 0], [5, 6]);
+    document = applyDrawWall(document, [5, 6], [10, 6]);
+
+    const result = rebuildZones(document);
+
+    expect(result.zoneOrder).toHaveLength(3);
   });
 });

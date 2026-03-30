@@ -88,9 +88,9 @@ describe('ArchitectureScene', () => {
       root.render(<ArchitectureScene />);
     });
 
-    expect(mountNode.querySelector('[data-testid="architecture-scene"]')).not.toBeNull();
-    expect(mountNode.querySelector('[data-testid="architecture-wall-w1"]')).toBeNull();
-    expect(mountNode.querySelector('[data-testid="architecture-zone-z1"]')).toBeNull();
+    expect(mountNode.querySelector('[name="architecture-scene"]')).not.toBeNull();
+    expect(mountNode.querySelector('[name="wall:w1"]')).toBeNull();
+    expect(mountNode.querySelector('[name="zone:z1"]')).toBeNull();
   });
 
   it('renders wall and zone meshes from the architecture document', () => {
@@ -99,9 +99,9 @@ describe('ArchitectureScene', () => {
       root.render(<ArchitectureScene />);
     });
 
-    expect(mountNode.querySelector('[data-testid="architecture-scene"]')).not.toBeNull();
-    expect(mountNode.querySelector('[data-testid="architecture-wall-w1"]')).not.toBeNull();
-    expect(mountNode.querySelector('[data-testid="architecture-zone-z1"]')).not.toBeNull();
+    expect(mountNode.querySelector('[name="architecture-scene"]')).not.toBeNull();
+    expect(mountNode.querySelector('[name="wall:w1"]')).not.toBeNull();
+    expect(mountNode.querySelector('[name="zone:z1"]')).not.toBeNull();
   });
 
   it('renders a draft wall preview while a wall is in progress', () => {
@@ -111,7 +111,7 @@ describe('ArchitectureScene', () => {
       root.render(<ArchitectureScene />);
     });
 
-    expect(mountNode.querySelector('[data-testid="draft-wall-preview"]')).not.toBeNull();
+    expect(mountNode.querySelector('[name="draft-wall-preview"]')).not.toBeNull();
   });
 
   it('starts, updates, and commits a draft wall through the wall interaction helpers', () => {

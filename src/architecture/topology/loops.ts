@@ -5,6 +5,7 @@ import type { Point2 } from './math.js';
 interface AdjacencyEdge {
   wallId: string;
   otherVertexId: string;
+  angle: number;
 }
 
 export interface ClosedLoop {
@@ -61,6 +62,33 @@ function getSignedArea(points: Point2[]): number {
   return area / 2;
 }
 
+function isSamePoint(left: Point2, right: Point2, epsilon: number): boolean {
+  return (
+    Math.abs(left[0] - right[0]) <= epsilon &&
+    Math.abs(left[1] - right[1]) <= epsilon
+  );
+}
+
+function isEndpointOnlyIntersection(
+  hitPoint: Point2,
+  startA: Point2,
+  endA: Point2,
+  startB: Point2,
+  endB: Point2,
+  epsilon: number
+): boolean {
+  const touchesEndpointOnA = (
+    isSamePoint(hitPoint, startA, epsilon) ||
+    isSamePoint(hitPoint, endA, epsilon)
+  );
+  const touchesEndpointOnB = (
+    isSamePoint(hitPoint, startB, epsilon) ||
+    isSamePoint(hitPoint, endB, epsilon)
+  );
+
+  return touchesEndpointOnA && touchesEndpointOnB;
+}
+
 function sharesEndpoint(indexA: number, indexB: number, edgeCount: number): boolean {
   if (indexA === indexB) {
     return true;
@@ -89,7 +117,7 @@ function hasSelfIntersection(points: Point2[], epsilon: number): boolean {
       const endB = points[(indexB + 1) % edgeCount];
       const hit = intersectSegments(startA, endA, startB, endB, epsilon);
 
-      if (hit) {
+      if (hit && !isEndpointOnlyIntersection(hit.point, startA, endA, startB, endB, epsilon)) {
         return true;
       }
     }
@@ -115,6 +143,10 @@ function buildAdjacency(
     startEdges.push({
       wallId,
       otherVertexId: wall.endVertexId,
+      angle: Math.atan2(
+        getPoint(document, wall.endVertexId)[1] - getPoint(document, wall.startVertexId)[1],
+        getPoint(document, wall.endVertexId)[0] - getPoint(document, wall.startVertexId)[0],
+      ),
     });
     adjacency.set(wall.startVertexId, startEdges);
 
@@ -122,11 +154,54 @@ function buildAdjacency(
     endEdges.push({
       wallId,
       otherVertexId: wall.startVertexId,
+      angle: Math.atan2(
+        getPoint(document, wall.startVertexId)[1] - getPoint(document, wall.endVertexId)[1],
+        getPoint(document, wall.startVertexId)[0] - getPoint(document, wall.endVertexId)[0],
+      ),
     });
     adjacency.set(wall.endVertexId, endEdges);
   }
 
   return adjacency;
+}
+
+function buildCoreAdjacency(adjacency: Map<string, AdjacencyEdge[]>): Map<string, AdjacencyEdge[]> {
+  const core = new Map<string, AdjacencyEdge[]>(
+    [...adjacency.entries()].map(([vertexId, edges]) => [vertexId, [...edges]])
+  );
+  const queue: string[] = [...core.entries()]
+    .filter(([, edges]) => edges.length < 2)
+    .map(([vertexId]) => vertexId);
+  const removed = new Set<string>();
+
+  while (queue.length > 0) {
+    const vertexId = queue.pop();
+
+    if (!vertexId || removed.has(vertexId)) {
+      continue;
+    }
+
+    removed.add(vertexId);
+    const edges = core.get(vertexId) ?? [];
+
+    for (const edge of edges) {
+      const neighborEdges = core.get(edge.otherVertexId);
+      if (!neighborEdges) {
+        continue;
+      }
+
+      const nextNeighborEdges = neighborEdges.filter((neighborEdge) => neighborEdge.otherVertexId !== vertexId);
+      core.set(edge.otherVertexId, nextNeighborEdges);
+
+      if (!removed.has(edge.otherVertexId) && nextNeighborEdges.length < 2) {
+        queue.push(edge.otherVertexId);
+      }
+    }
+
+    core.delete(vertexId);
+  }
+
+  return core;
 }
 
 function collectConnectedVertexIds(
@@ -155,62 +230,56 @@ function collectConnectedVertexIds(
   return [...visited];
 }
 
-function traceClosedLoop(
+function createHalfEdgeKey(fromVertexId: string, edge: AdjacencyEdge): string {
+  return `${fromVertexId}|${edge.otherVertexId}|${edge.wallId}`;
+}
+
+function traceFace(
   document: ArchitectureDocument,
-  levelId: string,
-  componentVertexIds: string[],
   adjacency: Map<string, AdjacencyEdge[]>,
+  startVertexId: string,
+  startEdge: AdjacencyEdge,
   epsilon: number
 ): ClosedLoop | null {
-  if (componentVertexIds.length < 3) {
-    return null;
-  }
-
-  const degreesAreClosed = componentVertexIds.every((vertexId) => {
-    const degree = adjacency.get(vertexId)?.length ?? 0;
-
-    return degree === 2;
-  });
-
-  if (!degreesAreClosed) {
-    return null;
-  }
-
-  const sortedVertexIds = [...componentVertexIds].sort((left, right) => (
-    compareVertexIds(left, right, document)
-  ));
-  const startVertexId = sortedVertexIds[0];
   const loopVertexIds: string[] = [];
   const loopWallIds: string[] = [];
-  let previousVertexId: string | null = null;
-  let currentVertexId = startVertexId;
+  let previousVertexId = startVertexId;
+  let currentVertexId = startEdge.otherVertexId;
+  let currentEdge = startEdge;
+  const startHalfEdgeKey = createHalfEdgeKey(startVertexId, startEdge);
+  const visitedHalfEdges = new Set<string>();
 
   while (true) {
-    loopVertexIds.push(currentVertexId);
+    const currentHalfEdgeKey = createHalfEdgeKey(previousVertexId, currentEdge);
+    if (visitedHalfEdges.has(currentHalfEdgeKey)) {
+      return null;
+    }
+    visitedHalfEdges.add(currentHalfEdgeKey);
 
-    const nextEdge = (adjacency.get(currentVertexId) ?? []).find((edge) => (
-      edge.otherVertexId !== previousVertexId
+    loopVertexIds.push(previousVertexId);
+    loopWallIds.push(currentEdge.wallId);
+
+    const outgoingEdges = adjacency.get(currentVertexId) ?? [];
+    const reverseEdgeIndex = outgoingEdges.findIndex((edge) => (
+      edge.otherVertexId === previousVertexId && edge.wallId === currentEdge.wallId
     ));
 
+    if (reverseEdgeIndex === -1 || outgoingEdges.length === 0) {
+      return null;
+    }
+
+    const nextEdge = outgoingEdges[(reverseEdgeIndex - 1 + outgoingEdges.length) % outgoingEdges.length];
     if (!nextEdge) {
       return null;
     }
 
-    loopWallIds.push(nextEdge.wallId);
     previousVertexId = currentVertexId;
     currentVertexId = nextEdge.otherVertexId;
+    currentEdge = nextEdge;
 
-    if (currentVertexId === startVertexId) {
+    if (createHalfEdgeKey(previousVertexId, currentEdge) === startHalfEdgeKey) {
       break;
     }
-
-    if (loopVertexIds.includes(currentVertexId) || loopVertexIds.length > componentVertexIds.length) {
-      return null;
-    }
-  }
-
-  if (loopWallIds.length !== componentVertexIds.length) {
-    return null;
   }
 
   const points = loopVertexIds.map((vertexId) => getPoint(document, vertexId));
@@ -220,16 +289,12 @@ function traceClosedLoop(
     return null;
   }
 
-  if (signedArea < 0) {
-    return {
-      levelId,
-      vertexIds: [...loopVertexIds].reverse(),
-      wallIds: [...loopWallIds].reverse(),
-    };
+  if (signedArea <= 0) {
+    return null;
   }
 
   return {
-    levelId,
+    levelId: document.walls[loopWallIds[0]]?.levelId ?? document.levelOrder[0] ?? '',
     vertexIds: loopVertexIds,
     wallIds: loopWallIds,
   };
@@ -242,27 +307,42 @@ export function findClosedLoops(
   const loops: ClosedLoop[] = [];
 
   for (const levelId of document.levelOrder) {
-    const adjacency = buildAdjacency(document, levelId);
-    const visitedVertexIds = new Set<string>();
+    const adjacency = buildCoreAdjacency(buildAdjacency(document, levelId));
+    for (const edges of adjacency.values()) {
+      edges.sort((left, right) => left.angle - right.angle);
+    }
 
-    for (const vertexId of adjacency.keys()) {
-      if (visitedVertexIds.has(vertexId)) {
-        continue;
-      }
+    const visitedHalfEdges = new Set<string>();
 
-      const componentVertexIds = collectConnectedVertexIds(vertexId, adjacency);
-      componentVertexIds.forEach((id) => visitedVertexIds.add(id));
+    for (const [vertexId, edges] of adjacency.entries()) {
+      for (const edge of edges) {
+        const halfEdgeKey = createHalfEdgeKey(vertexId, edge);
+        if (visitedHalfEdges.has(halfEdgeKey)) {
+          continue;
+        }
 
-      const loop = traceClosedLoop(
-        document,
-        levelId,
-        componentVertexIds,
-        adjacency,
-        epsilon
-      );
+        const loop = traceFace(
+          document,
+          adjacency,
+          vertexId,
+          edge,
+          epsilon,
+        );
 
-      if (loop) {
-        loops.push(loop);
+        if (!loop) {
+          visitedHalfEdges.add(halfEdgeKey);
+          continue;
+        }
+
+        loop.vertexIds.forEach((fromVertexId, index) => {
+          const wallId = loop.wallIds[index];
+          const toVertexId = loop.vertexIds[(index + 1) % loop.vertexIds.length];
+          visitedHalfEdges.add(`${fromVertexId}|${toVertexId}|${wallId}`);
+        });
+
+        if (loop.levelId === levelId) {
+          loops.push(loop);
+        }
       }
     }
   }

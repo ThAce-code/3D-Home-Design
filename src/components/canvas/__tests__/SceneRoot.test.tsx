@@ -116,11 +116,39 @@ describe('SceneRoot', () => {
     expect(canvasSpy).toHaveBeenCalledTimes(1);
     expect(mountNode.querySelector('[data-testid="scene-canvas"]')).not.toBeNull();
     expect(mountNode.querySelector('[data-testid="mock-grid"]')).not.toBeNull();
-    expect(mountNode.querySelector('[data-testid="architecture-scene"]')).not.toBeNull();
-    expect(mountNode.querySelector('[data-testid="architecture-wall-w1"]')).not.toBeNull();
-    expect(mountNode.querySelector('[data-testid="architecture-zone-z1"]')).not.toBeNull();
-    expect(mountNode.querySelector('[data-testid="draft-wall-preview"]')).not.toBeNull();
+    expect(mountNode.querySelector('[name="architecture-scene"]')).not.toBeNull();
+    expect(mountNode.querySelector('[name="wall:w1"]')).not.toBeNull();
+    expect(mountNode.querySelector('[name="zone:z1"]')).not.toBeNull();
+    expect(mountNode.querySelector('[name="draft-wall-preview"]')).not.toBeNull();
     expect(mountNode.querySelector('[data-testid="scene-child"]')).not.toBeNull();
+  });
+
+  it('renders wall draft hints as regular DOM overlay content instead of custom R3F-only tags', () => {
+    act(() => {
+      useArchitectureEditorStore.getState().setActiveTool('wall');
+      useArchitectureEditorStore.getState().startDraftWall([0, 0], 'v1');
+      useArchitectureEditorStore.getState().updateDraftWall([4, 0], 'v2');
+      useArchitectureEditorStore.getState().setWallToolModifiers({ shiftKey: true });
+      useArchitectureEditorStore.getState().setWallClosurePreview({
+        vertexId: 'v-close',
+        point: [4, 0],
+      });
+      useArchitectureEditorStore.getState().setWallNumericEntryEnabled(true);
+      root.render(
+        <SceneRoot showArchitectureScene>
+          <group data-testid="scene-child" />
+        </SceneRoot>
+      );
+    });
+
+    const hud = mountNode.querySelector('[data-testid="wall-draft-hud"]');
+
+    expect(hud).not.toBeNull();
+    expect(hud?.textContent).toContain('按墙中线绘制');
+    expect(hud?.textContent).toContain('正交锁定');
+    expect(hud?.textContent).toContain('释放以闭合');
+    expect(hud?.textContent).toContain('按 Tab 输入长度');
+    expect(mountNode.querySelector('wall-draft-hint')).toBeNull();
   });
 
   it('keeps the architecture scene disconnected when the feature flag is off', () => {
@@ -135,7 +163,7 @@ describe('SceneRoot', () => {
 
     expect(canvasSpy).toHaveBeenCalledTimes(1);
     expect(mountNode.querySelector('[data-testid="scene-canvas"]')).not.toBeNull();
-    expect(mountNode.querySelector('[data-testid="architecture-scene"]')).toBeNull();
+    expect(mountNode.querySelector('[name="architecture-scene"]')).toBeNull();
     expect(mountNode.querySelector('[data-testid="scene-child"]')).not.toBeNull();
   });
 });

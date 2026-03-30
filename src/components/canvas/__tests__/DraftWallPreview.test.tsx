@@ -2,7 +2,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DraftWallPreview from '../DraftWallPreview';
-import ArchitectureScene from '../ArchitectureScene';
+import WallDraftHud from '../WallDraftHud';
 import {
   createEmptyArchitectureDocument,
   getPrimaryLevelId,
@@ -67,7 +67,7 @@ describe('DraftWallPreview', () => {
         point: [4, 0],
       });
       useArchitectureEditorStore.getState().setWallNumericEntryEnabled(true);
-      root.render(<ArchitectureScene />);
+      root.render(<WallDraftHud />);
     });
 
     const hud = mountNode.querySelector('[data-testid="wall-draft-hud"]');
@@ -77,5 +77,95 @@ describe('DraftWallPreview', () => {
     expect(hud?.textContent).toContain('正交锁定');
     expect(hud?.textContent).toContain('释放以闭合');
     expect(hud?.textContent).toContain('按 Tab 输入长度');
+  });
+
+  it('shows a HUD hint when the draft point is snapped onto a wall body', () => {
+    const document = createEmptyArchitectureDocument();
+    const levelId = document.levelOrder[0];
+    const level = document.levels[levelId];
+
+    document.vertices = {
+      v1: { id: 'v1', x: 0, y: 0 },
+      v2: { id: 'v2', x: 4, y: 0 },
+    };
+    document.walls = {
+      w1: {
+        id: 'w1',
+        levelId,
+        startVertexId: 'v1',
+        endVertexId: 'v2',
+        thickness: level.defaultWallThickness,
+        height: level.defaultWallHeight,
+        kind: 'structural',
+      },
+    };
+    document.wallOrder = ['w1'];
+
+    act(() => {
+      useArchitectureDocumentStore.getState().replaceDocument(document);
+      useArchitectureEditorStore.getState().setActiveTool('wall');
+      useArchitectureEditorStore.getState().startDraftWall([1, 1], null);
+      useArchitectureEditorStore.getState().updateDraftWall([2, 0], null);
+      root.render(<WallDraftHud />);
+    });
+
+    const hud = mountNode.querySelector('[data-testid="wall-draft-hud"]');
+
+    expect(hud?.textContent).toContain('吸附到墙线');
+  });
+
+  it('renders a square footprint on the ground before the first wall click', () => {
+    const document = createEmptyArchitectureDocument();
+    const levelId = getPrimaryLevelId(document);
+    document.levels[levelId] = {
+      ...document.levels[levelId],
+      defaultWallThickness: 0.2,
+    };
+
+    act(() => {
+      useArchitectureDocumentStore.getState().replaceDocument(document);
+      useArchitectureEditorStore.getState().setActiveTool('wall');
+      useArchitectureEditorStore.getState().setCursorPoint([2, 3]);
+      root.render(<DraftWallPreview />);
+    });
+
+    const footprint = mountNode.querySelector('[name="draft-wall-footprint"]');
+    const geometry = footprint?.querySelector('planegeometry');
+
+    expect(footprint).not.toBeNull();
+    expect(geometry?.getAttribute('args')).toBe('0.2,0.2');
+  });
+
+  it('shows a wall snap marker when the draft point is snapped onto an existing wall body', () => {
+    const document = createEmptyArchitectureDocument();
+    const levelId = document.levelOrder[0];
+    const level = document.levels[levelId];
+
+    document.vertices = {
+      v1: { id: 'v1', x: 0, y: 0 },
+      v2: { id: 'v2', x: 4, y: 0 },
+    };
+    document.walls = {
+      w1: {
+        id: 'w1',
+        levelId,
+        startVertexId: 'v1',
+        endVertexId: 'v2',
+        thickness: level.defaultWallThickness,
+        height: level.defaultWallHeight,
+        kind: 'structural',
+      },
+    };
+    document.wallOrder = ['w1'];
+
+    act(() => {
+      useArchitectureDocumentStore.getState().replaceDocument(document);
+      useArchitectureEditorStore.getState().setActiveTool('wall');
+      useArchitectureEditorStore.getState().startDraftWall([1, 1], null);
+      useArchitectureEditorStore.getState().updateDraftWall([2, 0], null);
+      root.render(<DraftWallPreview />);
+    });
+
+    expect(mountNode.querySelector('[name="draft-wall-snap-point"]')).not.toBeNull();
   });
 });

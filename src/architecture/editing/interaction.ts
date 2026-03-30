@@ -46,12 +46,20 @@ export function advanceWallDraftInteraction({
   }
 
   if (!draftWall) {
+    const snap = resolveWallDraftSnap({
+      document,
+      draftWall,
+      rawPoint: point,
+      viewport,
+      wallTool,
+    });
+
     return {
       document,
       draftWall: {
-        startPoint: point,
-        currentPoint: point,
-        snappedVertexId: null,
+        startPoint: snap.point,
+        currentPoint: snap.point,
+        snappedVertexId: snap.snappedVertexId,
       },
       closureCandidate: null,
       axisLock: 'free',
@@ -65,12 +73,13 @@ export function advanceWallDraftInteraction({
     viewport,
     wallTool,
   });
+  const shouldUseClickSnap = snap.reason === 'closure' || snap.reason === 'endpoint';
 
   return {
     document: reduceArchitectureCommand(document, {
       type: 'DRAW_WALL',
       start: draftWall.startPoint,
-      end: snap.point,
+      end: shouldUseClickSnap ? snap.point : draftWall.currentPoint,
     }),
     draftWall: null,
     closureCandidate: snap.closureCandidate,

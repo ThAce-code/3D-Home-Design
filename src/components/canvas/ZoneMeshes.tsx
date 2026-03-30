@@ -30,12 +30,11 @@ export default function ZoneMeshes() {
   }), [zoneMeshes]);
 
   return (
-    <group data-testid="zone-meshes">
+    <group name="zone-meshes">
       {shapes.map((shape) => (
         <mesh
           key={shape.zoneId}
           name={`zone:${shape.zoneId}`}
-          data-testid={`architecture-zone-${shape.zoneId}`}
           rotation={shape.rotation}
           position={shape.position}
           onPointerDown={(event) => {

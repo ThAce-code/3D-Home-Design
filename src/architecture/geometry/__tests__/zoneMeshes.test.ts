@@ -4,6 +4,7 @@ import {
   createEmptyArchitectureDocument,
   type ArchitectureDocument,
 } from '../../domain/document';
+import { applyDrawWall } from '../../topology/repair';
 import { rebuildZones } from '../../topology/zones';
 import { buildZoneMeshDescriptors } from '../zoneMeshes';
 
@@ -110,5 +111,31 @@ describe('buildZoneMeshDescriptors', () => {
 
     expect(hits.length).toBeGreaterThan(0);
     expect(hits[0]?.point.z).toBeCloseTo(1.5, 5);
+  });
+
+  it('keeps the surrounding zone raycastable when an inner rectangle is bridged to the outer boundary', () => {
+    let document = createEmptyArchitectureDocument();
+    document = applyDrawWall(document, [0, 0], [10, 0]);
+    document = applyDrawWall(document, [10, 0], [10, 10]);
+    document = applyDrawWall(document, [10, 10], [0, 10]);
+    document = applyDrawWall(document, [0, 10], [0, 0]);
+    document = applyDrawWall(document, [3, 3], [7, 3]);
+    document = applyDrawWall(document, [7, 3], [7, 7]);
+    document = applyDrawWall(document, [7, 7], [3, 7]);
+    document = applyDrawWall(document, [3, 7], [3, 3]);
+    document = applyDrawWall(document, [5, 10], [5, 7]);
+
+    const descriptors = buildZoneMeshDescriptors(document);
+    const meshes = descriptors.map((descriptor) => createMeshFromDescriptor(descriptor));
+    const raycaster = new THREE.Raycaster(
+      new THREE.Vector3(1, 10, 1),
+      new THREE.Vector3(0, -1, 0)
+    );
+    const hits = raycaster.intersectObjects(meshes, false);
+
+    expect(descriptors).toHaveLength(2);
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0]?.point.x).toBeCloseTo(1, 5);
+    expect(hits[0]?.point.z).toBeCloseTo(1, 5);
   });
 });
