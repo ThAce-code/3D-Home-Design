@@ -1,33 +1,26 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { useStore } from '../useStore';
 
-describe('roomSlice', () => {
-  beforeEach(() => { useStore.setState(useStore.getInitialState()); });
+describe('legacy room slice removal', () => {
+  beforeEach(() => {
+    useStore.setState(useStore.getInitialState());
+  });
 
-  it('starts with empty rooms', () => {
-    expect(useStore.getState().rooms).toEqual([]);
+  it('does not expose room collections on the app store', () => {
+    const state = useStore.getState() as Record<string, unknown>;
+
+    expect('rooms' in state).toBe(false);
+    expect('selectedRoomId' in state).toBe(false);
+    expect('adjacencyMap' in state).toBe(false);
   });
-  it('addRoom adds a room', () => {
-    useStore.getState().addRoom({ width: 5, depth: 4, height: 3 });
-    expect(useStore.getState().rooms).toHaveLength(1);
-    expect(useStore.getState().rooms[0].width).toBe(5);
-  });
-  it('updateRoom modifies room', () => {
-    useStore.getState().addRoom({ width: 5, depth: 4, height: 3 });
-    const id = useStore.getState().rooms[0].id;
-    useStore.getState().updateRoom(id, { width: 8 });
-    expect(useStore.getState().rooms[0].width).toBe(8);
-  });
-  it('removeRoom deletes room', () => {
-    useStore.getState().addRoom({ width: 5, depth: 4, height: 3 });
-    const id = useStore.getState().rooms[0].id;
-    useStore.getState().removeRoom(id);
-    expect(useStore.getState().rooms).toHaveLength(0);
-  });
-  it('selectRoom sets selectedRoomId', () => {
-    useStore.getState().addRoom({ width: 5, depth: 4, height: 3 });
-    const id = useStore.getState().rooms[0].id;
-    useStore.getState().selectRoom(id);
-    expect(useStore.getState().selectedRoomId).toBe(id);
+
+  it('does not expose room mutation actions on the app store', () => {
+    const state = useStore.getState() as Record<string, unknown>;
+
+    expect('addRoom' in state).toBe(false);
+    expect('updateRoom' in state).toBe(false);
+    expect('removeRoom' in state).toBe(false);
+    expect('selectRoom' in state).toBe(false);
+    expect('recalculateAdjacency' in state).toBe(false);
   });
 });
