@@ -76,4 +76,24 @@ describe('LandingPage', () => {
 
     expect(window.location.pathname).toBe('/editor');
   });
+
+  it('falls back to local-safe imagery when landing assets fail to load', () => {
+    act(() => {
+      root.render(<LandingPage />);
+    });
+
+    const logo = mountNode.querySelector('img[alt="Facility Design Logo"]');
+    const preview = mountNode.querySelector('img[alt="Technical top-down 3D architectural floor plan"]');
+
+    expect(logo).not.toBeNull();
+    expect(preview).not.toBeNull();
+
+    act(() => {
+      logo?.dispatchEvent(new Event('error'));
+      preview?.dispatchEvent(new Event('error'));
+    });
+
+    expect((logo as HTMLImageElement).src).toContain('data:image/svg+xml');
+    expect((preview as HTMLImageElement).src).toContain('data:image/svg+xml');
+  });
 });

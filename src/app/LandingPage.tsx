@@ -12,6 +12,55 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from 'motion/react';
 import { navigateTo } from './router.js';
 
+const LOGO_FALLBACK =
+  "data:image/svg+xml;charset=UTF-8," +
+  encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+      <defs>
+        <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stop-color="#26dcd6"/>
+          <stop offset="100%" stop-color="#ff9f1c"/>
+        </linearGradient>
+      </defs>
+      <rect width="128" height="128" rx="28" fill="#f7f9fb"/>
+      <path d="M28 72 64 38l36 34v22H80V72H48v22H28Z" fill="url(#g)"/>
+    </svg>
+  `);
+
+const INTERIOR_FALLBACK =
+  "data:image/svg+xml;charset=UTF-8," +
+  encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 960">
+      <rect width="1440" height="960" fill="#f7f9fb"/>
+      <rect x="110" y="110" width="1220" height="740" rx="48" fill="#eef3f6" stroke="#dac2ae" stroke-width="8"/>
+      <rect x="180" y="180" width="440" height="260" rx="32" fill="#ffffff" stroke="#26dcd6" stroke-width="10"/>
+      <rect x="680" y="180" width="580" height="180" rx="32" fill="#ffffff" stroke="#ff9f1c" stroke-width="10"/>
+      <rect x="680" y="420" width="250" height="280" rx="32" fill="#ffffff" stroke="#26dcd6" stroke-width="10"/>
+      <rect x="990" y="420" width="270" height="280" rx="32" fill="#ffffff" stroke="#ff9f1c" stroke-width="10"/>
+      <path d="M640 180v520" stroke="#544434" stroke-width="10" stroke-dasharray="22 14"/>
+      <path d="M180 500h440" stroke="#544434" stroke-width="10" stroke-dasharray="22 14"/>
+    </svg>
+  `);
+
+const PLAN_FALLBACK =
+  "data:image/svg+xml;charset=UTF-8," +
+  encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080">
+      <rect width="1080" height="1080" fill="#f2f4f6"/>
+      <rect x="120" y="120" width="840" height="840" rx="40" fill="#fff" stroke="#191c1e" stroke-width="16"/>
+      <rect x="220" y="220" width="260" height="260" fill="#52f6ef" fill-opacity="0.28" stroke="#006a66" stroke-width="12"/>
+      <rect x="540" y="220" width="320" height="180" fill="#ff9f1c" fill-opacity="0.22" stroke="#683c00" stroke-width="12"/>
+      <rect x="540" y="470" width="320" height="340" fill="#52f6ef" fill-opacity="0.18" stroke="#006a66" stroke-width="12"/>
+      <path d="M500 220v590M220 520h260" stroke="#191c1e" stroke-width="16"/>
+    </svg>
+  `);
+
+function applyFallbackImage(event: ReactMouseEvent<HTMLImageElement> | Event, fallbackSrc: string) {
+  const image = event.currentTarget as HTMLImageElement;
+  image.onerror = null;
+  image.src = fallbackSrc;
+}
+
 function LiquidNavbar() {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -106,6 +155,7 @@ function LiquidNavbar() {
               src="/logo.png"
               alt="Facility Design Logo"
               className="h-16 w-16 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-110"
+              onError={(event) => applyFallbackImage(event, LOGO_FALLBACK)}
             />
             <span className="bg-gradient-to-r from-secondary-fixed-dim to-primary-container bg-clip-text text-xl font-bold tracking-tighter text-transparent font-headline">
               Facility Design
@@ -169,6 +219,7 @@ export default function LandingPage() {
           className="h-full w-full object-cover opacity-60"
           alt="Ultra-modern minimalist bright living room"
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWFzjYbOAim9JYHcDd1mqyRNrXaKGpfB4_3NjpmzUDTGD0YpNa-lRGZ06Z0-1lgTDSdi2GzSzUOffbEbjdV6qTfE7PsvzOlZS9jLaXVKLrr9R1nCTawml0bVoMDk17hLaDRJKT820KaknhLLr_etWKFbKghkm1dfhVB-ZO_zOs2Xj1rwOK3eBTnwACZMAPnftpWUXLXD9x-GVFlvYSSRAthQToIIViL1F9XNR5D1TxhvxcHBSqqkX_8UctAiH_HhxAHlyKfsj4kajE"
+          onError={(event) => applyFallbackImage(event, INTERIOR_FALLBACK)}
           initial={{ filter: 'blur(20px)', scale: 1.1 }}
           animate={{ filter: 'blur(2px)', scale: 1.05 }}
           transition={{ duration: 2, ease: 'easeOut' }}
@@ -327,6 +378,7 @@ export default function LandingPage() {
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 alt="Technical top-down 3D architectural floor plan"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0LS8jvYWCaJnhXSPGbH7ZBDU8WXiNSqt6xl9iZKLU8rT1M2h8_9A8ENmRbnqR0KRAZHpiIpB76Ks_w96UUF_iFb5Zsz2O4yYaPN7Et-NLJ-E37LK4-JHgDJ3AzvNfzZ7a21sNTPpjvsClPymNZbAMHTJKER8G26FBIeF3HbfBfs0usBOslRRTLagEElWwxMOeo3freqDwR7lBjA0rYUfRdaDc1dnmMufW1AR571jBRgLqyAGzkO_p3tfptqFToZm690ztcLz5o6lT"
+                onError={(event) => applyFallbackImage(event, PLAN_FALLBACK)}
               />
               <div className="glass-panel absolute right-6 bottom-6 left-6 flex items-center justify-between rounded-xl p-4">
                 <div className="flex gap-3">
@@ -398,6 +450,7 @@ export default function LandingPage() {
                   src="/logo.png"
                   alt="Facility Design Logo"
                   className="h-12 w-12 object-contain grayscale opacity-70"
+                  onError={(event) => applyFallbackImage(event, LOGO_FALLBACK)}
                 />
                 <span className="text-lg font-bold text-slate-900 font-headline">Facility Design</span>
               </div>
