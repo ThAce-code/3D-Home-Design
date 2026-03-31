@@ -7,6 +7,8 @@
   --editor-grid-major: #bfb39e;
   --editor-surface: rgba(255, 251, 245, 0.84);
   --editor-surface-strong: rgba(250, 244, 235, 0.94);
+  --editor-field: rgba(255, 251, 245, 0.72);
+  --editor-field-border: rgba(104, 84, 63, 0.16);
   --editor-text: #2f2418;
   --editor-text-muted: #6f6253;
   --editor-accent: #4e7a74;
@@ -15,6 +17,8 @@
   --editor-border: rgba(104, 84, 63, 0.12);
   --editor-crosshair: rgba(47, 36, 24, 0.52);
   --editor-overlay-scrim: rgba(243, 239, 230, 0.72);
+  --editor-danger: #b35c4b;
+  --editor-danger-soft: rgba(179, 92, 75, 0.12);
 
   --landing-bg: #f6f1e8;
   --landing-surface: rgba(255, 251, 245, 0.78);
