@@ -55,6 +55,10 @@ const PLAN_FALLBACK =
     </svg>
   `);
 
+const LANDING_LOGO_SRC = '/landing-logo.svg';
+const LANDING_INTERIOR_SRC = '/landing-interior.svg';
+const LANDING_PLAN_SRC = '/landing-plan.svg';
+
 function applyFallbackImage(event: ReactMouseEvent<HTMLImageElement> | Event, fallbackSrc: string) {
   const image = event.currentTarget as HTMLImageElement;
   image.onerror = null;
@@ -152,7 +156,7 @@ function LiquidNavbar() {
         <div className="relative z-10 flex items-center gap-8">
           <button type="button" onClick={() => navigateTo('/')} className="group flex items-center gap-3">
             <img
-              src="/logo.png"
+              src={LANDING_LOGO_SRC}
               alt="Facility Design Logo"
               className="h-16 w-16 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-110"
               onError={(event) => applyFallbackImage(event, LOGO_FALLBACK)}
@@ -218,7 +222,7 @@ export default function LandingPage() {
         <motion.img
           className="h-full w-full object-cover opacity-60"
           alt="Ultra-modern minimalist bright living room"
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWFzjYbOAim9JYHcDd1mqyRNrXaKGpfB4_3NjpmzUDTGD0YpNa-lRGZ06Z0-1lgTDSdi2GzSzUOffbEbjdV6qTfE7PsvzOlZS9jLaXVKLrr9R1nCTawml0bVoMDk17hLaDRJKT820KaknhLLr_etWKFbKghkm1dfhVB-ZO_zOs2Xj1rwOK3eBTnwACZMAPnftpWUXLXD9x-GVFlvYSSRAthQToIIViL1F9XNR5D1TxhvxcHBSqqkX_8UctAiH_HhxAHlyKfsj4kajE"
+          src={LANDING_INTERIOR_SRC}
           onError={(event) => applyFallbackImage(event, INTERIOR_FALLBACK)}
           initial={{ filter: 'blur(20px)', scale: 1.1 }}
           animate={{ filter: 'blur(2px)', scale: 1.05 }}
@@ -377,7 +381,7 @@ export default function LandingPage() {
               <img
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 alt="Technical top-down 3D architectural floor plan"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0LS8jvYWCaJnhXSPGbH7ZBDU8WXiNSqt6xl9iZKLU8rT1M2h8_9A8ENmRbnqR0KRAZHpiIpB76Ks_w96UUF_iFb5Zsz2O4yYaPN7Et-NLJ-E37LK4-JHgDJ3AzvNfzZ7a21sNTPpjvsClPymNZbAMHTJKER8G26FBIeF3HbfBfs0usBOslRRTLagEElWwxMOeo3freqDwR7lBjA0rYUfRdaDc1dnmMufW1AR571jBRgLqyAGzkO_p3tfptqFToZm690ztcLz5o6lT"
+                src={LANDING_PLAN_SRC}
                 onError={(event) => applyFallbackImage(event, PLAN_FALLBACK)}
               />
               <div className="glass-panel absolute right-6 bottom-6 left-6 flex items-center justify-between rounded-xl p-4">
@@ -447,7 +451,7 @@ export default function LandingPage() {
             <div className="flex flex-col items-center gap-4 md:items-start">
               <div className="flex items-center gap-3">
                 <img
-                  src="/logo.png"
+                  src={LANDING_LOGO_SRC}
                   alt="Facility Design Logo"
                   className="h-12 w-12 object-contain grayscale opacity-70"
                   onError={(event) => applyFallbackImage(event, LOGO_FALLBACK)}

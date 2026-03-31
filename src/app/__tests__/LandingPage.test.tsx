@@ -96,4 +96,18 @@ describe('LandingPage', () => {
     expect((logo as HTMLImageElement).src).toContain('data:image/svg+xml');
     expect((preview as HTMLImageElement).src).toContain('data:image/svg+xml');
   });
+
+  it('uses self-contained landing imagery instead of remote-first URLs', () => {
+    act(() => {
+      root.render(<LandingPage />);
+    });
+
+    const allImages = Array.from(mountNode.querySelectorAll('img'));
+
+    expect(allImages.length).toBeGreaterThan(0);
+
+    for (const image of allImages) {
+      expect((image as HTMLImageElement).src).not.toContain('lh3.googleusercontent.com');
+    }
+  });
 });
