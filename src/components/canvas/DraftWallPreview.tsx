@@ -3,6 +3,7 @@ import { getPrimaryLevelId } from '../../architecture/domain/document.js';
 import { findNearestWallBodySnapCandidate } from '../../architecture/geometry/wallDraftSnap.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
+import { editorTheme } from '../../theme/editorTheme.js';
 
 export default function DraftWallPreview() {
   const document = useArchitectureDocumentStore((state) => state.document);
@@ -22,7 +23,7 @@ export default function DraftWallPreview() {
     >
       <planeGeometry args={[thickness, thickness]} />
       <meshBasicMaterial
-        color="#28A375"
+        color={editorTheme.draft}
         transparent
         opacity={0.35}
         side={THREE.DoubleSide}
@@ -48,7 +49,7 @@ export default function DraftWallPreview() {
             position={[snapCandidate.point[0], 0.03, snapCandidate.point[1]]}
           >
             <sphereGeometry args={[0.08, 16, 16]} />
-            <meshBasicMaterial color="#F4B942" />
+            <meshBasicMaterial color={editorTheme.snap} />
           </mesh>
         ) : null}
       </group>
@@ -78,11 +79,11 @@ export default function DraftWallPreview() {
         rotation={[0, -Math.atan2(dy, dx), 0]}
       >
         <boxGeometry args={[length, 3, thickness]} />
-        <meshStandardMaterial color="#28A375" transparent opacity={0.45} />
+        <meshStandardMaterial color={editorTheme.draft} transparent opacity={0.45} />
       </mesh>
       <line name="draft-wall-centerline">
         <bufferGeometry />
-        <lineBasicMaterial color="#1E7A55" />
+        <lineBasicMaterial color={editorTheme.axisGuide} />
       </line>
       {closurePoint ? (
         <mesh
@@ -90,7 +91,7 @@ export default function DraftWallPreview() {
           position={[closurePoint[0], 0.02, closurePoint[1]]}
         >
           <sphereGeometry args={[0.12, 16, 16]} />
-          <meshStandardMaterial color="#F4B942" />
+          <meshStandardMaterial color={editorTheme.closure} />
         </mesh>
       ) : null}
       {wallSnapCandidate ? (
@@ -99,7 +100,7 @@ export default function DraftWallPreview() {
           position={[wallSnapCandidate.point[0], 0.03, wallSnapCandidate.point[1]]}
         >
           <sphereGeometry args={[0.08, 16, 16]} />
-          <meshBasicMaterial color="#F4B942" />
+          <meshBasicMaterial color={editorTheme.snap} />
         </mesh>
       ) : null}
     </group>

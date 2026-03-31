@@ -9,6 +9,7 @@ import {
 } from '../../../architecture/domain/document';
 import { useArchitectureDocumentStore } from '../../../store/architectureDocumentStore';
 import { useArchitectureEditorStore } from '../../../store/architectureEditorStore';
+import { editorTheme } from '../../../theme/editorTheme';
 
 describe('DraftWallPreview', () => {
   let mountNode: HTMLDivElement;
@@ -167,5 +168,61 @@ describe('DraftWallPreview', () => {
     });
 
     expect(mountNode.querySelector('[name="draft-wall-snap-point"]')).not.toBeNull();
+  });
+
+  it('uses editor draft, snap, and closure colors instead of legacy hardcoded preview colors', () => {
+    const document = createEmptyArchitectureDocument();
+    const levelId = document.levelOrder[0];
+    const level = document.levels[levelId];
+
+    document.vertices = {
+      v1: { id: 'v1', x: 0, y: 0 },
+      v2: { id: 'v2', x: 4, y: 0 },
+    };
+    document.walls = {
+      w1: {
+        id: 'w1',
+        levelId,
+        startVertexId: 'v1',
+        endVertexId: 'v2',
+        thickness: level.defaultWallThickness,
+        height: level.defaultWallHeight,
+        kind: 'structural',
+      },
+    };
+    document.wallOrder = ['w1'];
+
+    act(() => {
+      useArchitectureDocumentStore.getState().replaceDocument(document);
+      useArchitectureEditorStore.getState().setActiveTool('wall');
+      useArchitectureEditorStore.getState().setCursorPoint([2, 0]);
+      root.render(<DraftWallPreview />);
+    });
+
+    const footprintMaterial = mountNode.querySelector('[name="draft-wall-footprint"] meshbasicmaterial');
+    const initialSnapMaterial = mountNode.querySelector('[name="draft-wall-snap-point"] meshbasicmaterial');
+
+    expect(footprintMaterial?.getAttribute('color')).toBe(editorTheme.draft);
+    expect(initialSnapMaterial?.getAttribute('color')).toBe(editorTheme.snap);
+
+    act(() => {
+      useArchitectureEditorStore.getState().startDraftWall([1, 1], null);
+      useArchitectureEditorStore.getState().updateDraftWall([2, 0], null);
+      useArchitectureEditorStore.getState().setWallClosurePreview({
+        vertexId: 'v-close',
+        point: [2, 0],
+      });
+      root.render(<DraftWallPreview />);
+    });
+
+    const previewMaterial = mountNode.querySelector('[name="draft-wall-preview"] meshstandardmaterial');
+    const centerlineMaterial = mountNode.querySelector('[name="draft-wall-centerline"] linebasicmaterial');
+    const closureMaterial = mountNode.querySelector('[name="draft-wall-closure-point"] meshstandardmaterial');
+    const snapMaterial = mountNode.querySelector('[name="draft-wall-snap-point"] meshbasicmaterial');
+
+    expect(previewMaterial?.getAttribute('color')).toBe(editorTheme.draft);
+    expect(centerlineMaterial?.getAttribute('color')).toBe(editorTheme.axisGuide);
+    expect(closureMaterial?.getAttribute('color')).toBe(editorTheme.closure);
+    expect(snapMaterial?.getAttribute('color')).toBe(editorTheme.snap);
   });
 });
