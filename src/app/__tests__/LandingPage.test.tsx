@@ -97,17 +97,31 @@ describe('LandingPage', () => {
     expect((preview as HTMLImageElement).src).toContain('data:image/svg+xml');
   });
 
-  it('uses self-contained landing imagery instead of remote-first URLs', () => {
+  it('restores gemini navigation rhythm for parity', () => {
     act(() => {
       root.render(<LandingPage />);
     });
 
-    const allImages = Array.from(mountNode.querySelectorAll('img'));
+    const nav = mountNode.querySelector('[data-testid="landing-nav"]');
 
-    expect(allImages.length).toBeGreaterThan(0);
+    expect(nav).not.toBeNull();
+    expect(nav?.textContent).toContain('Gallery');
+    expect(nav?.textContent).toContain('Features');
+    expect(nav?.textContent).toContain('Pricing');
+    expect(nav?.textContent).toContain('About');
+  });
 
-    for (const image of allImages) {
-      expect((image as HTMLImageElement).src).not.toContain('lh3.googleusercontent.com');
-    }
+  it('restores gemini remote-first imagery for parity', () => {
+    act(() => {
+      root.render(<LandingPage />);
+    });
+
+    const heroImage = mountNode.querySelector('img[alt="Ultra-modern minimalist bright living room"]');
+    const previewImage = mountNode.querySelector('img[alt="Technical top-down 3D architectural floor plan"]');
+
+    expect(heroImage).not.toBeNull();
+    expect(previewImage).not.toBeNull();
+    expect((heroImage as HTMLImageElement).src).toContain('lh3.googleusercontent.com');
+    expect((previewImage as HTMLImageElement).src).toContain('lh3.googleusercontent.com');
   });
 });
