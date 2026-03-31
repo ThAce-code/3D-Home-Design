@@ -1,4 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@200;300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --color-surface: var(--landing-color-surface);
+  --color-on-surface: var(--landing-color-on-surface);
+  --color-on-surface-variant: var(--landing-color-on-surface-variant);
+  --color-primary-container: var(--landing-color-primary-container);
+  --color-on-primary-container: var(--landing-color-on-primary-container);
+  --color-secondary-fixed-dim: var(--landing-color-secondary-fixed-dim);
+  --color-secondary-container: var(--landing-color-secondary-container);
+  --color-on-secondary-container: var(--landing-color-on-secondary-container);
+  --color-secondary: var(--landing-color-secondary);
+  --color-surface-container-low: var(--landing-color-surface-container-low);
+  --color-surface-container-high: var(--landing-color-surface-container-high);
+  --color-outline-variant: var(--landing-color-outline-variant);
+
+  --font-headline: var(--landing-font-headline);
+  --font-body: var(--landing-font-body);
+  --font-label: var(--landing-font-label);
+}
 
 :root {
   --editor-bg: #f3efe6;
@@ -23,14 +43,6 @@
   --editor-overlay-scrim: rgba(243, 239, 230, 0.72);
   --editor-danger: #b35c4b;
   --editor-danger-soft: rgba(179, 92, 75, 0.12);
-
-  --landing-bg: #f6f1e8;
-  --landing-surface: rgba(255, 251, 245, 0.78);
-  --landing-text: #2f2418;
-  --landing-text-muted: #6b5a48;
-  --landing-accent: #ab6d3c;
-  --landing-accent-strong: #7f4c27;
-  --landing-border: rgba(104, 84, 63, 0.12);
 }
 
 [data-app-theme='editor'] {
@@ -38,7 +50,48 @@
 }
 
 [data-app-theme='landing'] {
-  color: var(--landing-text);
+  --landing-color-surface: #f7f9fb;
+  --landing-color-on-surface: #191c1e;
+  --landing-color-on-surface-variant: #544434;
+  --landing-color-primary-container: #ff9f1c;
+  --landing-color-on-primary-container: #683c00;
+  --landing-color-secondary-fixed-dim: #26dcd6;
+  --landing-color-secondary-container: #52f6ef;
+  --landing-color-on-secondary-container: #006f6b;
+  --landing-color-secondary: #006a66;
+  --landing-color-surface-container-low: #f2f4f6;
+  --landing-color-surface-container-high: #e6e8ea;
+  --landing-color-outline-variant: #dac2ae;
+  --landing-font-headline: 'Space Grotesk', sans-serif;
+  --landing-font-body: 'Manrope', sans-serif;
+  --landing-font-label: 'Manrope', sans-serif;
+
+  color: var(--landing-color-on-surface);
+}
+
+[data-app-theme='landing'] .glass-panel {
+  background: rgb(255 255 255 / 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgb(255 255 255 / 0.5);
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.08);
+}
+
+[data-app-theme='landing'] .hero-gradient {
+  background: radial-gradient(circle at center, rgb(255 159 28 / 0.05) 0%, transparent 70%);
+}
+
+[data-app-theme='landing'] .rounded-inherit {
+  border-radius: inherit;
+}
+
+[data-app-theme='landing'] .landing-glass {
+  background: linear-gradient(180deg, rgba(255, 252, 248, 0.76), rgba(255, 248, 241, 0.56));
+  backdrop-filter: blur(18px) saturate(110%);
+  -webkit-backdrop-filter: blur(18px) saturate(110%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 24px 80px -56px rgba(72, 48, 30, 0.45);
 }
 
 @keyframes panel-pop {
