@@ -7,12 +7,14 @@ import {
 } from '../../../architecture/domain/document';
 import { useArchitectureDocumentStore } from '../../../store/architectureDocumentStore';
 import { useArchitectureEditorStore } from '../../../store/architectureEditorStore';
+import { editorTheme } from '../../../theme/editorTheme';
 
 const canvasSpy = vi.fn();
+const gridSpy = vi.fn();
 
 vi.mock('@react-three/fiber', () => ({
   Canvas: ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => {
-    canvasSpy(props);
+    canvasSpy({ ...props, children });
 
     return (
       <div data-testid={String(props['data-testid'] ?? 'mock-canvas')}>
@@ -23,7 +25,10 @@ vi.mock('@react-three/fiber', () => ({
 }));
 
 vi.mock('@react-three/drei', () => ({
-  Grid: () => <div data-testid="mock-grid" />,
+  Grid: (props: Record<string, unknown>) => {
+    gridSpy(props);
+    return <div data-testid="mock-grid" />;
+  },
 }));
 
 vi.mock('../SceneDebugBridge', () => ({
@@ -82,6 +87,7 @@ describe('SceneRoot', () => {
 
   beforeEach(() => {
     canvasSpy.mockClear();
+    gridSpy.mockClear();
     useArchitectureDocumentStore.setState(useArchitectureDocumentStore.getInitialState());
     useArchitectureEditorStore.setState(useArchitectureEditorStore.getInitialState());
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -121,6 +127,28 @@ describe('SceneRoot', () => {
     expect(mountNode.querySelector('[data-testid="architecture-zone-z1"]')).not.toBeNull();
     expect(mountNode.querySelector('[data-testid="draft-wall-preview"]')).not.toBeNull();
     expect(mountNode.querySelector('[data-testid="scene-child"]')).not.toBeNull();
+  });
+
+  it('uses the light editor background and grid palette', () => {
+    act(() => {
+      root.render(
+        <SceneRoot>
+          <group data-testid="scene-child" />
+        </SceneRoot>
+      );
+    });
+
+    expect(canvasSpy).toHaveBeenCalledTimes(1);
+    expect(gridSpy).toHaveBeenCalledTimes(1);
+
+    const gridProps = gridSpy.mock.calls[0]?.[0] as
+      | { sectionColor?: string; cellColor?: string }
+      | undefined;
+    const backgroundNode = mountNode.querySelector('color[attach="background"]');
+
+    expect(backgroundNode).not.toBeNull();
+    expect(gridProps?.sectionColor).toBe(editorTheme.gridMajor);
+    expect(gridProps?.cellColor).toBe(editorTheme.gridMinor);
   });
 
   it('keeps the architecture scene disconnected when the feature flag is off', () => {

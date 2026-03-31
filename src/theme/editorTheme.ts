@@ -1,0 +1,17 @@
+export const editorTheme = {
+  background: '#f3efe6',
+  plane: '#e8e0d2',
+  gridMinor: '#d7cfbf',
+  gridMajor: '#bfb39e',
+  surface: 'rgba(255, 251, 245, 0.84)',
+  surfaceStrong: 'rgba(250, 244, 235, 0.94)',
+  text: '#2f2418',
+  textMuted: '#6f6253',
+  accent: '#4e7a74',
+  accentStrong: '#2f6f73',
+  accentSoft: 'rgba(196, 138, 58, 0.18)',
+  border: 'rgba(104, 84, 63, 0.12)',
+  crosshair: 'rgba(47, 36, 24, 0.52)',
+  overlayScrim: 'rgba(243, 239, 230, 0.72)',
+  danger: '#b35c4b',
+} as const;

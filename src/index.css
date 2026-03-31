@@ -1,5 +1,38 @@
 @import "tailwindcss";
 
+:root {
+  --editor-bg: #f3efe6;
+  --editor-plane: #e8e0d2;
+  --editor-grid-minor: #d7cfbf;
+  --editor-grid-major: #bfb39e;
+  --editor-surface: rgba(255, 251, 245, 0.84);
+  --editor-surface-strong: rgba(250, 244, 235, 0.94);
+  --editor-text: #2f2418;
+  --editor-text-muted: #6f6253;
+  --editor-accent: #4e7a74;
+  --editor-accent-strong: #2f6f73;
+  --editor-accent-soft: rgba(196, 138, 58, 0.18);
+  --editor-border: rgba(104, 84, 63, 0.12);
+  --editor-crosshair: rgba(47, 36, 24, 0.52);
+  --editor-overlay-scrim: rgba(243, 239, 230, 0.72);
+
+  --landing-bg: #f6f1e8;
+  --landing-surface: rgba(255, 251, 245, 0.78);
+  --landing-text: #2f2418;
+  --landing-text-muted: #6b5a48;
+  --landing-accent: #ab6d3c;
+  --landing-accent-strong: #7f4c27;
+  --landing-border: rgba(104, 84, 63, 0.12);
+}
+
+[data-app-theme='editor'] {
+  color: var(--editor-text);
+}
+
+[data-app-theme='landing'] {
+  color: var(--landing-text);
+}
+
 @keyframes panel-pop {
   from {
     opacity: 0;
@@ -19,6 +52,6 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #28A375;
+  background: var(--editor-accent-strong);
   border-radius: 4px;
 }
