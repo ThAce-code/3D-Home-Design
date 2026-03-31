@@ -7,6 +7,16 @@ import {
 } from '../../../architecture/domain/document';
 import { useArchitectureDocumentStore } from '../../../store/architectureDocumentStore';
 import { useStore } from '../../../store/useStore';
+import { editorTheme } from '../../../theme/editorTheme';
+
+function hexToRgbString(hex: string) {
+  const normalized = hex.replace('#', '');
+  const bigint = parseInt(normalized, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgb(${r}, ${g}, ${b})`;
+}
 
 const { saveStateMock, saveArchitectureDocumentMock } = vi.hoisted(() => ({
   saveStateMock: vi.fn(),
@@ -102,5 +112,19 @@ describe('TopActions', () => {
       })
     );
     expect(saveStateMock).not.toHaveBeenCalled();
+  });
+
+  it('uses the light editor surface styling for action buttons', () => {
+    act(() => {
+      root.render(<TopActions architectureModeEnabled />);
+    });
+
+    const buttons = mountNode.querySelectorAll('button');
+    const saveButton = buttons[0] as HTMLButtonElement | undefined;
+
+    expect(saveButton).toBeDefined();
+    expect(saveButton?.style.background).toBe(editorTheme.surface);
+    expect(saveButton?.style.border).toBe(`1px solid ${editorTheme.border}`);
+    expect(saveButton?.style.color).toBe(hexToRgbString(editorTheme.textMuted));
   });
 });
