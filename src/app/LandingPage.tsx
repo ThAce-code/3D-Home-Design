@@ -109,7 +109,7 @@ export default function LandingPage() {
           src={LANDING_INTERIOR_SRC}
           onError={(event) => applyFallbackImage(event, INTERIOR_FALLBACK)}
           initial={{ filter: 'blur(20px)', scale: 1.1 }}
-          animate={{ filter: 'blur(2px)', scale: 1.05 }}
+          animate={{ filter: 'blur(0px)', scale: 1.05 }}
           transition={{ duration: 2, ease: 'easeOut' }}
           style={{ x: bgX, y: bgY }}
         />
@@ -122,17 +122,17 @@ export default function LandingPage() {
         logoFallbackSrc={LOGO_FALLBACK}
         onLogoError={applyFallbackImage}
         onNavigateHome={() => navigateTo('/')}
-        onLaunchEditor={() => navigateTo('/editor')}
+        onAuthAction={() => navigateTo('/editor')}
       />
 
       <motion.div style={{ x: uiX, y: uiY }} className="relative z-10 flex w-full flex-col items-center">
-        <main className="flex min-h-screen w-full max-w-[1920px] flex-col items-center px-6 pb-20 pt-32">
-          <section data-testid="landing-hero" className="mt-12 mb-24 max-w-5xl text-center md:mt-24">
+        <main className="flex min-h-screen w-full max-w-[1920px] flex-col items-center justify-center px-6 pb-24 pt-28 md:pt-32">
+          <section data-testid="landing-hero" className="w-full max-w-5xl text-center">
             <motion.div
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
-              className="mb-8 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-label uppercase tracking-widest"
+              className="mb-5 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-label uppercase tracking-widest md:mb-6"
               style={{
                 border: `1px solid ${LANDING_SURFACES.tealBorder}`,
                 backgroundColor: LANDING_SURFACES.tealFill,
@@ -147,7 +147,7 @@ export default function LandingPage() {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.6, ease: 'easeOut' }}
-              className="mb-8 text-5xl font-bold leading-[0.92] tracking-tight text-on-surface font-headline md:text-7xl lg:text-[6.8rem]"
+              className="mb-5 text-5xl font-bold leading-[0.9] tracking-tight text-on-surface font-headline md:mb-6 md:text-7xl lg:text-[6.8rem]"
             >
               Build Your
               <br />
@@ -169,7 +169,7 @@ export default function LandingPage() {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.8, ease: 'easeOut' }}
-              className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-on-surface-variant font-body md:text-xl"
+              className="landing-hero-subtitle mx-auto max-w-2xl text-lg leading-relaxed text-on-surface-variant font-body md:text-xl"
             >
               A precision configurator for interactive 3D interior design and floor planning. Craft
               environments with the fluidity of an artist and the precision of an engineer.
@@ -184,78 +184,13 @@ export default function LandingPage() {
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <LiquidGlassButton
                   testId="liquid-glass-button"
+                  motionVariant="hero-cta"
                   onClick={() => navigateTo('/editor')}
                   className="hero-liquid-glass-button"
                 >
                   Start Designing
                 </LiquidGlassButton>
               </motion.div>
-            </motion.div>
-          </section>
-
-          <section data-testid="landing-features" id="features" className="mt-auto grid w-full max-w-7xl grid-cols-1 gap-6 md:grid-cols-3">
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.2 }}
-              whileHover={{ y: -8, boxShadow: '0 20px 40px -10px rgba(0,0,0,0.2)' }}
-              transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.1 }}
-              className="glass-panel group relative rounded-2xl p-8"
-            >
-              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-secondary-container/20">
-                <Move className="h-7 w-7 text-secondary-fixed-dim" />
-              </div>
-              <h3 className="mb-3 text-xl font-bold text-on-surface font-headline">Drag &amp; Drop Geometry</h3>
-              <p className="text-sm leading-relaxed text-on-surface-variant opacity-80 font-body">
-                Seamlessly manipulate 3D volumes with our proprietary spatial snapping engine.
-                Architecture made tactile.
-              </p>
-              <div className="mt-6 flex items-center gap-2 text-[10px] font-label uppercase tracking-widest text-secondary opacity-0 transition-opacity group-hover:opacity-100">
-                Explore Tool <ChevronRight className="h-3 w-3" />
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.2 }}
-              whileHover={{ y: -8, boxShadow: '0 20px 40px -10px rgba(0,0,0,0.2)' }}
-              transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.2 }}
-              className="glass-panel group relative overflow-hidden rounded-2xl p-8"
-            >
-              <div className="absolute -top-4 -right-4 h-24 w-24 rounded-full bg-primary-container/10 blur-2xl" />
-              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-secondary-container/20">
-                <Gamepad2 className="h-7 w-7 text-secondary-fixed-dim" />
-              </div>
-              <h3 className="mb-3 text-xl font-bold text-on-surface font-headline">Immersive FPS Roaming</h3>
-              <p className="text-sm leading-relaxed text-on-surface-variant opacity-80 font-body">
-                Experience your floor plans in real-time first-person perspective. Walk through your
-                creation before a single brick is laid.
-              </p>
-              <div className="mt-6 flex items-center gap-2 text-[10px] font-label uppercase tracking-widest text-secondary opacity-0 transition-opacity group-hover:opacity-100">
-                View Modes <ChevronRight className="h-3 w-3" />
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.2 }}
-              whileHover={{ y: -8, boxShadow: '0 20px 40px -10px rgba(0,0,0,0.2)' }}
-              transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.3 }}
-              className="glass-panel group relative rounded-2xl p-8"
-            >
-              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-secondary-container/20">
-                <Cpu className="h-7 w-7 text-secondary-fixed-dim" />
-              </div>
-              <h3 className="mb-3 text-xl font-bold text-on-surface font-headline">Facility Optimized</h3>
-              <p className="text-sm leading-relaxed text-on-surface-variant opacity-80 font-body">
-                Engineered for large-scale architectural workflows. High-poly counts, real-time
-                lighting, and precise CAD exports.
-              </p>
-              <div className="mt-6 flex items-center gap-2 text-[10px] font-label uppercase tracking-widest text-secondary opacity-0 transition-opacity group-hover:opacity-100">
-                Specs <ChevronRight className="h-3 w-3" />
-              </div>
             </motion.div>
           </section>
         </main>
@@ -338,17 +273,87 @@ export default function LandingPage() {
         </section>
 
         <section
-          id="pricing"
+          data-testid="landing-features"
+          id="docs"
+          className="grid w-full max-w-7xl grid-cols-1 gap-6 px-6 pb-24 md:grid-cols-3"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.2 }}
+            whileHover={{ y: -8, boxShadow: '0 20px 40px -10px rgba(0,0,0,0.2)' }}
+            transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.1 }}
+            className="glass-panel group relative rounded-2xl p-8"
+          >
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-secondary-container/20">
+              <Move className="h-7 w-7 text-secondary-fixed-dim" />
+            </div>
+            <h3 className="mb-3 text-xl font-bold text-on-surface font-headline">Drag &amp; Drop Geometry</h3>
+            <p className="text-sm leading-relaxed text-on-surface-variant opacity-80 font-body">
+              Seamlessly manipulate 3D volumes with our proprietary spatial snapping engine.
+              Architecture made tactile.
+            </p>
+            <div className="mt-6 flex items-center gap-2 text-[10px] font-label uppercase tracking-widest text-secondary opacity-0 transition-opacity group-hover:opacity-100">
+              Explore Tool <ChevronRight className="h-3 w-3" />
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.2 }}
+            whileHover={{ y: -8, boxShadow: '0 20px 40px -10px rgba(0,0,0,0.2)' }}
+            transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.2 }}
+            className="glass-panel group relative overflow-hidden rounded-2xl p-8"
+          >
+            <div className="absolute -top-4 -right-4 h-24 w-24 rounded-full bg-primary-container/10 blur-2xl" />
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-secondary-container/20">
+              <Gamepad2 className="h-7 w-7 text-secondary-fixed-dim" />
+            </div>
+            <h3 className="mb-3 text-xl font-bold text-on-surface font-headline">Immersive FPS Roaming</h3>
+            <p className="text-sm leading-relaxed text-on-surface-variant opacity-80 font-body">
+              Experience your floor plans in real-time first-person perspective. Walk through your
+              creation before a single brick is laid.
+            </p>
+            <div className="mt-6 flex items-center gap-2 text-[10px] font-label uppercase tracking-widest text-secondary opacity-0 transition-opacity group-hover:opacity-100">
+              View Modes <ChevronRight className="h-3 w-3" />
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.2 }}
+            whileHover={{ y: -8, boxShadow: '0 20px 40px -10px rgba(0,0,0,0.2)' }}
+            transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.3 }}
+            className="glass-panel group relative rounded-2xl p-8"
+          >
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-secondary-container/20">
+              <Cpu className="h-7 w-7 text-secondary-fixed-dim" />
+            </div>
+            <h3 className="mb-3 text-xl font-bold text-on-surface font-headline">Facility Optimized</h3>
+            <p className="text-sm leading-relaxed text-on-surface-variant opacity-80 font-body">
+              Engineered for large-scale architectural workflows. High-poly counts, real-time
+              lighting, and precise CAD exports.
+            </p>
+            <div className="mt-6 flex items-center gap-2 text-[10px] font-label uppercase tracking-widest text-secondary opacity-0 transition-opacity group-hover:opacity-100">
+              Specs <ChevronRight className="h-3 w-3" />
+            </div>
+          </motion.div>
+        </section>
+
+        <section
+          id="experience"
           className="w-full max-w-7xl px-6 pb-24"
         >
           <div className="glass-panel rounded-3xl p-10 text-center">
-            <p className="text-[10px] font-label uppercase tracking-widest text-secondary">Pricing</p>
+            <p className="text-[10px] font-label uppercase tracking-widest text-secondary">Experience</p>
             <h2 className="mt-4 text-3xl font-bold text-on-surface font-headline md:text-4xl">
-              Flexible access for early design work.
+              Walk through every decision before it becomes built space.
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-on-surface-variant font-body md:text-base">
-              Start in the editor today and expand into richer editing, room semantics, and delivery
-              tooling as the V3 architecture core continues to harden.
+              Move from layout to atmosphere with an interface tuned for spatial feedback, immersive
+              review, and a calmer design flow from concept through presentation.
             </p>
           </div>
         </section>
@@ -391,7 +396,7 @@ export default function LandingPage() {
                 onClick={() => navigateTo('/editor')}
                 className="text-xs text-slate-400 transition-all hover:text-orange-400 hover:underline decoration-secondary-fixed-dim underline-offset-4 font-label"
               >
-                Launch Editor
+                Sign in / Sign up
               </button>
             </div>
           </div>
