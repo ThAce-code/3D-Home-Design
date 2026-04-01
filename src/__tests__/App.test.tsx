@@ -146,15 +146,23 @@ describe('App route shell', () => {
     expect(architecturePersistenceSpy).not.toHaveBeenCalled();
   });
 
-  it('renders the editor shell at /editor and initializes editor hooks', () => {
+  it('renders the editor shell at /editor after a lazy-loading fallback', async () => {
     window.history.replaceState({}, '', '/editor');
 
     act(() => {
       root.render(<App />);
     });
 
-    expect(mountNode.querySelector('[data-testid="landing-page"]')).toBeNull();
+    expect(mountNode.querySelector('[data-testid="editor-loading"]')).not.toBeNull();
+    expect(mountNode.querySelector('[data-testid="scene-root"]')).toBeNull();
+
+    await act(async () => {
+      await vi.dynamicImportSettled();
+    });
+
+    expect(mountNode.querySelector('[data-testid="editor-loading"]')).toBeNull();
     expect(mountNode.querySelector('[data-testid="scene-root"]')).not.toBeNull();
+    expect(mountNode.querySelector('[data-testid="landing-page"]')).toBeNull();
     expect(globalHotkeysSpy).toHaveBeenCalledTimes(1);
     expect(persistenceSpy).toHaveBeenCalledWith();
     expect(architecturePersistenceSpy).toHaveBeenCalledWith();
