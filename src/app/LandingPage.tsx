@@ -225,7 +225,7 @@ export default function LandingPage() {
     >
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <motion.img
-          className="h-full w-full object-cover opacity-60"
+          className="h-full w-full object-cover opacity-70"
           alt="Ultra-modern minimalist bright living room"
           src={LANDING_INTERIOR_SRC}
           onError={(event) => applyFallbackImage(event, INTERIOR_FALLBACK)}
@@ -234,7 +234,7 @@ export default function LandingPage() {
           transition={{ duration: 2, ease: 'easeOut' }}
           style={{ x: bgX, y: bgY }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-surface/20 via-surface/40 to-surface" />
+        <div className="absolute inset-0 bg-gradient-to-b from-surface/8 via-surface/28 to-surface/70" />
         <div className="hero-gradient absolute inset-0" />
       </div>
 
@@ -242,7 +242,7 @@ export default function LandingPage() {
 
       <motion.div style={{ x: uiX, y: uiY }} className="relative z-10 flex w-full flex-col items-center">
         <main className="flex min-h-screen w-full max-w-[1920px] flex-col items-center px-6 pb-20 pt-32">
-          <section data-testid="landing-hero" className="mt-12 mb-24 max-w-4xl text-center md:mt-24">
+          <section data-testid="landing-hero" className="mt-12 mb-24 max-w-5xl text-center md:mt-24">
             <motion.div
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -257,9 +257,12 @@ export default function LandingPage() {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.6, ease: 'easeOut' }}
-              className="mb-8 text-5xl font-bold leading-[0.95] tracking-tight text-on-surface font-headline md:text-7xl lg:text-8xl"
+              className="mb-8 text-5xl font-bold leading-[0.92] tracking-tight text-on-surface font-headline md:text-7xl lg:text-[6.8rem]"
             >
-              Build Your Architectural <br />
+              Build Your
+              <br />
+              Architectural
+              <br />
               <span className="bg-gradient-to-br from-on-surface to-on-surface-variant bg-clip-text text-transparent">
                 Dream. Realized.
               </span>

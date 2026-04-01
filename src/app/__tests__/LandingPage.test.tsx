@@ -58,7 +58,8 @@ describe('LandingPage', () => {
     expect(mountNode.querySelector('[data-testid="landing-features"]')).not.toBeNull();
     expect(mountNode.querySelector('[data-testid="landing-footer"]')).not.toBeNull();
     expect(mountNode.textContent).toContain('Facility Design');
-    expect(mountNode.textContent).toContain('Build Your Architectural');
+    expect(mountNode.textContent).toContain('Build Your');
+    expect(mountNode.textContent).toContain('Architectural');
     expect(mountNode.textContent).toContain('Dream. Realized.');
     expect(mountNode.textContent).toContain('Drag & Drop Geometry');
     expect(mountNode.textContent).toContain('Immersive FPS Roaming');
@@ -75,6 +76,21 @@ describe('LandingPage', () => {
     });
 
     expect(window.location.pathname).toBe('/editor');
+  });
+
+  it('keeps the hero title split into the same three emphasis lines as the gemini reference', () => {
+    act(() => {
+      root.render(<LandingPage />);
+    });
+
+    const hero = mountNode.querySelector('[data-testid="landing-hero"]');
+    const heading = hero?.querySelector('h1');
+
+    expect(hero).not.toBeNull();
+    expect(hero?.textContent).toContain('Build Your');
+    expect(hero?.textContent).toContain('Architectural');
+    expect(hero?.textContent).toContain('Dream. Realized.');
+    expect(heading?.querySelectorAll('br')).toHaveLength(2);
   });
 
   it('falls back to local-safe imagery when landing assets fail to load', () => {
