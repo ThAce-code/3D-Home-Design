@@ -64,6 +64,7 @@ describe('LandingPage', () => {
     expect(mountNode.textContent).toContain('Drag & Drop Geometry');
     expect(mountNode.textContent).toContain('Immersive FPS Roaming');
     expect(mountNode.textContent).toContain('Facility Optimized');
+    expect(mountNode.textContent).not.toContain('View Demo');
 
     const primaryCta = Array.from(mountNode.querySelectorAll('button')).find((button) =>
       button.textContent?.includes('Start Designing'),
@@ -76,6 +77,20 @@ describe('LandingPage', () => {
     });
 
     expect(window.location.pathname).toBe('/editor');
+  });
+
+  it('renders liquid glass hero CTA and liquid glass navbar shell', () => {
+    act(() => {
+      root.render(<LandingPage />);
+    });
+
+    const nav = mountNode.querySelector('[data-testid="landing-nav"]');
+    const hero = mountNode.querySelector('[data-testid="landing-hero"]');
+    const heroLiquidCta = hero?.querySelector('[data-testid="liquid-glass-button"]');
+
+    expect(nav?.querySelector('[data-testid="liquid-glass-navbar"]')).not.toBeNull();
+    expect(heroLiquidCta).not.toBeNull();
+    expect(heroLiquidCta?.textContent).toContain('Start Designing');
   });
 
   it('keeps the hero title split into the same three emphasis lines as the gemini reference', () => {

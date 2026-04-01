@@ -1,0 +1,36 @@
+import { expect, test, type Page } from '@playwright/test'
+
+async function backgroundColorOf(page: Page, selector: string) {
+  return page.locator(selector).evaluate((element) => getComputedStyle(element).backgroundColor)
+}
+
+test('landing first screen uses liquid glass navbar and hero CTA without the demo button', async ({ page }) => {
+  await page.goto('/')
+
+  await expect(page.getByTestId('landing-nav')).toBeVisible()
+  await expect(page.getByTestId('landing-hero')).toContainText('Dream. Realized.')
+
+  const navLaunchButton = page.getByRole('button', { name: 'Launch Editor' }).first()
+  const heroPrimaryCta = page.getByRole('button', { name: /Start Designing/i })
+  const heroBadge = page.getByText('Next-Gen Spatial Engine', { exact: false }).first()
+  const heroLiquidCta = page.getByTestId('liquid-glass-button')
+  const liquidNavbar = page.getByTestId('liquid-glass-navbar')
+  const viewDemo = page.getByRole('link', { name: /View Demo/i })
+
+  await expect(navLaunchButton).toBeVisible()
+  await expect(heroPrimaryCta).toBeVisible()
+  await expect(heroBadge).toBeVisible()
+  await expect(liquidNavbar).toBeVisible()
+  await expect(heroLiquidCta).toBeVisible()
+  await expect(viewDemo).toHaveCount(0)
+
+  expect(await backgroundColorOf(page, '[data-testid="landing-nav"] button:has-text("Launch Editor")')).not.toBe(
+    'rgba(0, 0, 0, 0)',
+  )
+  expect(await backgroundColorOf(page, '[data-testid="landing-hero"] button:has-text("Start Designing")')).not.toBe(
+    'rgba(0, 0, 0, 0)',
+  )
+  expect(await heroBadge.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(
+    'rgba(0, 0, 0, 0)',
+  )
+})

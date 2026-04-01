@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   Box,
   ChevronRight,
   Compass,
@@ -9,7 +8,9 @@ import {
   Move,
 } from 'lucide-react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import LiquidGlassButton from './components/LiquidGlassButton.js';
+import LiquidGlassNavbar from './components/LiquidGlassNavbar.js';
 import { navigateTo } from './router.js';
 
 const LOGO_FALLBACK =
@@ -61,139 +62,17 @@ const LANDING_INTERIOR_SRC =
 const LANDING_PLAN_SRC =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuB0LS8jvYWCaJnhXSPGbH7ZBDU8WXiNSqt6xl9iZKLU8rT1M2h8_9A8ENmRbnqR0KRAZHpiIpB76Ks_w96UUF_iFb5Zsz2O4yYaPN7Et-NLJ-E37LK4-JHgDJ3AzvNfzZ7a21sNTPpjvsClPymNZbAMHTJKER8G26FBIeF3HbfBfs0usBOslRRTLagEElWwxMOeo3freqDwR7lBjA0rYUfRdaDc1dnmMufW1AR571jBRgLqyAGzkO_p3tfptqFToZm690ztcLz5o6lT';
 
+const LANDING_SURFACES = {
+  tealFill: 'rgba(82, 246, 239, 0.3)',
+  tealText: '#006a66',
+  tealBorder: 'rgba(38, 220, 214, 0.2)',
+  titleGradient: 'linear-gradient(135deg, #191c1e 0%, #544434 100%)',
+} as const;
+
 function applyFallbackImage(event: ReactMouseEvent<HTMLImageElement> | Event, fallbackSrc: string) {
   const image = event.currentTarget as HTMLImageElement;
   image.onerror = null;
   image.src = fallbackSrc;
-}
-
-function LiquidNavbar() {
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const hoverState = useMotionValue(0);
-
-  const smoothX = useSpring(mouseX, { stiffness: 150, damping: 20 });
-  const smoothY = useSpring(mouseY, { stiffness: 150, damping: 20 });
-  const smoothHover = useSpring(hoverState, { stiffness: 100, damping: 15 });
-
-  const handleMouseMove = (event: ReactMouseEvent<HTMLElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    mouseX.set(event.clientX - rect.left);
-    mouseY.set(event.clientY - rect.top);
-  };
-
-  const pullX = useTransform(smoothX, (value) => {
-    const width = typeof window === 'undefined' ? 1 : window.innerWidth;
-    return ((value - width / 2) / (width / 2)) * 10;
-  });
-
-  const pullY = useTransform(smoothY, (value) => {
-    const height = typeof window === 'undefined' ? 1 : 96;
-    return ((value - height / 2) / (height / 2)) * 8;
-  });
-
-  const activePullX = useTransform(() => pullX.get() * smoothHover.get());
-  const activePullY = useTransform(() => pullY.get() * smoothHover.get());
-
-  const sheenOpacity = useTransform(smoothHover, [0, 1], [0, 0.7]);
-  const backgroundSheen = useMotionTemplate`radial-gradient(circle 250px at ${smoothX}px ${smoothY}px, rgba(255,255,255,${sheenOpacity}), transparent 80%)`;
-
-  const chromaX = useTransform(smoothX, (value) => {
-    const width = typeof window === 'undefined' ? 1 : window.innerWidth;
-    return ((value - width / 2) / (width / 2)) * 6;
-  });
-  const chromaY = useTransform(smoothY, (value) => {
-    const height = typeof window === 'undefined' ? 1 : 96;
-    return ((value - height / 2) / (height / 2)) * 6;
-  });
-  const chromaOpacity = useTransform(smoothHover, [0, 1], [0, 0.3]);
-  const chromaShadow = useMotionTemplate`
-    inset ${chromaX}px ${chromaY}px 12px rgba(255, 0, 0, ${chromaOpacity}),
-    inset calc(${chromaX}px * -1) calc(${chromaY}px * -1) 12px rgba(0, 255, 255, ${chromaOpacity})
-  `;
-
-  return (
-    <motion.nav
-      data-testid="landing-nav"
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => hoverState.set(1)}
-      onMouseLeave={() => hoverState.set(0)}
-      style={{ paddingLeft: '32px', paddingRight: '32px', y: 16 }}
-      className="fixed top-0 z-50 flex h-24 w-full items-center justify-center"
-    >
-      <motion.div
-        className="relative flex h-full w-full max-w-[1920px] items-center justify-between overflow-hidden px-8"
-        style={{
-          x: activePullX,
-          y: activePullY,
-          borderRadius: '32px',
-          boxShadow:
-            'inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 6px rgba(0,0,0,0.1), 0 20px 40px rgba(0,0,0,0.15)',
-          backdropFilter: 'blur(3px) saturate(110%)',
-          WebkitBackdropFilter: 'blur(3px) saturate(110%)',
-          backgroundColor: 'rgba(255, 255, 255, 0.03)',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.4)',
-          transformOrigin: 'center center',
-        }}
-      >
-        <motion.div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: backgroundSheen, mixBlendMode: 'overlay' }}
-        />
-
-        <motion.div
-          className="pointer-events-none absolute inset-0 rounded-inherit"
-          style={{ boxShadow: chromaShadow, mixBlendMode: 'color-burn' }}
-        />
-
-        <div
-          className="pointer-events-none absolute inset-0 rounded-inherit"
-          style={{
-            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 0 20px rgba(255,255,255,0.1)',
-            mixBlendMode: 'screen',
-          }}
-        />
-
-        <div className="relative z-10 flex items-center gap-8">
-          <button type="button" onClick={() => navigateTo('/')} className="group flex items-center gap-3">
-            <img
-              src={LANDING_LOGO_SRC}
-              alt="Facility Design Logo"
-              className="h-16 w-16 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-110"
-              onError={(event) => applyFallbackImage(event, LOGO_FALLBACK)}
-            />
-            <span className="bg-gradient-to-r from-secondary-fixed-dim to-primary-container bg-clip-text text-xl font-bold tracking-tighter text-transparent font-headline">
-              Facility Design
-            </span>
-          </button>
-          <div className="hidden gap-8 font-headline text-sm tracking-tight md:flex">
-            <a className="text-slate-600 transition-colors hover:text-secondary-fixed-dim" href="#preview">
-              Gallery
-            </a>
-            <a className="text-slate-600 transition-colors hover:text-secondary-fixed-dim" href="#features">
-              Features
-            </a>
-            <a className="text-slate-600 transition-colors hover:text-secondary-fixed-dim" href="#pricing">
-              Pricing
-            </a>
-            <a className="text-slate-600 transition-colors hover:text-secondary-fixed-dim" href="#footer">
-              About
-            </a>
-          </div>
-        </div>
-        <div className="relative z-10 flex items-center gap-6">
-          <button
-            type="button"
-            onClick={() => navigateTo('/editor')}
-            className="rounded-lg bg-primary-container px-6 py-2.5 font-bold font-headline text-on-primary-container shadow-lg shadow-primary-container/20 transition-all duration-300 hover:opacity-90 active:scale-90"
-          >
-            Launch Editor
-          </button>
-        </div>
-      </motion.div>
-    </motion.nav>
-  );
 }
 
 export default function LandingPage() {
@@ -238,7 +117,13 @@ export default function LandingPage() {
         <div className="hero-gradient absolute inset-0" />
       </div>
 
-      <LiquidNavbar />
+      <LiquidGlassNavbar
+        logoSrc={LANDING_LOGO_SRC}
+        logoFallbackSrc={LOGO_FALLBACK}
+        onLogoError={applyFallbackImage}
+        onNavigateHome={() => navigateTo('/')}
+        onLaunchEditor={() => navigateTo('/editor')}
+      />
 
       <motion.div style={{ x: uiX, y: uiY }} className="relative z-10 flex w-full flex-col items-center">
         <main className="flex min-h-screen w-full max-w-[1920px] flex-col items-center px-6 pb-20 pt-32">
@@ -247,7 +132,12 @@ export default function LandingPage() {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
-              className="mb-8 inline-flex items-center gap-2 rounded-full border border-secondary-fixed-dim/20 bg-secondary-container/30 px-3 py-1 text-[10px] font-label uppercase tracking-widest text-secondary"
+              className="mb-8 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-label uppercase tracking-widest"
+              style={{
+                border: `1px solid ${LANDING_SURFACES.tealBorder}`,
+                backgroundColor: LANDING_SURFACES.tealFill,
+                color: LANDING_SURFACES.tealText,
+              }}
             >
               <Compass className="h-3.5 w-3.5" />
               Next-Gen Spatial Engine
@@ -263,7 +153,14 @@ export default function LandingPage() {
               <br />
               Architectural
               <br />
-              <span className="bg-gradient-to-br from-on-surface to-on-surface-variant bg-clip-text text-transparent">
+              <span
+                className="text-transparent"
+                style={{
+                  backgroundImage: LANDING_SURFACES.titleGradient,
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                }}
+              >
                 Dream. Realized.
               </span>
             </motion.h1>
@@ -282,27 +179,17 @@ export default function LandingPage() {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 1.0, ease: 'easeOut' }}
-              className="flex flex-col items-center justify-center gap-4 sm:flex-row"
+              className="flex items-center justify-center"
             >
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigateTo('/editor')}
-                className="group relative flex items-center gap-3 overflow-hidden rounded-xl bg-primary-container px-10 py-5 font-bold font-headline text-on-primary-container shadow-[0_0_40px_-10px_rgba(255,159,28,0.5)] transition-shadow duration-500 hover:shadow-[0_20px_50px_-10px_rgba(255,159,28,0.8)]"
-              >
-                <span className="relative z-10">Start Designing</span>
-                <ArrowRight className="relative z-10 h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </motion.button>
-
-              <motion.a
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                href="#preview"
-                className="rounded-xl border border-secondary-fixed-dim/50 bg-white/40 px-10 py-5 font-bold font-headline text-secondary backdrop-blur-md transition-colors duration-300 hover:border-teal-400/80 hover:bg-teal-400/10"
-              >
-                View Demo
-              </motion.a>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <LiquidGlassButton
+                  testId="liquid-glass-button"
+                  onClick={() => navigateTo('/editor')}
+                  className="hero-liquid-glass-button"
+                >
+                  Start Designing
+                </LiquidGlassButton>
+              </motion.div>
             </motion.div>
           </section>
 

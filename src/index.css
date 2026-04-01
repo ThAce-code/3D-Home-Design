@@ -94,6 +94,122 @@
     0 24px 80px -56px rgba(72, 48, 30, 0.45);
 }
 
+[data-app-theme='landing'] .liquid-glass-shell {
+  --landing-liquid-bg: rgba(255, 255, 255, 0.08);
+  --landing-liquid-border: rgba(51, 51, 51, 0.15);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--landing-liquid-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 3px double var(--landing-liquid-border);
+  filter: contrast(1.05);
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+  box-shadow:
+    inset 2px -2px 1px -1px rgba(255, 255, 255, 0.9),
+    inset -2px 2px 1px -1px rgba(255, 255, 255, 0.9),
+    inset 6px -6px 1px -6px rgba(255, 255, 255, 0.55),
+    inset -6px 6px 1px -6px rgba(255, 255, 255, 0.55),
+    inset 0 0 2px rgba(0, 0, 0, 0.8),
+    0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-app-theme='landing'] .liquid-glass-shell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.7) 0%,
+    transparent 25%,
+    transparent 75%,
+    rgba(255, 255, 255, 0.7) 100%
+  );
+  pointer-events: none;
+  z-index: 3;
+}
+
+[data-app-theme='landing'] .liquid-glass-shell:active {
+  transform: scale(0.97);
+}
+
+[data-app-theme='landing'] .liquid-glass-shell .liquid-glass-depth-ring {
+  position: absolute;
+  inset: 8px;
+  z-index: 1;
+  border: 1px solid rgba(0, 0, 0, 0.8);
+  border-radius: inherit;
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+[data-app-theme='landing'] .liquid-glass-shell .liquid-glass-inner-ring {
+  position: absolute;
+  inset: 4px;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: inherit;
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+[data-app-theme='landing'] .liquid-glass-shell .liquid-glass-highlight {
+  z-index: 3;
+}
+
+[data-app-theme='landing'] .liquid-glass-content {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #111;
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.15));
+}
+
+[data-app-theme='landing'] .liquid-glass-pill {
+  min-height: 72px;
+  padding: 0 8px 0 32px;
+  border-radius: 999px;
+}
+
+[data-app-theme='landing'] .hero-liquid-glass-button {
+  min-width: 280px;
+}
+
+[data-app-theme='landing'] .liquid-glass-label {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+}
+
+[data-app-theme='landing'] .liquid-glass-dark-arrow {
+  display: flex;
+  height: 56px;
+  width: 56px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background-color: #111;
+  color: #fff;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.2);
+}
+
+[data-app-theme='landing'] .liquid-glass-arrow-icon {
+  height: 24px;
+  width: 24px;
+  stroke-width: 2;
+}
+
+[data-app-theme='landing'] .liquid-glass-navbar-shell {
+  border-radius: 32px;
+}
+
 @keyframes panel-pop {
   from {
     opacity: 0;
