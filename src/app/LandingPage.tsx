@@ -174,7 +174,7 @@ function LiquidNavbar() {
             <a className="text-slate-600 transition-colors hover:text-secondary-fixed-dim" href="#features">
               Features
             </a>
-            <a className="text-slate-600 transition-colors hover:text-secondary-fixed-dim" href="#">
+            <a className="text-slate-600 transition-colors hover:text-secondary-fixed-dim" href="#pricing">
               Pricing
             </a>
             <a className="text-slate-600 transition-colors hover:text-secondary-fixed-dim" href="#footer">
@@ -445,6 +445,22 @@ export default function LandingPage() {
               </div>
             </div>
           </motion.div>
+        </section>
+
+        <section
+          id="pricing"
+          className="w-full max-w-7xl px-6 pb-24"
+        >
+          <div className="glass-panel rounded-3xl p-10 text-center">
+            <p className="text-[10px] font-label uppercase tracking-widest text-secondary">Pricing</p>
+            <h2 className="mt-4 text-3xl font-bold text-on-surface font-headline md:text-4xl">
+              Flexible access for early design work.
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-on-surface-variant font-body md:text-base">
+              Start in the editor today and expand into richer editing, room semantics, and delivery
+              tooling as the V3 architecture core continues to harden.
+            </p>
+          </div>
         </section>
 
         <footer

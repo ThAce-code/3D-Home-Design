@@ -97,6 +97,22 @@ describe('LandingPage', () => {
     expect((preview as HTMLImageElement).src).toContain('data:image/svg+xml');
   });
 
+  it('falls back to local-safe imagery when the remote hero background fails to load', () => {
+    act(() => {
+      root.render(<LandingPage />);
+    });
+
+    const heroImage = mountNode.querySelector('img[alt="Ultra-modern minimalist bright living room"]');
+
+    expect(heroImage).not.toBeNull();
+
+    act(() => {
+      heroImage?.dispatchEvent(new Event('error'));
+    });
+
+    expect((heroImage as HTMLImageElement).src).toContain('data:image/svg+xml');
+  });
+
   it('restores gemini navigation rhythm for parity', () => {
     act(() => {
       root.render(<LandingPage />);
@@ -109,6 +125,21 @@ describe('LandingPage', () => {
     expect(nav?.textContent).toContain('Features');
     expect(nav?.textContent).toContain('Pricing');
     expect(nav?.textContent).toContain('About');
+  });
+
+  it('wires pricing navigation to a real section anchor', () => {
+    act(() => {
+      root.render(<LandingPage />);
+    });
+
+    const pricingLink = Array.from(mountNode.querySelectorAll('[data-testid="landing-nav"] a')).find((link) =>
+      link.textContent?.includes('Pricing'),
+    );
+    const pricingSection = mountNode.querySelector('#pricing');
+
+    expect(pricingLink).not.toBeNull();
+    expect(pricingLink?.getAttribute('href')).toBe('#pricing');
+    expect(pricingSection).not.toBeNull();
   });
 
   it('restores gemini remote-first imagery for parity', () => {
