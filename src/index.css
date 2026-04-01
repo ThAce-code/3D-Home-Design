@@ -95,8 +95,8 @@
 }
 
 [data-app-theme='landing'] .liquid-glass-shell {
-  --landing-liquid-bg: rgba(255, 255, 255, 0.08);
-  --landing-liquid-border: rgba(51, 51, 51, 0.15);
+  --landing-liquid-bg: rgba(255, 255, 255, 0.05);
+  --landing-liquid-border: rgba(51, 51, 51, 0.12);
   position: relative;
   display: flex;
   align-items: center;
@@ -113,8 +113,8 @@
     inset -2px 2px 1px -1px rgba(255, 255, 255, 0.9),
     inset 6px -6px 1px -6px rgba(255, 255, 255, 0.55),
     inset -6px 6px 1px -6px rgba(255, 255, 255, 0.55),
-    inset 0 0 2px rgba(0, 0, 0, 0.8),
-    0 6px 12px rgba(0, 0, 0, 0.1);
+    inset 0 0 2px rgba(0, 0, 0, 0.55),
+    0 6px 12px rgba(0, 0, 0, 0.08);
 }
 
 [data-app-theme='landing'] .liquid-glass-shell::after {
@@ -208,6 +208,17 @@
 
 [data-app-theme='landing'] .liquid-glass-navbar-shell {
   border-radius: 32px;
+  --landing-liquid-bg: rgba(255, 255, 255, 0.03);
+  --landing-liquid-border: rgba(51, 51, 51, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    inset 2px -2px 1px -1px rgba(255, 255, 255, 0.78),
+    inset -2px 2px 1px -1px rgba(255, 255, 255, 0.78),
+    inset 6px -6px 1px -6px rgba(255, 255, 255, 0.42),
+    inset -6px 6px 1px -6px rgba(255, 255, 255, 0.42),
+    inset 0 0 2px rgba(0, 0, 0, 0.38),
+    0 10px 24px rgba(0, 0, 0, 0.08);
 }
 
 @keyframes panel-pop {

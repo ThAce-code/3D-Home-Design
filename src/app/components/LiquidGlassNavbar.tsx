@@ -62,7 +62,7 @@ export default function LiquidGlassNavbar({
     >
       <motion.div
         data-testid="liquid-glass-navbar"
-        className="liquid-glass-shell liquid-glass-navbar-shell relative flex h-full w-full max-w-[1920px] items-center justify-between overflow-hidden px-8"
+        className="liquid-glass-shell liquid-glass-navbar-shell relative h-full w-full max-w-[1920px] overflow-hidden px-8"
         style={{ x: activePullX, y: activePullY }}
       >
         <span aria-hidden="true" className="liquid-glass-depth-ring" />
@@ -73,26 +73,31 @@ export default function LiquidGlassNavbar({
           style={{ background: backgroundSheen, mixBlendMode: 'overlay' }}
         />
 
-        <div className="relative z-10 flex items-center gap-8">
+        <div className="relative z-10 grid h-full w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-6">
           <button type="button" onClick={onNavigateHome} className="group flex items-center gap-3">
-            <img
-              src={logoSrc}
-              alt="Facility Design Logo"
-              className="h-16 w-16 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-110"
-              onError={(event) => onLogoError(event, logoFallbackSrc)}
-            />
-            <span
-              className="text-xl font-bold tracking-tighter text-transparent font-headline"
-              style={{
-                backgroundImage: BRAND_GRADIENT,
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-              }}
-            >
-              Facility Design
+            <span data-testid="liquid-glass-navbar-brand" className="flex items-center gap-3 justify-self-start">
+              <img
+                src={logoSrc}
+                alt="Facility Design Logo"
+                className="h-16 w-16 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-110"
+                onError={(event) => onLogoError(event, logoFallbackSrc)}
+              />
+              <span
+                className="text-xl font-bold tracking-tighter text-transparent font-headline"
+                style={{
+                  backgroundImage: BRAND_GRADIENT,
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                }}
+              >
+                Facility Design
+              </span>
             </span>
           </button>
-          <div className="hidden gap-8 font-headline text-sm tracking-tight md:flex">
+          <div
+            data-testid="liquid-glass-navbar-links"
+            className="hidden items-center justify-center gap-8 font-headline text-sm tracking-tight md:flex"
+          >
             <a className="text-slate-600 transition-colors hover:text-secondary-fixed-dim" href="#preview">
               Gallery
             </a>
@@ -106,20 +111,20 @@ export default function LiquidGlassNavbar({
               About
             </a>
           </div>
-        </div>
-        <div className="relative z-10 flex items-center gap-6">
-          <button
-            type="button"
-            onClick={onLaunchEditor}
-            className="rounded-lg px-6 py-2.5 font-bold font-headline transition-all duration-300 hover:opacity-90 active:scale-90"
-            style={{
-              backgroundColor: ACCENT_FILL,
-              color: ACCENT_TEXT,
-              boxShadow: ACCENT_SHADOW,
-            }}
-          >
-            Launch Editor
-          </button>
+          <div data-testid="liquid-glass-navbar-cta" className="flex items-center justify-self-end">
+            <button
+              type="button"
+              onClick={onLaunchEditor}
+              className="rounded-lg px-6 py-2.5 font-bold font-headline transition-all duration-300 hover:opacity-90 active:scale-90"
+              style={{
+                backgroundColor: ACCENT_FILL,
+                color: ACCENT_TEXT,
+                boxShadow: ACCENT_SHADOW,
+              }}
+            >
+              Launch Editor
+            </button>
+          </div>
         </div>
       </motion.div>
     </motion.nav>

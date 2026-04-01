@@ -15,12 +15,18 @@ test('landing first screen uses liquid glass navbar and hero CTA without the dem
   const heroBadge = page.getByText('Next-Gen Spatial Engine', { exact: false }).first()
   const heroLiquidCta = page.getByTestId('liquid-glass-button')
   const liquidNavbar = page.getByTestId('liquid-glass-navbar')
+  const liquidNavbarBrand = page.getByTestId('liquid-glass-navbar-brand')
+  const liquidNavbarLinks = page.getByTestId('liquid-glass-navbar-links')
+  const liquidNavbarCta = page.getByTestId('liquid-glass-navbar-cta')
   const viewDemo = page.getByRole('link', { name: /View Demo/i })
 
   await expect(navLaunchButton).toBeVisible()
   await expect(heroPrimaryCta).toBeVisible()
   await expect(heroBadge).toBeVisible()
   await expect(liquidNavbar).toBeVisible()
+  await expect(liquidNavbarBrand).toBeVisible()
+  await expect(liquidNavbarLinks).toBeVisible()
+  await expect(liquidNavbarCta).toBeVisible()
   await expect(heroLiquidCta).toBeVisible()
   await expect(viewDemo).toHaveCount(0)
 
@@ -32,5 +38,8 @@ test('landing first screen uses liquid glass navbar and hero CTA without the dem
   )
   expect(await heroBadge.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(
     'rgba(0, 0, 0, 0)',
+  )
+  expect(await liquidNavbar.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(
+    'rgb(255, 255, 255)',
   )
 })

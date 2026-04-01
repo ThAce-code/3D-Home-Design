@@ -87,8 +87,12 @@ describe('LandingPage', () => {
     const nav = mountNode.querySelector('[data-testid="landing-nav"]');
     const hero = mountNode.querySelector('[data-testid="landing-hero"]');
     const heroLiquidCta = hero?.querySelector('[data-testid="liquid-glass-button"]');
+    const navbarShell = nav?.querySelector('[data-testid="liquid-glass-navbar"]');
 
-    expect(nav?.querySelector('[data-testid="liquid-glass-navbar"]')).not.toBeNull();
+    expect(navbarShell).not.toBeNull();
+    expect(navbarShell?.querySelector('[data-testid="liquid-glass-navbar-brand"]')).not.toBeNull();
+    expect(navbarShell?.querySelector('[data-testid="liquid-glass-navbar-links"]')).not.toBeNull();
+    expect(navbarShell?.querySelector('[data-testid="liquid-glass-navbar-cta"]')).not.toBeNull();
     expect(heroLiquidCta).not.toBeNull();
     expect(heroLiquidCta?.textContent).toContain('Start Designing');
   });
