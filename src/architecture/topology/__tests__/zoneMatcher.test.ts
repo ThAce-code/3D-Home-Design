@@ -37,6 +37,92 @@ describe('matchZones', () => {
     expect(result.reusedZoneIdByLoopIndex.get(0)).toBe('zone-living');
   });
 
+  it('does not reuse a zone id across levels even when the geometry matches', () => {
+    const result = matchZones({
+      previousZones: [{
+        geometry: {
+          area: 12,
+          centroid: [2, 1.5],
+          points: [
+            [0, 0],
+            [4, 0],
+            [4, 3],
+            [0, 3],
+          ],
+        },
+        levelId: 'level-1',
+        signature: '0|1|2|3',
+        zoneId: 'zone-living',
+      }],
+      nextLoops: [{
+        area: 12,
+        centroid: [2, 1.5],
+        levelId: 'level-2',
+        points: [
+          [0, 0],
+          [4, 0],
+          [4, 3],
+          [0, 3],
+        ],
+        signature: '0|1|2|3',
+      }],
+      epsilon: 1e-6,
+    });
+
+    expect(result.reusedZoneIdByLoopIndex.has(0)).toBe(false);
+  });
+
+  it('uses each old zone id at most once across matching loops', () => {
+    const result = matchZones({
+      previousZones: [{
+        geometry: {
+          area: 12,
+          centroid: [2, 1.5],
+          points: [
+            [0, 0],
+            [4, 0],
+            [4, 3],
+            [0, 3],
+          ],
+        },
+        levelId: 'level-1',
+        signature: '0|1|2|3',
+        zoneId: 'zone-living',
+      }],
+      nextLoops: [
+        {
+          area: 12,
+          centroid: [2, 1.5],
+          levelId: 'level-1',
+          points: [
+            [0, 0],
+            [4, 0],
+            [4, 3],
+            [0, 3],
+          ],
+          signature: '0|1|2|3',
+        },
+        {
+          area: 12,
+          centroid: [2, 1.5],
+          levelId: 'level-1',
+          points: [
+            [0, 0],
+            [4, 0],
+            [4, 3],
+            [0, 3],
+          ],
+          signature: '0|1|2|3',
+        },
+      ],
+      epsilon: 1e-6,
+    });
+
+    expect(result.reusedZoneIdByLoopIndex.size).toBe(1);
+    expect(result.reusedZoneIdByLoopIndex.get(0)).toBe('zone-living');
+    expect(result.reusedZoneIdByLoopIndex.has(1)).toBe(false);
+  });
+
   it('refuses inheritance when two previous rooms overlap a new room too similarly', () => {
     const result = matchZones({
       previousZones: [

@@ -60,6 +60,7 @@ export interface MatchZonesResult {
 }
 
 const MIN_ZONE_ID_OVERLAP_RATIO = 0.6;
+const MIN_AMBIGUITY_GAP_RATIO = 0.1;
 
 function createLevelScopedSignature(levelId: string, signature: string): string {
   return `${levelId}::${signature}`;
@@ -489,7 +490,7 @@ function matchByOverlap(
   epsilon: number
 ): Map<number, string> {
   const usedZoneIds = new Set(reusableZoneIdByLoopIndex.values());
-  const overlapCandidates: OverlapMatchCandidate[] = [];
+  const overlapCandidatesByLoopIndex = new Map<number, OverlapMatchCandidate[]>();
 
   for (const [loopIndex, loop] of nextLoops.entries()) {
     if (reusableZoneIdByLoopIndex.has(loopIndex)) {
@@ -538,12 +539,12 @@ function matchByOverlap(
         continue;
       }
 
-      overlapCandidates.push({
+      const candidates = overlapCandidatesByLoopIndex.get(loopIndex) ?? [];
+      candidates.push({
         centroidDistance: distanceBetweenPoints(
           previousZone.geometry.centroid,
           loop.centroid
         ),
-        loopIndex,
         overlapArea: overlapArea > 0
           ? overlapArea
           : Math.min(
@@ -554,7 +555,52 @@ function matchByOverlap(
         overlapOldRatio,
         zoneId: previousZone.zoneId,
       });
+      overlapCandidatesByLoopIndex.set(loopIndex, candidates);
     }
+  }
+
+  const overlapCandidates: OverlapMatchCandidate[] = [];
+
+  for (const [loopIndex, candidates] of overlapCandidatesByLoopIndex.entries()) {
+    candidates.sort((left, right) => {
+      if (right.overlapArea !== left.overlapArea) {
+        return right.overlapArea - left.overlapArea;
+      }
+
+      if (right.overlapOldRatio !== left.overlapOldRatio) {
+        return right.overlapOldRatio - left.overlapOldRatio;
+      }
+
+      if (right.overlapNewRatio !== left.overlapNewRatio) {
+        return right.overlapNewRatio - left.overlapNewRatio;
+      }
+
+      if (left.centroidDistance !== right.centroidDistance) {
+        return left.centroidDistance - right.centroidDistance;
+      }
+
+      return left.zoneId.localeCompare(right.zoneId);
+    });
+
+    const bestCandidate = candidates[0];
+    const secondCandidate = candidates[1];
+
+    if (!bestCandidate) {
+      continue;
+    }
+
+    if (
+      secondCandidate &&
+      bestCandidate.overlapArea > 0 &&
+      (bestCandidate.overlapArea - secondCandidate.overlapArea) / bestCandidate.overlapArea < MIN_AMBIGUITY_GAP_RATIO
+    ) {
+      continue;
+    }
+
+    overlapCandidates.push({
+      ...bestCandidate,
+      loopIndex,
+    });
   }
 
   overlapCandidates.sort((left, right) => {
