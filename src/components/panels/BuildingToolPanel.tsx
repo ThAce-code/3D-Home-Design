@@ -1,6 +1,7 @@
 import { SquarePen, Pointer, Hand, Eraser } from 'lucide-react';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import type { ArchitectureTool } from '../../architecture/editing/tools.js';
+import { createArchitectureToolStoreController } from '../../architecture/editing/toolController.js';
 import { editorThemeVars } from '../../theme/editorTheme.js';
 
 const tools: { tool: ArchitectureTool; icon: typeof Pointer; label: string }[] = [
@@ -10,9 +11,12 @@ const tools: { tool: ArchitectureTool; icon: typeof Pointer; label: string }[] =
   { tool: 'delete', icon: Eraser, label: '删除' },
 ];
 
+const toolController = createArchitectureToolStoreController({
+  editorStore: useArchitectureEditorStore,
+});
+
 export default function BuildingToolPanel() {
   const activeTool = useArchitectureEditorStore((state) => state.activeTool);
-  const setActiveTool = useArchitectureEditorStore((state) => state.setActiveTool);
 
   return (
     <div data-testid="building-tool-panel" className="p-4 flex flex-col gap-3">
@@ -31,7 +35,7 @@ export default function BuildingToolPanel() {
             <button
               key={tool}
               type="button"
-              onClick={() => setActiveTool(tool)}
+              onClick={() => toolController.selectTool(tool)}
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors"
               style={{
                 background: isActive ? editorThemeVars.accentSoft : editorThemeVars.field,
