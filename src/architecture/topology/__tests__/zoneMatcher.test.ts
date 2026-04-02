@@ -228,4 +228,58 @@ describe('matchZones', () => {
     expect(result.reusedZoneIdByLoopIndex.get(0)).toBe('zone-living');
     expect(result.reusedZoneIdByLoopIndex.has(1)).toBe(false);
   });
+
+  it('keeps only one predecessor id when two rooms merge into one', () => {
+    const result = matchZones({
+      previousZones: [
+        {
+          geometry: {
+            area: 9,
+            centroid: [1.125, 2],
+            points: [
+              [0, 0],
+              [2.25, 0],
+              [2.25, 4],
+              [0, 4],
+            ],
+          },
+          levelId: 'level-1',
+          signature: 'left',
+          zoneId: 'zone-left',
+        },
+        {
+          geometry: {
+            area: 7,
+            centroid: [3.125, 2],
+            points: [
+              [2.25, 0],
+              [4, 0],
+              [4, 4],
+              [2.25, 4],
+            ],
+          },
+          levelId: 'level-1',
+          signature: 'right',
+          zoneId: 'zone-right',
+        },
+      ],
+      nextLoops: [
+        {
+          area: 16,
+          centroid: [2, 2],
+          levelId: 'level-1',
+          points: [
+            [0, 0],
+            [4, 0],
+            [4, 4],
+            [0, 4],
+          ],
+          signature: 'merged',
+        },
+      ],
+      epsilon: 1e-6,
+    });
+
+    expect(result.reusedZoneIdByLoopIndex.get(0)).toBe('zone-left');
+  });
 });

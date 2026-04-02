@@ -611,6 +611,75 @@ describe('rebuildZones', () => {
     });
   });
 
+  it('keeps one predecessor id after two rooms are merged into one larger room', () => {
+    const splitDocument = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 0, y: 0 },
+        { id: 'v2', x: 2.25, y: 0 },
+        { id: 'v3', x: 4, y: 0 },
+        { id: 'v4', x: 4, y: 4 },
+        { id: 'v5', x: 2.25, y: 4 },
+        { id: 'v6', x: 0, y: 4 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v5' },
+        { id: 'w3', startVertexId: 'v5', endVertexId: 'v6' },
+        { id: 'w4', startVertexId: 'v6', endVertexId: 'v1' },
+        { id: 'w5', startVertexId: 'v2', endVertexId: 'v3' },
+        { id: 'w6', startVertexId: 'v3', endVertexId: 'v4' },
+        { id: 'w7', startVertexId: 'v4', endVertexId: 'v5' },
+      ],
+    });
+    const first = rebuildZones(splitDocument);
+    const leftZoneId = first.zoneOrder[0];
+    const rightZoneId = first.zoneOrder[1];
+    const levelId = first.levelOrder[0];
+    const mergedDocument: ArchitectureDocument = {
+      ...first,
+      walls: {
+        w1: first.walls.w1,
+        w3: first.walls.w3,
+        w4: first.walls.w4,
+        w5: first.walls.w5,
+        w6: first.walls.w6,
+        w7: first.walls.w7,
+      },
+      wallOrder: ['w1', 'w5', 'w6', 'w7', 'w3', 'w4'],
+      zones: {
+        ...first.zones,
+        [leftZoneId]: {
+          ...first.zones[leftZoneId],
+          kind: 'room',
+          name: 'Master',
+        },
+        [rightZoneId]: {
+          ...first.zones[rightZoneId],
+          kind: 'room',
+          name: 'Guest',
+        },
+      },
+      levels: {
+        ...first.levels,
+        [levelId]: {
+          ...first.levels[levelId],
+          vertexIds: ['v1', 'v2', 'v3', 'v4', 'v5', 'v6'],
+          wallIds: ['w1', 'w5', 'w6', 'w7', 'w3', 'w4'],
+          zoneIds: [leftZoneId, rightZoneId],
+        },
+      },
+    };
+
+    const result = rebuildZones(mergedDocument);
+
+    expect(result.zoneOrder).toHaveLength(1);
+    expect(result.zoneOrder[0]).toBe(leftZoneId);
+    expect(result.zones[leftZoneId]).toMatchObject({
+      kind: 'room',
+      name: 'Master',
+    });
+  });
+
   it('drops the zone when the walls no longer form a closed loop even if the input still contains the old zone', () => {
     const rectangleDocument = createDocumentWithWalls({
       vertices: [

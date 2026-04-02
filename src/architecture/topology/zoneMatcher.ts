@@ -22,6 +22,7 @@ interface LoopMatchState {
 }
 
 interface OverlapMatchCandidate {
+  adjacencyContinuity: number;
   centroidDistance: number;
   boundarySimilarity: number;
   loopIndex: number;
@@ -64,6 +65,8 @@ const MIN_ZONE_ID_OVERLAP_RATIO = 0.6;
 const MIN_AMBIGUITY_GAP_RATIO = 0.1;
 const MIN_SPLIT_ZONE_OVERLAP_RATIO = 0.2;
 const MIN_SPLIT_ZONE_WINNER_RATIO = 0.4;
+const MIN_MERGE_ZONE_OVERLAP_RATIO = 0.2;
+const MIN_MERGE_ZONE_WINNER_RATIO = 0.4;
 
 function createLevelScopedSignature(levelId: string, signature: string): string {
   return `${levelId}::${signature}`;
@@ -86,6 +89,49 @@ function computeBoundarySimilarity(previousSignature: string, nextSignature: str
   }
 
   return sharedParts / previousParts.length;
+}
+
+function buildSignatureAdjacencySet(signature: string): Set<string> {
+  const parts = signature.split('|').filter(Boolean);
+
+  if (parts.length < 2) {
+    return new Set();
+  }
+
+  const edges = new Set<string>();
+
+  for (let index = 0; index < parts.length; index += 1) {
+    const current = parts[index];
+    const next = parts[(index + 1) % parts.length];
+
+    if (!current || !next) {
+      continue;
+    }
+
+    const edge = current <= next ? `${current}|${next}` : `${next}|${current}`;
+    edges.add(edge);
+  }
+
+  return edges;
+}
+
+function computeAdjacencyContinuity(previousSignature: string, nextSignature: string): number {
+  const previousEdges = buildSignatureAdjacencySet(previousSignature);
+  const nextEdges = buildSignatureAdjacencySet(nextSignature);
+
+  if (previousEdges.size === 0) {
+    return 0;
+  }
+
+  let sharedEdges = 0;
+
+  for (const edge of previousEdges) {
+    if (nextEdges.has(edge)) {
+      sharedEdges += 1;
+    }
+  }
+
+  return sharedEdges / previousEdges.size;
 }
 
 function computeSignedArea(points: Point2[]): number {
@@ -237,6 +283,95 @@ interface OverlapCandidateCollections {
   byZoneId: Map<string, OverlapMatchCandidate[]>;
 }
 
+function compareOverlapCandidates(
+  left: OverlapMatchCandidate,
+  right: OverlapMatchCandidate
+): number {
+  if (right.overlapArea !== left.overlapArea) {
+    return right.overlapArea - left.overlapArea;
+  }
+
+  if (right.overlapOldRatio !== left.overlapOldRatio) {
+    return right.overlapOldRatio - left.overlapOldRatio;
+  }
+
+  if (right.overlapNewRatio !== left.overlapNewRatio) {
+    return right.overlapNewRatio - left.overlapNewRatio;
+  }
+
+  if (left.centroidDistance !== right.centroidDistance) {
+    return left.centroidDistance - right.centroidDistance;
+  }
+
+  if (right.boundarySimilarity !== left.boundarySimilarity) {
+    return right.boundarySimilarity - left.boundarySimilarity;
+  }
+
+  return left.zoneId.localeCompare(right.zoneId);
+}
+
+function compareSplitCandidates(
+  left: OverlapMatchCandidate,
+  right: OverlapMatchCandidate
+): number {
+  if (right.overlapArea !== left.overlapArea) {
+    return right.overlapArea - left.overlapArea;
+  }
+
+  if (right.overlapOldRatio !== left.overlapOldRatio) {
+    return right.overlapOldRatio - left.overlapOldRatio;
+  }
+
+  if (left.centroidDistance !== right.centroidDistance) {
+    return left.centroidDistance - right.centroidDistance;
+  }
+
+  if (right.boundarySimilarity !== left.boundarySimilarity) {
+    return right.boundarySimilarity - left.boundarySimilarity;
+  }
+
+  return left.zoneId.localeCompare(right.zoneId);
+}
+
+function compareMergeCandidates(
+  left: OverlapMatchCandidate,
+  right: OverlapMatchCandidate
+): number {
+  if (right.overlapArea !== left.overlapArea) {
+    return right.overlapArea - left.overlapArea;
+  }
+
+  if (right.overlapNewRatio !== left.overlapNewRatio) {
+    return right.overlapNewRatio - left.overlapNewRatio;
+  }
+
+  if (left.centroidDistance !== right.centroidDistance) {
+    return left.centroidDistance - right.centroidDistance;
+  }
+
+  if (right.adjacencyContinuity !== left.adjacencyContinuity) {
+    return right.adjacencyContinuity - left.adjacencyContinuity;
+  }
+
+  return left.zoneId.localeCompare(right.zoneId);
+}
+
+function hasAmbiguousWinner(
+  bestCandidate: OverlapMatchCandidate | undefined,
+  secondCandidate: OverlapMatchCandidate | undefined,
+  score: (candidate: OverlapMatchCandidate) => number
+): boolean {
+  if (!bestCandidate || !secondCandidate) {
+    return false;
+  }
+
+  const bestScore = score(bestCandidate);
+  const secondScore = score(secondCandidate);
+
+  return bestScore > 0 &&
+    (bestScore - secondScore) / bestScore < MIN_AMBIGUITY_GAP_RATIO;
+}
+
 function collectOverlapCandidates(
   previousZones: PreviousZoneMatchState[],
   nextLoops: LoopMatchState[],
@@ -288,6 +423,10 @@ function collectOverlapCandidates(
       }
 
       const candidate = {
+        adjacencyContinuity: computeAdjacencyContinuity(
+          previousZone.signature,
+          loop.signature
+        ),
         boundarySimilarity: computeBoundarySimilarity(
           previousZone.signature,
           loop.signature
@@ -621,29 +760,7 @@ function matchByOverlap(
       continue;
     }
 
-    filteredCandidates.sort((left, right) => {
-      if (right.overlapArea !== left.overlapArea) {
-        return right.overlapArea - left.overlapArea;
-      }
-
-      if (right.overlapOldRatio !== left.overlapOldRatio) {
-        return right.overlapOldRatio - left.overlapOldRatio;
-      }
-
-      if (right.overlapNewRatio !== left.overlapNewRatio) {
-        return right.overlapNewRatio - left.overlapNewRatio;
-      }
-
-      if (left.centroidDistance !== right.centroidDistance) {
-        return left.centroidDistance - right.centroidDistance;
-      }
-
-      if (right.boundarySimilarity !== left.boundarySimilarity) {
-        return right.boundarySimilarity - left.boundarySimilarity;
-      }
-
-      return left.zoneId.localeCompare(right.zoneId);
-    });
+    filteredCandidates.sort(compareOverlapCandidates);
 
     const bestCandidate = filteredCandidates[0];
     const secondCandidate = filteredCandidates[1];
@@ -652,11 +769,7 @@ function matchByOverlap(
       continue;
     }
 
-    if (
-      secondCandidate &&
-      bestCandidate.overlapArea > 0 &&
-      (bestCandidate.overlapArea - secondCandidate.overlapArea) / bestCandidate.overlapArea < MIN_AMBIGUITY_GAP_RATIO
-    ) {
+    if (hasAmbiguousWinner(bestCandidate, secondCandidate, (candidate) => candidate.overlapArea)) {
       continue;
     }
 
@@ -736,25 +849,7 @@ function matchBySplit(
       continue;
     }
 
-    candidates.sort((left, right) => {
-      if (right.overlapArea !== left.overlapArea) {
-        return right.overlapArea - left.overlapArea;
-      }
-
-      if (right.overlapOldRatio !== left.overlapOldRatio) {
-        return right.overlapOldRatio - left.overlapOldRatio;
-      }
-
-      if (left.centroidDistance !== right.centroidDistance) {
-        return left.centroidDistance - right.centroidDistance;
-      }
-
-      if (right.boundarySimilarity !== left.boundarySimilarity) {
-        return right.boundarySimilarity - left.boundarySimilarity;
-      }
-
-      return left.zoneId.localeCompare(right.zoneId);
-    });
+    candidates.sort(compareSplitCandidates);
 
     const bestCandidate = candidates[0];
     const secondCandidate = candidates[1];
@@ -763,11 +858,7 @@ function matchBySplit(
       continue;
     }
 
-    if (
-      secondCandidate &&
-      bestCandidate.overlapArea > 0 &&
-      (bestCandidate.overlapArea - secondCandidate.overlapArea) / bestCandidate.overlapArea < MIN_AMBIGUITY_GAP_RATIO
-    ) {
+    if (hasAmbiguousWinner(bestCandidate, secondCandidate, (candidate) => candidate.overlapArea)) {
       continue;
     }
 
@@ -778,21 +869,73 @@ function matchBySplit(
   return reusableZoneIdByLoopIndex;
 }
 
+function matchByMerge(
+  previousZones: PreviousZoneMatchState[],
+  nextLoops: LoopMatchState[],
+  reusableZoneIdByLoopIndex: Map<number, string>,
+  epsilon: number
+): Map<number, string> {
+  const { byLoopIndex } = collectOverlapCandidates(
+    previousZones,
+    nextLoops,
+    reusableZoneIdByLoopIndex,
+    epsilon
+  );
+  const usedZoneIds = new Set(reusableZoneIdByLoopIndex.values());
+
+  for (const [loopIndex, candidates] of byLoopIndex.entries()) {
+    const filteredCandidates = candidates.filter((candidate) => (
+      candidate.overlapNewRatio >= MIN_MERGE_ZONE_OVERLAP_RATIO &&
+      !reusableZoneIdByLoopIndex.has(candidate.loopIndex) &&
+      !usedZoneIds.has(candidate.zoneId)
+    ));
+
+    if (filteredCandidates.length < 2) {
+      continue;
+    }
+
+    filteredCandidates.sort(compareMergeCandidates);
+
+    const bestCandidate = filteredCandidates[0];
+    const secondCandidate = filteredCandidates[1];
+
+    if (!bestCandidate || bestCandidate.overlapNewRatio < MIN_MERGE_ZONE_WINNER_RATIO) {
+      continue;
+    }
+
+    if (hasAmbiguousWinner(bestCandidate, secondCandidate, (candidate) => candidate.overlapArea)) {
+      continue;
+    }
+
+    reusableZoneIdByLoopIndex.set(loopIndex, bestCandidate.zoneId);
+    usedZoneIds.add(bestCandidate.zoneId);
+  }
+
+  return reusableZoneIdByLoopIndex;
+}
+
 export function matchZones(args: MatchZonesArgs): MatchZonesResult {
   const previousZones: PreviousZoneMatchState[] = args.previousZones;
   const nextLoops: LoopMatchState[] = args.nextLoops;
   const reusableZoneIdByLoopIndex = matchBySignature(previousZones, nextLoops);
-  const overlappedZoneIds = matchByOverlap(
+  const overlappedZoneIdByLoopIndex = matchByOverlap(
     previousZones,
     nextLoops,
     reusableZoneIdByLoopIndex,
     args.epsilon
   );
+  const splitZoneIds = matchBySplit(
+    previousZones,
+    nextLoops,
+    overlappedZoneIdByLoopIndex,
+    args.epsilon
+  );
+
   return {
-    reusedZoneIdByLoopIndex: matchBySplit(
+    reusedZoneIdByLoopIndex: matchByMerge(
       previousZones,
       nextLoops,
-      overlappedZoneIds,
+      splitZoneIds,
       args.epsilon
     ),
   };
