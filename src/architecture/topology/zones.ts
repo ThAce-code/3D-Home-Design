@@ -6,6 +6,8 @@ import {
 import type { Zone } from '../domain/zone.js';
 import { findClosedLoops } from './loops.js';
 
+export const MIN_VALID_ZONE_AREA = 0.25;
+
 // V1 only accepts disconnected simple loops as zone candidates. Shared-wall
 // graphs and full face extraction remain explicitly out of scope for now.
 function rotateBoundaryToSmallestVertexId(boundaryVertexIds: string[]): string[] {
@@ -39,6 +41,30 @@ function createBoundarySignature(boundaryVertexIds: string[]): string {
   return canonicalizeBoundaryVertexIds(boundaryVertexIds).join('|');
 }
 
+function computeBoundaryArea(
+  document: ArchitectureDocument,
+  boundaryVertexIds: string[]
+): number {
+  if (boundaryVertexIds.length < 3) {
+    return 0;
+  }
+
+  let area = 0;
+
+  for (let index = 0; index < boundaryVertexIds.length; index += 1) {
+    const currentVertex = document.vertices[boundaryVertexIds[index]];
+    const nextVertex = document.vertices[boundaryVertexIds[(index + 1) % boundaryVertexIds.length]];
+
+    if (!currentVertex || !nextVertex) {
+      return 0;
+    }
+
+    area += (currentVertex.x * nextVertex.y) - (nextVertex.x * currentVertex.y);
+  }
+
+  return Math.abs(area) / 2;
+}
+
 export function rebuildZones(
   document: ArchitectureDocument,
   epsilon = 1e-6
@@ -69,9 +95,11 @@ export function rebuildZones(
     return {
       ...loop,
       canonicalBoundaryVertexIds,
+      area: computeBoundaryArea(next, canonicalBoundaryVertexIds),
       signature: canonicalBoundaryVertexIds.join('|'),
     };
-  }).sort((left, right) => left.signature.localeCompare(right.signature));
+  }).filter((loop) => loop.area >= MIN_VALID_ZONE_AREA)
+    .sort((left, right) => left.signature.localeCompare(right.signature));
 
   next.zones = {};
   next.zoneOrder = [];

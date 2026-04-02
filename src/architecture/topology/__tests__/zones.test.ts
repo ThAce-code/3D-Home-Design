@@ -447,4 +447,25 @@ describe('rebuildZones', () => {
 
     expect(result.zoneOrder).toHaveLength(3);
   });
+
+  it('filters out closed loops smaller than the minimum valid zone area', () => {
+    const tinyLoopDocument = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 0, y: 0 },
+        { id: 'v2', x: 0.4, y: 0 },
+        { id: 'v3', x: 0.4, y: 0.4 },
+        { id: 'v4', x: 0, y: 0.4 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v3' },
+        { id: 'w3', startVertexId: 'v3', endVertexId: 'v4' },
+        { id: 'w4', startVertexId: 'v4', endVertexId: 'v1' },
+      ],
+    });
+
+    const result = rebuildZones(tinyLoopDocument);
+
+    expect(result.zoneOrder).toEqual([]);
+  });
 });
