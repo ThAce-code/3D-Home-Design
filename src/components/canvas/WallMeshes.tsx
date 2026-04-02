@@ -3,16 +3,15 @@ import * as THREE from 'three';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import { buildWallMeshDescriptors } from '../../architecture/geometry/wallMeshes.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
-import {
-  applyArchitectureInteractionCommands,
-  getWallMeshPointerDownEffects,
-} from '../../architecture/editing/interaction.js';
+import { createArchitectureMeshStoreController } from '../../architecture/editing/meshController.js';
+
+const meshController = createArchitectureMeshStoreController({
+  editorStore: useArchitectureEditorStore,
+  documentStore: useArchitectureDocumentStore,
+});
 
 export default function WallMeshes() {
   const document = useArchitectureDocumentStore((state) => state.document);
-  const replaceDocument = useArchitectureDocumentStore((state) => state.replaceDocument);
-  const activeTool = useArchitectureEditorStore((state) => state.activeTool);
-  const setSelection = useArchitectureEditorStore((state) => state.setSelection);
   const walls = buildWallMeshDescriptors(document);
   const wallShapes = useMemo(() => walls.map((wall) => {
     const shape = new THREE.Shape();
@@ -48,32 +47,7 @@ export default function WallMeshes() {
             name={`wall:${wall.wallId}`}
             rotation={[-Math.PI / 2, 0, 0]}
             onPointerDown={(event) => {
-              const intersections = ('intersections' in event && Array.isArray(event.intersections))
-                ? event.intersections
-                : ('nativeEvent' in event
-                  && event.nativeEvent
-                  && 'intersections' in event.nativeEvent
-                  && Array.isArray(event.nativeEvent.intersections)
-                  ? event.nativeEvent.intersections
-                  : []);
-              const effects = getWallMeshPointerDownEffects({
-                activeTool,
-                document,
-                wallId: wall.wallId,
-                intersections: intersections.map((intersection) => ({
-                  objectName: intersection.object?.name ?? '',
-                  point: [intersection.point.x, intersection.point.z] as [number, number],
-                })),
-              });
-
-              if (effects.shouldStopPropagation) {
-                event.stopPropagation();
-              }
-
-              applyArchitectureInteractionCommands(effects.commands, {
-                setSelection,
-                replaceDocument,
-              });
+              meshController.handleWallPointerDown(wall.wallId, event);
             }}
           >
             <extrudeGeometry args={[wall.shape, wall.extrudeSettings]} />

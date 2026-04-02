@@ -175,6 +175,24 @@ describe('editor panel theming', () => {
     expect(input?.style.border).toBe(`1px solid ${editorThemeVars.fieldBorder}`);
   });
 
+  it('updates wall thickness through the wall property panel', () => {
+    act(() => {
+      useArchitectureDocumentStore.getState().replaceDocument(createDocumentWithWallAndZone());
+      root.render(<WallPropertyPanel wallId="w1" />);
+    });
+
+    const thicknessInput = mountNode.querySelector('input') as HTMLInputElement | null;
+    expect(thicknessInput).not.toBeNull();
+
+    act(() => {
+      const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+      setValue?.call(thicknessInput, '0.42');
+      thicknessInput!.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    expect(useArchitectureDocumentStore.getState().document.walls.w1?.thickness).toBe(0.42);
+  });
+
   it('renders the zone property panel with editor surface tokens', () => {
     act(() => {
       useArchitectureDocumentStore.getState().replaceDocument(createDocumentWithWallAndZone());

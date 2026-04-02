@@ -1,14 +1,17 @@
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
-import { reduceArchitectureCommand } from '../../architecture/editing/reducers.js';
+import { createWallPropertyStoreController } from '../../architecture/editing/propertyController.js';
 import { editorThemeVars } from '../../theme/editorTheme.js';
 
 interface Props {
   wallId: string;
 }
 
+const wallPropertyController = createWallPropertyStoreController({
+  documentStore: useArchitectureDocumentStore,
+});
+
 export default function WallPropertyPanel({ wallId }: Props) {
   const document = useArchitectureDocumentStore((state) => state.document);
-  const replaceDocument = useArchitectureDocumentStore((state) => state.replaceDocument);
   const wall = document.walls[wallId];
 
   if (!wall) {
@@ -19,14 +22,6 @@ export default function WallPropertyPanel({ wallId }: Props) {
     background: editorThemeVars.field,
     border: `1px solid ${editorThemeVars.fieldBorder}`,
     color: editorThemeVars.text,
-  };
-
-  const patchWall = (patch: Partial<Pick<typeof wall, 'thickness' | 'height' | 'kind'>>) => {
-    replaceDocument(reduceArchitectureCommand(document, {
-      type: 'SET_WALL_PROPS',
-      wallId,
-      patch,
-    }));
   };
 
   return (
@@ -61,7 +56,7 @@ export default function WallPropertyPanel({ wallId }: Props) {
               if (!Number.isFinite(next) || next <= 0) {
                 return;
               }
-              patchWall({ thickness: next });
+              wallPropertyController.patchWall(wallId, { thickness: next });
             }}
             className="flex-1 rounded-md px-2 py-1 text-sm outline-none"
             style={inputStyle}
@@ -80,7 +75,7 @@ export default function WallPropertyPanel({ wallId }: Props) {
               if (!Number.isFinite(next) || next <= 0) {
                 return;
               }
-              patchWall({ height: next });
+              wallPropertyController.patchWall(wallId, { height: next });
             }}
             className="flex-1 rounded-md px-2 py-1 text-sm outline-none"
             style={inputStyle}
@@ -91,7 +86,7 @@ export default function WallPropertyPanel({ wallId }: Props) {
           <span className="w-16 text-xs" style={{ color: editorThemeVars.textMuted }}>类型</span>
           <select
             value={wall.kind}
-            onChange={(event) => patchWall({ kind: event.target.value as typeof wall.kind })}
+            onChange={(event) => wallPropertyController.patchWall(wallId, { kind: event.target.value as typeof wall.kind })}
             className="flex-1 rounded-md px-2 py-1 text-sm outline-none"
             style={inputStyle}
           >

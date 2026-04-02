@@ -3,15 +3,15 @@ import * as THREE from 'three';
 import { buildZoneMeshDescriptors } from '../../architecture/geometry/zoneMeshes.js';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
-import {
-  applyArchitectureInteractionCommands,
-  getZoneMeshPointerDownEffects,
-} from '../../architecture/editing/interaction.js';
+import { createArchitectureMeshStoreController } from '../../architecture/editing/meshController.js';
+
+const meshController = createArchitectureMeshStoreController({
+  editorStore: useArchitectureEditorStore,
+  documentStore: useArchitectureDocumentStore,
+});
 
 export default function ZoneMeshes() {
   const document = useArchitectureDocumentStore((state) => state.document);
-  const activeTool = useArchitectureEditorStore((state) => state.activeTool);
-  const setSelection = useArchitectureEditorStore((state) => state.setSelection);
   const zoneMeshes = buildZoneMeshDescriptors(document);
   const shapes = useMemo(() => zoneMeshes.map((polygon) => {
     const shape = new THREE.Shape();
@@ -42,18 +42,7 @@ export default function ZoneMeshes() {
           rotation={shape.rotation}
           position={shape.position}
           onPointerDown={(event) => {
-            const effects = getZoneMeshPointerDownEffects({
-              activeTool,
-              zoneId: shape.zoneId,
-            });
-
-            if (effects.shouldStopPropagation) {
-              event.stopPropagation();
-            }
-
-            applyArchitectureInteractionCommands(effects.commands, {
-              setSelection,
-            });
+            meshController.handleZonePointerDown(shape.zoneId, event);
           }}
         >
           <shapeGeometry args={[shape.shape]} />
