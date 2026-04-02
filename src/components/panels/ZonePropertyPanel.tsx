@@ -34,7 +34,7 @@ export default function ZonePropertyPanel({ zoneId }: Props) {
           kind: {zone.kind}
         </p>
         <p className="text-sm" style={{ color: editorThemeVars.text }}>
-          boundary vertices: {zone.boundaryVertexIds.length}
+          boundary points: {zone.boundaryVertexIds.length}
         </p>
       </div>
     </div>

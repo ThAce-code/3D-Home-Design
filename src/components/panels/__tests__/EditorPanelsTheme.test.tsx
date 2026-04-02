@@ -206,5 +206,7 @@ describe('editor panel theming', () => {
     expect(panel?.style.background).toBe(editorThemeVars.surfaceStrong);
     expect(panel?.style.borderColor).toBe(editorThemeVars.border);
     expect(heading?.style.color).toBe(editorThemeVars.text);
+    expect(mountNode.textContent).toMatch(/boundary points:/i);
+    expect(mountNode.textContent).not.toMatch(/boundary vertices:/i);
   });
 });
