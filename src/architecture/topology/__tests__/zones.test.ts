@@ -263,6 +263,76 @@ describe('rebuildZones', () => {
     expect(result.zoneOrder[0]).toBe(zoneId);
   });
 
+  it('reuses the same zone id when a boundary edge is split by a collinear vertex', () => {
+    const rectangleDocument = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 0, y: 0 },
+        { id: 'v2', x: 4, y: 0 },
+        { id: 'v3', x: 4, y: 3 },
+        { id: 'v4', x: 0, y: 3 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v3' },
+        { id: 'w3', startVertexId: 'v3', endVertexId: 'v4' },
+        { id: 'w4', startVertexId: 'v4', endVertexId: 'v1' },
+      ],
+    });
+    const first = rebuildZones(rectangleDocument);
+    const zoneId = first.zoneOrder[0];
+    const levelId = first.levelOrder[0];
+    const splitInput: ArchitectureDocument = {
+      ...first,
+      vertices: {
+        ...first.vertices,
+        v5: { id: 'v5', x: 2, y: 0 },
+      },
+      walls: {
+        w1a: {
+          ...first.walls.w1,
+          id: 'w1a',
+          startVertexId: 'v1',
+          endVertexId: 'v5',
+        },
+        w1b: {
+          ...first.walls.w1,
+          id: 'w1b',
+          startVertexId: 'v5',
+          endVertexId: 'v2',
+        },
+        w2: first.walls.w2,
+        w3: first.walls.w3,
+        w4: first.walls.w4,
+      },
+      wallOrder: ['w1a', 'w1b', 'w2', 'w3', 'w4'],
+      zones: {
+        ...first.zones,
+        [zoneId]: {
+          ...first.zones[zoneId],
+          kind: 'room',
+          name: 'Living Room',
+        },
+      },
+      levels: {
+        ...first.levels,
+        [levelId]: {
+          ...first.levels[levelId],
+          vertexIds: ['v1', 'v5', 'v2', 'v3', 'v4'],
+          wallIds: ['w1a', 'w1b', 'w2', 'w3', 'w4'],
+          zoneIds: [zoneId],
+        },
+      },
+    };
+
+    const result = rebuildZones(splitInput);
+
+    expect(result.zoneOrder[0]).toBe(zoneId);
+    expect(result.zones[zoneId]).toMatchObject({
+      kind: 'room',
+      name: 'Living Room',
+    });
+  });
+
   it('drops the zone when the walls no longer form a closed loop even if the input still contains the old zone', () => {
     const rectangleDocument = createDocumentWithWalls({
       vertices: [

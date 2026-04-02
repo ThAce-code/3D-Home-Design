@@ -4,6 +4,7 @@ import {
   type ArchitectureDocument,
 } from '../domain/document.js';
 import type { Zone } from '../domain/zone.js';
+import { cross2D, dot2D, subtractPoints, type Point2 } from './math.js';
 import { findClosedLoops } from './loops.js';
 
 export const MIN_VALID_ZONE_AREA = 0.25;
@@ -37,8 +38,96 @@ export function canonicalizeBoundaryVertexIds(boundaryVertexIds: string[]): stri
   return forwardSignature <= reverseSignature ? forward : reverse;
 }
 
-function createBoundarySignature(boundaryVertexIds: string[]): string {
-  return canonicalizeBoundaryVertexIds(boundaryVertexIds).join('|');
+function getVertexPoint(
+  document: ArchitectureDocument,
+  vertexId: string
+): Point2 | null {
+  const vertex = document.vertices[vertexId];
+
+  if (!vertex) {
+    return null;
+  }
+
+  return [vertex.x, vertex.y];
+}
+
+function isRedundantBoundaryVertex(
+  document: ArchitectureDocument,
+  previousVertexId: string,
+  currentVertexId: string,
+  nextVertexId: string,
+  epsilon: number
+): boolean {
+  const previousPoint = getVertexPoint(document, previousVertexId);
+  const currentPoint = getVertexPoint(document, currentVertexId);
+  const nextPoint = getVertexPoint(document, nextVertexId);
+
+  if (!previousPoint || !currentPoint || !nextPoint) {
+    return false;
+  }
+
+  const previousToNext = subtractPoints(nextPoint, previousPoint);
+  const previousToCurrent = subtractPoints(currentPoint, previousPoint);
+  const currentToNext = subtractPoints(currentPoint, nextPoint);
+
+  if (Math.abs(cross2D(previousToNext, previousToCurrent)) > epsilon) {
+    return false;
+  }
+
+  return dot2D(previousToCurrent, currentToNext) <= epsilon;
+}
+
+function simplifyBoundaryVertexIds(
+  document: ArchitectureDocument,
+  boundaryVertexIds: string[],
+  epsilon: number
+): string[] {
+  if (boundaryVertexIds.length <= 3) {
+    return [...boundaryVertexIds];
+  }
+
+  const simplified = [...boundaryVertexIds];
+  let changed = true;
+
+  while (changed && simplified.length > 3) {
+    changed = false;
+
+    for (let index = 0; index < simplified.length; index += 1) {
+      const previousVertexId = simplified[(index - 1 + simplified.length) % simplified.length];
+      const currentVertexId = simplified[index];
+      const nextVertexId = simplified[(index + 1) % simplified.length];
+
+      if (!previousVertexId || !currentVertexId || !nextVertexId) {
+        continue;
+      }
+
+      if (!isRedundantBoundaryVertex(
+        document,
+        previousVertexId,
+        currentVertexId,
+        nextVertexId,
+        epsilon
+      )) {
+        continue;
+      }
+
+      simplified.splice(index, 1);
+      changed = true;
+      break;
+    }
+  }
+
+  return simplified;
+}
+
+function createBoundarySignature(
+  document: ArchitectureDocument,
+  boundaryVertexIds: string[],
+  epsilon: number
+): string {
+  return canonicalizeBoundaryVertexIds(
+    simplifyBoundaryVertexIds(document, boundaryVertexIds, epsilon)
+  ).join('|');
 }
 
 function computeBoundaryArea(
@@ -83,7 +172,7 @@ export function rebuildZones(
     }
 
     previousZoneIdBySignature.set(
-      createBoundarySignature(zone.boundaryVertexIds),
+      createBoundarySignature(document, zone.boundaryVertexIds, epsilon),
       zoneId
     );
     previousZoneById.set(zoneId, zone);
@@ -96,7 +185,7 @@ export function rebuildZones(
       ...loop,
       canonicalBoundaryVertexIds,
       area: computeBoundaryArea(next, canonicalBoundaryVertexIds),
-      signature: canonicalBoundaryVertexIds.join('|'),
+      signature: createBoundarySignature(next, canonicalBoundaryVertexIds, epsilon),
     };
   }).filter((loop) => loop.area >= MIN_VALID_ZONE_AREA)
     .sort((left, right) => left.signature.localeCompare(right.signature));
