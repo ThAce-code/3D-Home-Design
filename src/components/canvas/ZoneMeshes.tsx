@@ -3,6 +3,10 @@ import * as THREE from 'three';
 import { buildZoneMeshDescriptors } from '../../architecture/geometry/zoneMeshes.js';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
+import {
+  applyArchitectureInteractionCommands,
+  getZoneMeshPointerDownEffects,
+} from '../../architecture/editing/interaction.js';
 
 export default function ZoneMeshes() {
   const document = useArchitectureDocumentStore((state) => state.document);
@@ -38,15 +42,17 @@ export default function ZoneMeshes() {
           rotation={shape.rotation}
           position={shape.position}
           onPointerDown={(event) => {
-            if (activeTool !== 'select') {
-              return;
+            const effects = getZoneMeshPointerDownEffects({
+              activeTool,
+              zoneId: shape.zoneId,
+            });
+
+            if (effects.shouldStopPropagation) {
+              event.stopPropagation();
             }
 
-            event.stopPropagation();
-            setSelection({
-              vertexIds: [],
-              wallIds: [],
-              zoneIds: [shape.zoneId],
+            applyArchitectureInteractionCommands(effects.commands, {
+              setSelection,
             });
           }}
         >

@@ -2,10 +2,11 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import { buildWallMeshDescriptors } from '../../architecture/geometry/wallMeshes.js';
-import { findZoneIdContainingPoint } from '../../architecture/geometry/zoneSelection.js';
-import { isPointNearWallFootprint } from '../../architecture/geometry/wallSelection.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
-import { reduceArchitectureCommand } from '../../architecture/editing/reducers.js';
+import {
+  applyArchitectureInteractionCommands,
+  getWallMeshPointerDownEffects,
+} from '../../architecture/editing/interaction.js';
 
 export default function WallMeshes() {
   const document = useArchitectureDocumentStore((state) => state.document);
@@ -47,24 +48,6 @@ export default function WallMeshes() {
             name={`wall:${wall.wallId}`}
             rotation={[-Math.PI / 2, 0, 0]}
             onPointerDown={(event) => {
-              if (activeTool === 'delete') {
-                event.stopPropagation();
-                replaceDocument(reduceArchitectureCommand(document, {
-                  type: 'DELETE_WALL',
-                  wallId: wall.wallId,
-                }));
-                setSelection({
-                  vertexIds: [],
-                  wallIds: [],
-                  zoneIds: [],
-                });
-                return;
-              }
-
-              if (activeTool !== 'select') {
-                return;
-              }
-
               const intersections = ('intersections' in event && Array.isArray(event.intersections))
                 ? event.intersections
                 : ('nativeEvent' in event
@@ -73,36 +56,23 @@ export default function WallMeshes() {
                   && Array.isArray(event.nativeEvent.intersections)
                   ? event.nativeEvent.intersections
                   : []);
-              const groundIntersection = intersections.find((intersection) => {
-                  const name = intersection.object?.name ?? '';
+              const effects = getWallMeshPointerDownEffects({
+                activeTool,
+                document,
+                wallId: wall.wallId,
+                intersections: intersections.map((intersection) => ({
+                  objectName: intersection.object?.name ?? '',
+                  point: [intersection.point.x, intersection.point.z] as [number, number],
+                })),
+              });
 
-                  return name === 'architecture-interaction-plane' || name === 'floor-plane';
-                });
-              const groundPoint = groundIntersection
-                ? [groundIntersection.point.x, groundIntersection.point.z] as [number, number]
-                : null;
-              const zoneId = groundPoint ? findZoneIdContainingPoint(document, groundPoint) : null;
-              const shouldPreferZone = Boolean(
-                zoneId
-                && groundPoint
-                && !isPointNearWallFootprint(document, wall.wallId, groundPoint)
-              );
-
-              event.stopPropagation();
-
-              if (shouldPreferZone && zoneId) {
-                setSelection({
-                  vertexIds: [],
-                  wallIds: [],
-                  zoneIds: [zoneId],
-                });
-                return;
+              if (effects.shouldStopPropagation) {
+                event.stopPropagation();
               }
 
-              setSelection({
-                vertexIds: [],
-                wallIds: [wall.wallId],
-                zoneIds: [],
+              applyArchitectureInteractionCommands(effects.commands, {
+                setSelection,
+                replaceDocument,
               });
             }}
           >

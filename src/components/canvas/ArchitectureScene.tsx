@@ -2,11 +2,14 @@ import { useEffect } from 'react';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import {
-  advanceWallDraftInteraction,
-  updateWallDraftPointer,
+  applyArchitectureInteractionCommands,
+  getArchitectureSceneContextMenuEffects,
+  getArchitectureSceneKeyDownEffects,
+  getArchitectureScenePoint,
+  getArchitectureSceneKeyUpEffects,
+  getArchitectureScenePointerDownEffects,
+  getArchitectureScenePointerMoveEffects,
 } from '../../architecture/editing/interaction.js';
-import { resolveWallDraftSnap } from '../../architecture/geometry/wallDraftSnap.js';
-import { findZoneIdContainingPoint } from '../../architecture/geometry/zoneSelection.js';
 import WallMeshes from './WallMeshes.js';
 import ZoneMeshes from './ZoneMeshes.js';
 import DraftWallPreview from './DraftWallPreview.js';
@@ -27,45 +30,40 @@ export default function ArchitectureScene() {
   const setWallClosurePreview = useArchitectureEditorStore((state) => state.setWallClosurePreview);
   const setWallToolModifiers = useArchitectureEditorStore((state) => state.setWallToolModifiers);
   const setWallNumericEntryEnabled = useArchitectureEditorStore((state) => state.setWallNumericEntryEnabled);
+  const interactionHandlers = {
+    setSelection,
+    setWallClosurePreview,
+    startDraftWall,
+    replaceDocument,
+    commitDraftWall,
+    setCursorPoint,
+    updateDraftWall,
+    setWallToolModifiers,
+    setWallNumericEntryEnabled,
+    cancelDraftWall,
+  };
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (activeTool !== 'wall') {
-        return;
-      }
+      const effects = getArchitectureSceneKeyDownEffects({
+        activeTool,
+        key: event.key,
+      });
 
-      if (event.key === 'Shift') {
-        setWallToolModifiers({ shiftKey: true });
-      }
-
-      if (event.key === 'Alt') {
-        setWallToolModifiers({ altKey: true });
-      }
-
-      if (event.key === 'Tab') {
+      if (effects.shouldPreventDefault) {
         event.preventDefault();
-        setWallNumericEntryEnabled(true);
       }
 
-      if (event.key === 'Escape') {
-        setWallClosurePreview(null);
-        setWallNumericEntryEnabled(false);
-        cancelDraftWall();
-      }
+      applyArchitectureInteractionCommands(effects.commands, interactionHandlers);
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
-      if (activeTool !== 'wall') {
-        return;
-      }
+      const effects = getArchitectureSceneKeyUpEffects({
+        activeTool,
+        key: event.key,
+      });
 
-      if (event.key === 'Shift') {
-        setWallToolModifiers({ shiftKey: false });
-      }
-
-      if (event.key === 'Alt') {
-        setWallToolModifiers({ altKey: false });
-      }
+      applyArchitectureInteractionCommands(effects.commands, interactionHandlers);
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -83,42 +81,13 @@ export default function ArchitectureScene() {
     setWallToolModifiers,
   ]);
 
-  const getPoint = (event: { point?: { x: number; z: number } }) => {
-    if (!event.point) {
-      return null;
-    }
-
-    return [event.point.x, event.point.z] as [number, number];
-  };
-
   const handlePointerDown = (event: { stopPropagation?: () => void; point?: { x: number; z: number } }) => {
-    const point = getPoint(event);
+    const point = getArchitectureScenePoint(event);
     if (!point) {
       return;
     }
 
-    if (activeTool === 'select') {
-      const zoneId = findZoneIdContainingPoint(document, point);
-      if (!zoneId) {
-        return;
-      }
-
-      event.stopPropagation?.();
-      setSelection({
-        vertexIds: [],
-        wallIds: [],
-        zoneIds: [zoneId],
-      });
-      return;
-    }
-
-    if (activeTool !== 'wall') {
-      return;
-    }
-
-    event.stopPropagation?.();
-
-    const next = advanceWallDraftInteraction({
+    const effects = getArchitectureScenePointerDownEffects({
       activeTool,
       document,
       draftWall,
@@ -127,48 +96,20 @@ export default function ArchitectureScene() {
       wallTool,
     });
 
-    if (!draftWall && next.draftWall) {
-      setWallClosurePreview(null);
-      startDraftWall(next.draftWall.startPoint, next.draftWall.snappedVertexId);
-      return;
+    if (effects.shouldStopPropagation) {
+      event.stopPropagation?.();
     }
 
-    if (!next.draftWall) {
-      setWallClosurePreview(null);
-      replaceDocument(next.document);
-      commitDraftWall();
-    }
+    applyArchitectureInteractionCommands(effects.commands, interactionHandlers);
   };
 
   const handlePointerMove = (event: { point?: { x: number; z: number } }) => {
-    const point = getPoint(event);
+    const point = getArchitectureScenePoint(event);
     if (!point) {
       return;
     }
 
-    if (activeTool === 'wall') {
-      const previewSnap = updateWallDraftPointer({
-        activeTool,
-        document,
-        draftWall,
-        point,
-        viewport,
-        wallTool,
-      });
-      setCursorPoint(previewSnap.draftWall ? previewSnap.draftWall.currentPoint : resolveWallDraftSnap({
-        document,
-        draftWall: null,
-        rawPoint: point,
-        viewport,
-        wallTool,
-      }).point);
-    }
-
-    if (activeTool !== 'wall' || !draftWall) {
-      return;
-    }
-
-    const nextDraftWall = updateWallDraftPointer({
+    const effects = getArchitectureScenePointerMoveEffects({
       activeTool,
       document,
       draftWall,
@@ -177,11 +118,7 @@ export default function ArchitectureScene() {
       wallTool,
     });
 
-    setWallClosurePreview(nextDraftWall.closureCandidate);
-
-    if (nextDraftWall.draftWall) {
-      updateDraftWall(nextDraftWall.draftWall.currentPoint, nextDraftWall.draftWall.snappedVertexId);
-    }
+    applyArchitectureInteractionCommands(effects.commands, interactionHandlers);
   };
 
   return (
@@ -193,9 +130,11 @@ export default function ArchitectureScene() {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onContextMenu={(event) => {
-          event.stopPropagation?.();
-          setWallClosurePreview(null);
-          cancelDraftWall();
+          const effects = getArchitectureSceneContextMenuEffects();
+          if (effects.shouldStopPropagation) {
+            event.stopPropagation?.();
+          }
+          applyArchitectureInteractionCommands(effects.commands, interactionHandlers);
         }}
       >
         <planeGeometry args={[200, 200]} />
