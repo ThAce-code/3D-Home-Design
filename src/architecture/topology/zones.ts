@@ -6,20 +6,14 @@ import {
 import type { Zone } from '../domain/zone.js';
 import { cross2D, dot2D, subtractPoints, type Point2 } from './math.js';
 import { findClosedLoops } from './loops.js';
+import { matchZones, type NextLoopMatchInput, type PreviousZoneMatchInput } from './zoneMatcher.js';
 
 export const MIN_VALID_ZONE_AREA = 0.25;
-const MIN_ZONE_ID_OVERLAP_RATIO = 0.6;
 
 interface BoundaryGeometry {
   area: number;
   centroid: Point2;
   points: Point2[];
-}
-
-interface PreviousZoneMatchState {
-  geometry: BoundaryGeometry | null;
-  signature: string;
-  zone: Zone;
 }
 
 interface LoopMatchState {
@@ -29,15 +23,6 @@ interface LoopMatchState {
   levelId: string;
   points: Point2[];
   signature: string;
-}
-
-interface OverlapMatchCandidate {
-  centroidDistance: number;
-  loopIndex: number;
-  overlapArea: number;
-  overlapNewRatio: number;
-  overlapOldRatio: number;
-  zoneId: string;
 }
 
 // V1 only accepts disconnected simple loops as zone candidates. Shared-wall
@@ -67,10 +52,6 @@ export function canonicalizeBoundaryVertexIds(boundaryVertexIds: string[]): stri
   const reverseSignature = reverse.join('|');
 
   return forwardSignature <= reverseSignature ? forward : reverse;
-}
-
-function createLevelScopedSignature(levelId: string, signature: string): string {
-  return `${levelId}::${signature}`;
 }
 
 function getVertexPoint(
@@ -473,132 +454,14 @@ function intersectTriangleWithTriangle(
   return computePolygonArea(clipped);
 }
 
-function computePolygonOverlapArea(
-  leftPoints: Point2[],
-  rightPoints: Point2[],
-  epsilon: number
-): number {
-  const leftTriangles = triangulatePolygon(leftPoints, epsilon);
-  const rightTriangles = triangulatePolygon(rightPoints, epsilon);
-
-  if (leftTriangles.length === 0 || rightTriangles.length === 0) {
-    return 0;
-  }
-
-  let overlapArea = 0;
-
-  for (const leftTriangle of leftTriangles) {
-    for (const rightTriangle of rightTriangles) {
-      overlapArea += intersectTriangleWithTriangle(
-        leftTriangle,
-        rightTriangle,
-        epsilon
-      );
-    }
-  }
-
-  return overlapArea;
-}
-
-function distanceBetweenPoints(left: Point2, right: Point2): number {
-  return Math.hypot(left[0] - right[0], left[1] - right[1]);
-}
-
-function isPointOnSegment(
-  point: Point2,
-  start: Point2,
-  end: Point2,
-  epsilon: number
-): boolean {
-  const startToEnd = subtractPoints(end, start);
-  const startToPoint = subtractPoints(point, start);
-  const endToPoint = subtractPoints(point, end);
-  const cross = Math.abs(cross2D(startToEnd, startToPoint));
-
-  if (cross > epsilon) {
-    return false;
-  }
-
-  return dot2D(startToPoint, endToPoint) <= epsilon;
-}
-
-function containsPoint(points: Point2[], point: Point2, epsilon: number): boolean {
-  let inside = false;
-
-  for (let currentIndex = 0; currentIndex < points.length; currentIndex += 1) {
-    const nextIndex = (currentIndex + 1) % points.length;
-    const current = points[currentIndex];
-    const next = points[nextIndex];
-
-    if (!current || !next) {
-      continue;
-    }
-
-    if (isPointOnSegment(point, current, next, epsilon)) {
-      return true;
-    }
-
-    const intersects = ((current[1] > point[1]) !== (next[1] > point[1]))
-      && (point[0] < (((next[0] - current[0]) * (point[1] - current[1])) / (next[1] - current[1])) + current[0]);
-
-    if (intersects) {
-      inside = !inside;
-    }
-  }
-
-  return inside;
-}
-
-function buildCoverageSamples(points: Point2[], centroid: Point2): Point2[] {
-  const samples: Point2[] = [centroid];
-
-  for (let index = 0; index < points.length; index += 1) {
-    const current = points[index];
-    const next = points[(index + 1) % points.length];
-
-    if (!current || !next) {
-      continue;
-    }
-
-    samples.push(current);
-    samples.push([
-      (current[0] + next[0]) / 2,
-      (current[1] + next[1]) / 2,
-    ]);
-  }
-
-  return samples;
-}
-
-function computeCoverageRatio(
-  subjectPoints: Point2[],
-  subjectCentroid: Point2,
-  containerPoints: Point2[],
-  epsilon: number
-): number {
-  const samples = buildCoverageSamples(subjectPoints, subjectCentroid);
-
-  if (samples.length === 0) {
-    return 0;
-  }
-
-  const coveredSamples = samples.filter((sample) => (
-    containsPoint(containerPoints, sample, epsilon)
-  ));
-
-  return coveredSamples.length / samples.length;
-}
-
 export function rebuildZones(
   document: ArchitectureDocument,
   epsilon = 1e-6
 ): ArchitectureDocument {
   const next = cloneArchitectureDocument(document);
   const loops = findClosedLoops(next, epsilon);
-  const previousZoneIdBySignature = new Map<string, string>();
   const previousZoneById = new Map<string, Zone>();
-  const previousZoneStateById = new Map<string, PreviousZoneMatchState>();
-  const usedZoneIds = new Set<string>();
+  const previousZones: PreviousZoneMatchInput[] = [];
 
   for (const zoneId of document.zoneOrder) {
     const zone = document.zones[zoneId];
@@ -608,15 +471,12 @@ export function rebuildZones(
     }
 
     const signature = createBoundarySignature(document, zone.boundaryVertexIds, epsilon);
-    previousZoneIdBySignature.set(
-      createLevelScopedSignature(zone.levelId, signature),
-      zoneId
-    );
     previousZoneById.set(zoneId, zone);
-    previousZoneStateById.set(zoneId, {
+    previousZones.push({
       geometry: buildBoundaryGeometry(document, zone.boundaryVertexIds, epsilon),
+      levelId: zone.levelId,
       signature,
-      zone,
+      zoneId,
     });
   }
 
@@ -644,120 +504,17 @@ export function rebuildZones(
       : left.signature.localeCompare(right.signature);
   });
 
-  const reusableZoneIdByLoopIndex = new Map<number, string>();
-
-  for (const [loopIndex, loop] of loopStates.entries()) {
-    const matchedZoneId = previousZoneIdBySignature.get(
-      createLevelScopedSignature(loop.levelId, loop.signature)
-    );
-
-    if (!matchedZoneId || usedZoneIds.has(matchedZoneId)) {
-      continue;
-    }
-
-    reusableZoneIdByLoopIndex.set(loopIndex, matchedZoneId);
-    usedZoneIds.add(matchedZoneId);
-  }
-
-  const overlapCandidates: OverlapMatchCandidate[] = [];
-
-  for (const [loopIndex, loop] of loopStates.entries()) {
-    if (reusableZoneIdByLoopIndex.has(loopIndex)) {
-      continue;
-    }
-
-    for (const [zoneId, previousState] of previousZoneStateById.entries()) {
-      if (
-        usedZoneIds.has(zoneId) ||
-        previousState.zone.levelId !== loop.levelId ||
-        !previousState.geometry
-      ) {
-        continue;
-      }
-
-      const overlapArea = computePolygonOverlapArea(
-        previousState.geometry.points,
-        loop.points,
-        epsilon
-      );
-      let overlapOldRatio = overlapArea / previousState.geometry.area;
-      let overlapNewRatio = overlapArea / loop.area;
-
-      if (
-        overlapOldRatio < MIN_ZONE_ID_OVERLAP_RATIO ||
-        overlapNewRatio < MIN_ZONE_ID_OVERLAP_RATIO
-      ) {
-        overlapOldRatio = computeCoverageRatio(
-          previousState.geometry.points,
-          previousState.geometry.centroid,
-          loop.points,
-          epsilon
-        );
-        overlapNewRatio = computeCoverageRatio(
-          loop.points,
-          loop.centroid,
-          previousState.geometry.points,
-          epsilon
-        );
-      }
-
-      if (
-        overlapOldRatio < MIN_ZONE_ID_OVERLAP_RATIO ||
-        overlapNewRatio < MIN_ZONE_ID_OVERLAP_RATIO
-      ) {
-        continue;
-      }
-
-      overlapCandidates.push({
-        centroidDistance: distanceBetweenPoints(
-          previousState.geometry.centroid,
-          loop.centroid
-        ),
-        loopIndex,
-        overlapArea: overlapArea > 0
-          ? overlapArea
-          : Math.min(
-            overlapOldRatio * previousState.geometry.area,
-            overlapNewRatio * loop.area
-          ),
-        overlapNewRatio,
-        overlapOldRatio,
-        zoneId,
-      });
-    }
-  }
-
-  overlapCandidates.sort((left, right) => {
-    if (right.overlapArea !== left.overlapArea) {
-      return right.overlapArea - left.overlapArea;
-    }
-
-    if (right.overlapOldRatio !== left.overlapOldRatio) {
-      return right.overlapOldRatio - left.overlapOldRatio;
-    }
-
-    if (right.overlapNewRatio !== left.overlapNewRatio) {
-      return right.overlapNewRatio - left.overlapNewRatio;
-    }
-
-    if (left.centroidDistance !== right.centroidDistance) {
-      return left.centroidDistance - right.centroidDistance;
-    }
-
-    return left.zoneId.localeCompare(right.zoneId);
-  });
-
-  for (const candidate of overlapCandidates) {
-    if (
-      reusableZoneIdByLoopIndex.has(candidate.loopIndex) ||
-      usedZoneIds.has(candidate.zoneId)
-    ) {
-      continue;
-    }
-
-    reusableZoneIdByLoopIndex.set(candidate.loopIndex, candidate.zoneId);
-    usedZoneIds.add(candidate.zoneId);
-  }
+  const reusableZoneIdByLoopIndex = matchZones({
+    epsilon,
+    nextLoops: loopStates.map<NextLoopMatchInput>((loop) => ({
+      area: loop.area,
+      centroid: loop.centroid,
+      levelId: loop.levelId,
+      points: loop.points,
+      signature: loop.signature,
+    })),
+    previousZones,
+  }).reusedZoneIdByLoopIndex;
 
   next.zones = {};
   next.zoneOrder = [];
