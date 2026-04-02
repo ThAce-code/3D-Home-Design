@@ -176,4 +176,56 @@ describe('matchZones', () => {
 
     expect(result.reusedZoneIdByLoopIndex.has(0)).toBe(false);
   });
+
+  it('inherits the primary split child when one room becomes two rooms', () => {
+    const result = matchZones({
+      previousZones: [{
+        geometry: {
+          area: 16,
+          centroid: [2, 2],
+          points: [
+            [0, 0],
+            [4, 0],
+            [4, 4],
+            [0, 4],
+          ],
+        },
+        levelId: 'level-1',
+        signature: '0|1|2|3',
+        zoneId: 'zone-living',
+      }],
+      nextLoops: [
+        {
+          area: 8.5,
+          centroid: [1.44, 1.44],
+          levelId: 'level-1',
+          points: [
+            [0, 0],
+            [4, 0],
+            [4, 1],
+            [1.5, 1],
+            [1.5, 4],
+            [0, 4],
+          ],
+          signature: '0|1|2|3|4|5',
+        },
+        {
+          area: 7.5,
+          centroid: [2.75, 2.5],
+          levelId: 'level-1',
+          points: [
+            [1.5, 1],
+            [4, 1],
+            [4, 4],
+            [1.5, 4],
+          ],
+          signature: '1|2|3|4',
+        },
+      ],
+      epsilon: 1e-6,
+    });
+
+    expect(result.reusedZoneIdByLoopIndex.get(0)).toBe('zone-living');
+    expect(result.reusedZoneIdByLoopIndex.has(1)).toBe(false);
+  });
 });

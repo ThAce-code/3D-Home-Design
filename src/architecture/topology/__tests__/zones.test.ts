@@ -502,6 +502,115 @@ describe('rebuildZones', () => {
     });
   });
 
+  it('keeps only the primary child on the old zone id after a split', () => {
+    const rectangleDocument = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 0, y: 0 },
+        { id: 'v2', x: 4, y: 0 },
+        { id: 'v3', x: 4, y: 4 },
+        { id: 'v4', x: 0, y: 4 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v3' },
+        { id: 'w3', startVertexId: 'v3', endVertexId: 'v4' },
+        { id: 'w4', startVertexId: 'v4', endVertexId: 'v1' },
+      ],
+    });
+    const first = rebuildZones(rectangleDocument);
+    const zoneId = first.zoneOrder[0];
+    const levelId = first.levelOrder[0];
+    const splitRoomDocument: ArchitectureDocument = {
+      ...first,
+      vertices: {
+        ...first.vertices,
+        v5: { id: 'v5', x: 1.5, y: 1 },
+        v6: { id: 'v6', x: 1.5, y: 4 },
+        v7: { id: 'v7', x: 4, y: 1 },
+      },
+      walls: {
+        w1: first.walls.w1,
+        w2a: {
+          ...first.walls.w1,
+          id: 'w2a',
+          startVertexId: 'v2',
+          endVertexId: 'v7',
+        },
+        w2b: {
+          ...first.walls.w2,
+          id: 'w2b',
+          startVertexId: 'v7',
+          endVertexId: 'v3',
+        },
+        w3a: {
+          ...first.walls.w3,
+          id: 'w3a',
+          startVertexId: 'v3',
+          endVertexId: 'v6',
+        },
+        w3b: {
+          ...first.walls.w3,
+          id: 'w3b',
+          startVertexId: 'v6',
+          endVertexId: 'v4',
+        },
+        w4: first.walls.w4,
+        w5: {
+          id: 'w5',
+          levelId,
+          startVertexId: 'v5',
+          endVertexId: 'v6',
+          thickness: first.walls.w1.thickness,
+          height: first.walls.w1.height,
+          kind: 'structural',
+        },
+        w6: {
+          id: 'w6',
+          levelId,
+          startVertexId: 'v5',
+          endVertexId: 'v7',
+          thickness: first.walls.w1.thickness,
+          height: first.walls.w1.height,
+          kind: 'structural',
+        },
+      },
+      wallOrder: ['w1', 'w2a', 'w2b', 'w3a', 'w3b', 'w4', 'w5', 'w6'],
+      zones: {
+        ...first.zones,
+        [zoneId]: {
+          ...first.zones[zoneId],
+          kind: 'room',
+          name: 'Living Room',
+        },
+      },
+      levels: {
+        ...first.levels,
+        [levelId]: {
+          ...first.levels[levelId],
+          vertexIds: ['v1', 'v2', 'v7', 'v3', 'v6', 'v4', 'v5'],
+          wallIds: ['w1', 'w2a', 'w2b', 'w3a', 'w3b', 'w4', 'w5', 'w6'],
+          zoneIds: [zoneId],
+        },
+      },
+    };
+
+    const result = rebuildZones(splitRoomDocument);
+    const inheritedZoneId = result.zoneOrder.find((candidateZoneId) => candidateZoneId === zoneId);
+    const spawnedZoneIds = result.zoneOrder.filter((candidateZoneId) => candidateZoneId !== zoneId);
+
+    expect(result.zoneOrder).toHaveLength(2);
+    expect(inheritedZoneId).toBe(zoneId);
+    expect(spawnedZoneIds).toHaveLength(1);
+    expect(result.zones[zoneId]).toMatchObject({
+      kind: 'room',
+      name: 'Living Room',
+    });
+    expect(result.zones[spawnedZoneIds[0]]).toMatchObject({
+      kind: 'unknown',
+      name: null,
+    });
+  });
+
   it('drops the zone when the walls no longer form a closed loop even if the input still contains the old zone', () => {
     const rectangleDocument = createDocumentWithWalls({
       vertices: [

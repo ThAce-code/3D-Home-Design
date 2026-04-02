@@ -23,6 +23,7 @@ interface LoopMatchState {
 
 interface OverlapMatchCandidate {
   centroidDistance: number;
+  boundarySimilarity: number;
   loopIndex: number;
   overlapArea: number;
   overlapNewRatio: number;
@@ -61,9 +62,30 @@ export interface MatchZonesResult {
 
 const MIN_ZONE_ID_OVERLAP_RATIO = 0.6;
 const MIN_AMBIGUITY_GAP_RATIO = 0.1;
+const MIN_SPLIT_ZONE_OVERLAP_RATIO = 0.2;
+const MIN_SPLIT_ZONE_WINNER_RATIO = 0.4;
 
 function createLevelScopedSignature(levelId: string, signature: string): string {
   return `${levelId}::${signature}`;
+}
+
+function computeBoundarySimilarity(previousSignature: string, nextSignature: string): number {
+  const previousParts = previousSignature.split('|').filter(Boolean);
+  const nextParts = new Set(nextSignature.split('|').filter(Boolean));
+
+  if (previousParts.length === 0) {
+    return 0;
+  }
+
+  let sharedParts = 0;
+
+  for (const part of previousParts) {
+    if (nextParts.has(part)) {
+      sharedParts += 1;
+    }
+  }
+
+  return sharedParts / previousParts.length;
 }
 
 function computeSignedArea(points: Point2[]): number {
@@ -208,6 +230,98 @@ function computeCoverageRatio(
   ));
 
   return coveredSamples.length / samples.length;
+}
+
+interface OverlapCandidateCollections {
+  byLoopIndex: Map<number, OverlapMatchCandidate[]>;
+  byZoneId: Map<string, OverlapMatchCandidate[]>;
+}
+
+function collectOverlapCandidates(
+  previousZones: PreviousZoneMatchState[],
+  nextLoops: LoopMatchState[],
+  reusableZoneIdByLoopIndex: Map<number, string>,
+  epsilon: number
+): OverlapCandidateCollections {
+  const usedZoneIds = new Set(reusableZoneIdByLoopIndex.values());
+  const byLoopIndex = new Map<number, OverlapMatchCandidate[]>();
+  const byZoneId = new Map<string, OverlapMatchCandidate[]>();
+
+  for (const [loopIndex, loop] of nextLoops.entries()) {
+    if (reusableZoneIdByLoopIndex.has(loopIndex)) {
+      continue;
+    }
+
+    for (const previousZone of previousZones) {
+      if (
+        usedZoneIds.has(previousZone.zoneId) ||
+        previousZone.levelId !== loop.levelId ||
+        !previousZone.geometry
+      ) {
+        continue;
+      }
+
+      const overlapArea = computePolygonOverlapArea(
+        previousZone.geometry.points,
+        loop.points,
+        epsilon
+      );
+      let overlapOldRatio = overlapArea / previousZone.geometry.area;
+      let overlapNewRatio = overlapArea / loop.area;
+
+      if (
+        overlapOldRatio < MIN_ZONE_ID_OVERLAP_RATIO ||
+        overlapNewRatio < MIN_ZONE_ID_OVERLAP_RATIO
+      ) {
+        overlapOldRatio = computeCoverageRatio(
+          previousZone.geometry.points,
+          previousZone.geometry.centroid,
+          loop.points,
+          epsilon
+        );
+        overlapNewRatio = computeCoverageRatio(
+          loop.points,
+          loop.centroid,
+          previousZone.geometry.points,
+          epsilon
+        );
+      }
+
+      const candidate = {
+        boundarySimilarity: computeBoundarySimilarity(
+          previousZone.signature,
+          loop.signature
+        ),
+        centroidDistance: distanceBetweenPoints(
+          previousZone.geometry.centroid,
+          loop.centroid
+        ),
+        loopIndex,
+        overlapArea: overlapArea > 0
+          ? overlapArea
+          : Math.min(
+            overlapOldRatio * previousZone.geometry.area,
+            overlapNewRatio * loop.area
+          ),
+        overlapNewRatio,
+        overlapOldRatio,
+        zoneId: previousZone.zoneId,
+      };
+
+      const loopCandidates = byLoopIndex.get(loopIndex) ?? [];
+      loopCandidates.push(candidate);
+      byLoopIndex.set(loopIndex, loopCandidates);
+
+      const zoneCandidates = byZoneId.get(previousZone.zoneId) ?? [];
+      zoneCandidates.push(candidate);
+      byZoneId.set(previousZone.zoneId, zoneCandidates);
+    }
+  }
+
+  return {
+    byLoopIndex,
+    byZoneId,
+  };
 }
 
 function isInsideClipEdge(
@@ -489,80 +603,25 @@ function matchByOverlap(
   reusableZoneIdByLoopIndex: Map<number, string>,
   epsilon: number
 ): Map<number, string> {
-  const usedZoneIds = new Set(reusableZoneIdByLoopIndex.values());
-  const overlapCandidatesByLoopIndex = new Map<number, OverlapMatchCandidate[]>();
+  const { byLoopIndex } = collectOverlapCandidates(
+    previousZones,
+    nextLoops,
+    reusableZoneIdByLoopIndex,
+    epsilon
+  );
+  const overlapCandidates: OverlapMatchCandidate[] = [];
 
-  for (const [loopIndex, loop] of nextLoops.entries()) {
-    if (reusableZoneIdByLoopIndex.has(loopIndex)) {
+  for (const [loopIndex, candidates] of byLoopIndex.entries()) {
+    const filteredCandidates = candidates.filter((candidate) => (
+      candidate.overlapOldRatio >= MIN_ZONE_ID_OVERLAP_RATIO &&
+      candidate.overlapNewRatio >= MIN_ZONE_ID_OVERLAP_RATIO
+    ));
+
+    if (filteredCandidates.length === 0) {
       continue;
     }
 
-    for (const previousZone of previousZones) {
-      if (
-        usedZoneIds.has(previousZone.zoneId) ||
-        previousZone.levelId !== loop.levelId ||
-        !previousZone.geometry
-      ) {
-        continue;
-      }
-
-      const overlapArea = computePolygonOverlapArea(
-        previousZone.geometry.points,
-        loop.points,
-        epsilon
-      );
-      let overlapOldRatio = overlapArea / previousZone.geometry.area;
-      let overlapNewRatio = overlapArea / loop.area;
-
-      if (
-        overlapOldRatio < MIN_ZONE_ID_OVERLAP_RATIO ||
-        overlapNewRatio < MIN_ZONE_ID_OVERLAP_RATIO
-      ) {
-        overlapOldRatio = computeCoverageRatio(
-          previousZone.geometry.points,
-          previousZone.geometry.centroid,
-          loop.points,
-          epsilon
-        );
-        overlapNewRatio = computeCoverageRatio(
-          loop.points,
-          loop.centroid,
-          previousZone.geometry.points,
-          epsilon
-        );
-      }
-
-      if (
-        overlapOldRatio < MIN_ZONE_ID_OVERLAP_RATIO ||
-        overlapNewRatio < MIN_ZONE_ID_OVERLAP_RATIO
-      ) {
-        continue;
-      }
-
-      const candidates = overlapCandidatesByLoopIndex.get(loopIndex) ?? [];
-      candidates.push({
-        centroidDistance: distanceBetweenPoints(
-          previousZone.geometry.centroid,
-          loop.centroid
-        ),
-        overlapArea: overlapArea > 0
-          ? overlapArea
-          : Math.min(
-            overlapOldRatio * previousZone.geometry.area,
-            overlapNewRatio * loop.area
-          ),
-        overlapNewRatio,
-        overlapOldRatio,
-        zoneId: previousZone.zoneId,
-      });
-      overlapCandidatesByLoopIndex.set(loopIndex, candidates);
-    }
-  }
-
-  const overlapCandidates: OverlapMatchCandidate[] = [];
-
-  for (const [loopIndex, candidates] of overlapCandidatesByLoopIndex.entries()) {
-    candidates.sort((left, right) => {
+    filteredCandidates.sort((left, right) => {
       if (right.overlapArea !== left.overlapArea) {
         return right.overlapArea - left.overlapArea;
       }
@@ -579,11 +638,15 @@ function matchByOverlap(
         return left.centroidDistance - right.centroidDistance;
       }
 
+      if (right.boundarySimilarity !== left.boundarySimilarity) {
+        return right.boundarySimilarity - left.boundarySimilarity;
+      }
+
       return left.zoneId.localeCompare(right.zoneId);
     });
 
-    const bestCandidate = candidates[0];
-    const secondCandidate = candidates[1];
+    const bestCandidate = filteredCandidates[0];
+    const secondCandidate = filteredCandidates[1];
 
     if (!bestCandidate) {
       continue;
@@ -620,8 +683,14 @@ function matchByOverlap(
       return left.centroidDistance - right.centroidDistance;
     }
 
+    if (right.boundarySimilarity !== left.boundarySimilarity) {
+      return right.boundarySimilarity - left.boundarySimilarity;
+    }
+
     return left.zoneId.localeCompare(right.zoneId);
   });
+
+  const usedZoneIds = new Set(reusableZoneIdByLoopIndex.values());
 
   for (const candidate of overlapCandidates) {
     if (
@@ -638,16 +707,92 @@ function matchByOverlap(
   return reusableZoneIdByLoopIndex;
 }
 
+function matchBySplit(
+  previousZones: PreviousZoneMatchState[],
+  nextLoops: LoopMatchState[],
+  reusableZoneIdByLoopIndex: Map<number, string>,
+  epsilon: number
+): Map<number, string> {
+  const { byZoneId } = collectOverlapCandidates(
+    previousZones,
+    nextLoops,
+    reusableZoneIdByLoopIndex,
+    epsilon
+  );
+  const usedZoneIds = new Set(reusableZoneIdByLoopIndex.values());
+
+  for (const previousZone of previousZones) {
+    if (usedZoneIds.has(previousZone.zoneId)) {
+      continue;
+    }
+
+    const candidates = (byZoneId.get(previousZone.zoneId) ?? []).filter((candidate) => (
+      candidate.overlapOldRatio >= MIN_SPLIT_ZONE_OVERLAP_RATIO &&
+      candidate.overlapNewRatio >= MIN_SPLIT_ZONE_OVERLAP_RATIO &&
+      !reusableZoneIdByLoopIndex.has(candidate.loopIndex)
+    ));
+
+    if (candidates.length < 2) {
+      continue;
+    }
+
+    candidates.sort((left, right) => {
+      if (right.overlapArea !== left.overlapArea) {
+        return right.overlapArea - left.overlapArea;
+      }
+
+      if (right.overlapOldRatio !== left.overlapOldRatio) {
+        return right.overlapOldRatio - left.overlapOldRatio;
+      }
+
+      if (left.centroidDistance !== right.centroidDistance) {
+        return left.centroidDistance - right.centroidDistance;
+      }
+
+      if (right.boundarySimilarity !== left.boundarySimilarity) {
+        return right.boundarySimilarity - left.boundarySimilarity;
+      }
+
+      return left.zoneId.localeCompare(right.zoneId);
+    });
+
+    const bestCandidate = candidates[0];
+    const secondCandidate = candidates[1];
+
+    if (!bestCandidate || bestCandidate.overlapOldRatio < MIN_SPLIT_ZONE_WINNER_RATIO) {
+      continue;
+    }
+
+    if (
+      secondCandidate &&
+      bestCandidate.overlapArea > 0 &&
+      (bestCandidate.overlapArea - secondCandidate.overlapArea) / bestCandidate.overlapArea < MIN_AMBIGUITY_GAP_RATIO
+    ) {
+      continue;
+    }
+
+    reusableZoneIdByLoopIndex.set(bestCandidate.loopIndex, previousZone.zoneId);
+    usedZoneIds.add(previousZone.zoneId);
+  }
+
+  return reusableZoneIdByLoopIndex;
+}
+
 export function matchZones(args: MatchZonesArgs): MatchZonesResult {
   const previousZones: PreviousZoneMatchState[] = args.previousZones;
   const nextLoops: LoopMatchState[] = args.nextLoops;
   const reusableZoneIdByLoopIndex = matchBySignature(previousZones, nextLoops);
-
+  const overlappedZoneIds = matchByOverlap(
+    previousZones,
+    nextLoops,
+    reusableZoneIdByLoopIndex,
+    args.epsilon
+  );
   return {
-    reusedZoneIdByLoopIndex: matchByOverlap(
+    reusedZoneIdByLoopIndex: matchBySplit(
       previousZones,
       nextLoops,
-      reusableZoneIdByLoopIndex,
+      overlappedZoneIds,
       args.epsilon
     ),
   };
