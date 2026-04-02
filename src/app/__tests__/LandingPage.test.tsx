@@ -106,14 +106,18 @@ describe('LandingPage', () => {
     const navbarCta = mountNode.querySelector('[data-testid="liquid-glass-navbar-cta"] button');
 
     expect(heroLiquidCta?.classList.contains('hero-liquid-glass-button')).toBe(true);
+    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-track')).not.toBeNull();
+    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-fill')).not.toBeNull();
+    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-shell-fill')).not.toBeNull();
     expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-ink')).not.toBeNull();
-    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-arrow-primary')).not.toBeNull();
-    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-arrow-secondary')).not.toBeNull();
+    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-orb')).not.toBeNull();
+    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-play-icon')).not.toBeNull();
+    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-slot-start')).not.toBeNull();
+    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-slot-end')).not.toBeNull();
     expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-label')).not.toBeNull();
 
+    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-content')?.children).toHaveLength(3);
     expect(navbarCta?.querySelector('.liquid-glass-hero-cta-ink')).toBeNull();
-    expect(navbarCta?.querySelector('.liquid-glass-hero-cta-arrow-primary')).toBeNull();
-    expect(navbarCta?.querySelector('.liquid-glass-hero-cta-arrow-secondary')).toBeNull();
   });
 
   it('keeps the liquid glass contrast layer outside the blur shell and left-biases the navbar links', () => {
@@ -246,7 +250,7 @@ describe('LandingPage', () => {
 
     expect(heroImage).not.toBeNull();
     expect(previewImage).not.toBeNull();
-    expect((heroImage as HTMLImageElement).src).toContain('lh3.googleusercontent.com');
-    expect((previewImage as HTMLImageElement).src).toContain('lh3.googleusercontent.com');
+    expect((heroImage as HTMLImageElement).src).toContain('/hero-interior.webp');
+    expect((previewImage as HTMLImageElement).src).toContain('/landing-plan.webp');
   });
 });

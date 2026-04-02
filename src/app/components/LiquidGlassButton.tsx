@@ -20,18 +20,25 @@ export default function LiquidGlassButton({
 }: LiquidGlassButtonProps) {
   const content = motionVariant === 'hero-cta' ? (
     <>
-      <span aria-hidden="true" className="liquid-glass-hero-cta-ink" />
+      <span aria-hidden="true" className="liquid-glass-hero-cta-shell-fill" />
+      <span aria-hidden="true" className="liquid-glass-hero-cta-track" />
+      <span aria-hidden="true" className="liquid-glass-hero-cta-fill" />
+      <span aria-hidden="true" className="liquid-glass-hero-cta-ink liquid-glass-hero-cta-orb">
+        <svg
+          className="liquid-glass-hero-cta-play-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path d="M8 18V6l8 6-8 6Z" />
+        </svg>
+      </span>
       <span aria-hidden="true" className="liquid-glass-hero-cta-gloss" />
       <span className="liquid-glass-content liquid-glass-hero-cta-content">
-        {showArrow ? (
-          <span aria-hidden="true" className="liquid-glass-hero-cta-icon-zone">
-            <span className="liquid-glass-hero-cta-arrow-track">
-              <ArrowRight className="liquid-glass-arrow-icon liquid-glass-hero-cta-arrow-primary" />
-              <ArrowRight className="liquid-glass-arrow-icon liquid-glass-hero-cta-arrow-secondary" />
-            </span>
-          </span>
-        ) : null}
+        <span aria-hidden="true" className="liquid-glass-hero-cta-slot liquid-glass-hero-cta-slot-start" />
         <span className="liquid-glass-label liquid-glass-hero-cta-label">{children}</span>
+        <span aria-hidden="true" className="liquid-glass-hero-cta-slot liquid-glass-hero-cta-slot-end" />
       </span>
     </>
   ) : (

@@ -34,6 +34,16 @@ test('landing first screen uses liquid glass navbar and hero CTA without the dem
   await expect(liquidNavbarLinks).toContainText('Experience')
   await expect(liquidNavbarLinks).toContainText('Studio')
 
+  await heroPrimaryCta.hover()
+
+  const heroShellFillBox = await page.locator('.hero-liquid-glass-button .liquid-glass-hero-cta-shell-fill').boundingBox()
+  const heroButtonBox = await heroPrimaryCta.boundingBox()
+
+  expect(heroShellFillBox).not.toBeNull()
+  expect(heroButtonBox).not.toBeNull()
+  expect(Math.abs((heroShellFillBox?.x ?? 0) - (heroButtonBox?.x ?? 0))).toBeLessThan(1)
+  expect(Math.abs((heroShellFillBox?.width ?? 0) - (heroButtonBox?.width ?? 0))).toBeLessThan(1)
+
   expect(await backgroundColorOf(page, '[data-testid="landing-nav"] button[aria-label="Sign in / Sign up"]')).not.toBe(
     'rgba(0, 0, 0, 0)',
   )
