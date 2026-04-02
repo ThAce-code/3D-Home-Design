@@ -412,6 +412,107 @@ describe('rebuildZones', () => {
     });
   });
 
+  it('reuses the same zone id when a local redraw turns an 8-side room into a 10-side room', () => {
+    const octagonDocument = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 1, y: 0 },
+        { id: 'v2', x: 3, y: 0 },
+        { id: 'v3', x: 4, y: 0.6 },
+        { id: 'v4', x: 4, y: 1.8 },
+        { id: 'v5', x: 4, y: 3 },
+        { id: 'v6', x: 3, y: 4 },
+        { id: 'v7', x: 1, y: 4 },
+        { id: 'v8', x: 0, y: 3 },
+        { id: 'v9', x: 0, y: 1.8 },
+        { id: 'v10', x: 0, y: 0.6 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v3' },
+        { id: 'w3', startVertexId: 'v3', endVertexId: 'v4' },
+        { id: 'w4', startVertexId: 'v4', endVertexId: 'v5' },
+        { id: 'w5', startVertexId: 'v5', endVertexId: 'v6' },
+        { id: 'w6', startVertexId: 'v6', endVertexId: 'v7' },
+        { id: 'w7', startVertexId: 'v7', endVertexId: 'v8' },
+        { id: 'w8', startVertexId: 'v8', endVertexId: 'v9' },
+        { id: 'w9', startVertexId: 'v9', endVertexId: 'v10' },
+        { id: 'w10', startVertexId: 'v10', endVertexId: 'v1' },
+      ],
+    });
+    const first = rebuildZones(octagonDocument);
+    const zoneId = first.zoneOrder[0];
+    const levelId = first.levelOrder[0];
+    const tenSidedVariant: ArchitectureDocument = {
+      ...first,
+      vertices: {
+        ...first.vertices,
+        v11: { id: 'v11', x: 3.6, y: 0.1 },
+        v12: { id: 'v12', x: 4, y: 0.7 },
+      },
+      walls: {
+        w1a: {
+          ...first.walls.w1,
+          id: 'w1a',
+          startVertexId: 'v1',
+          endVertexId: 'v2',
+        },
+        w1b: {
+          ...first.walls.w1,
+          id: 'w1b',
+          startVertexId: 'v2',
+          endVertexId: 'v11',
+        },
+        w1c: {
+          ...first.walls.w1,
+          id: 'w1c',
+          startVertexId: 'v11',
+          endVertexId: 'v12',
+        },
+        w1d: {
+          ...first.walls.w1,
+          id: 'w1d',
+          startVertexId: 'v12',
+          endVertexId: 'v3',
+        },
+        w2: first.walls.w2,
+        w3: first.walls.w3,
+        w4: first.walls.w4,
+        w5: first.walls.w5,
+        w6: first.walls.w6,
+        w7: first.walls.w7,
+        w8: first.walls.w8,
+        w9: first.walls.w9,
+        w10: first.walls.w10,
+      },
+      wallOrder: ['w1a', 'w1b', 'w1c', 'w1d', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'w9', 'w10'],
+      zones: {
+        ...first.zones,
+        [zoneId]: {
+          ...first.zones[zoneId],
+          kind: 'room',
+          name: 'Studio',
+        },
+      },
+      levels: {
+        ...first.levels,
+        [levelId]: {
+          ...first.levels[levelId],
+          vertexIds: ['v1', 'v2', 'v11', 'v12', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'],
+          wallIds: ['w1a', 'w1b', 'w1c', 'w1d', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'w9', 'w10'],
+          zoneIds: [zoneId],
+        },
+      },
+    };
+
+    const result = rebuildZones(tenSidedVariant);
+
+    expect(result.zoneOrder[0]).toBe(zoneId);
+    expect(result.zones[zoneId]).toMatchObject({
+      kind: 'room',
+      name: 'Studio',
+    });
+  });
+
   it('drops the zone when the walls no longer form a closed loop even if the input still contains the old zone', () => {
     const rectangleDocument = createDocumentWithWalls({
       vertices: [
