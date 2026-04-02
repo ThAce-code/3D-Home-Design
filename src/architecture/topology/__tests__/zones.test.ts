@@ -333,6 +333,85 @@ describe('rebuildZones', () => {
     });
   });
 
+  it('reuses the same zone id when most of the room overlaps but rebuilt walls introduce new boundary vertices', () => {
+    const rectangleDocument = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 0, y: 0 },
+        { id: 'v2', x: 4, y: 0 },
+        { id: 'v3', x: 4, y: 3 },
+        { id: 'v4', x: 0, y: 3 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v3' },
+        { id: 'w3', startVertexId: 'v3', endVertexId: 'v4' },
+        { id: 'w4', startVertexId: 'v4', endVertexId: 'v1' },
+      ],
+    });
+    const first = rebuildZones(rectangleDocument);
+    const zoneId = first.zoneOrder[0];
+    const levelId = first.levelOrder[0];
+    const shiftedInput: ArchitectureDocument = {
+      ...first,
+      vertices: {
+        ...first.vertices,
+        v2b: { id: 'v2b', x: 4.5, y: 0 },
+        v3b: { id: 'v3b', x: 4.5, y: 3 },
+      },
+      walls: {
+        w1b: {
+          ...first.walls.w1,
+          id: 'w1b',
+          startVertexId: 'v1',
+          endVertexId: 'v2b',
+        },
+        w2b: {
+          ...first.walls.w2,
+          id: 'w2b',
+          startVertexId: 'v2b',
+          endVertexId: 'v3b',
+        },
+        w3b: {
+          ...first.walls.w3,
+          id: 'w3b',
+          startVertexId: 'v3b',
+          endVertexId: 'v4',
+        },
+        w4: {
+          ...first.walls.w4,
+          startVertexId: 'v4',
+          endVertexId: 'v1',
+        },
+      },
+      wallOrder: ['w1b', 'w2b', 'w3b', 'w4'],
+      zones: {
+        ...first.zones,
+        [zoneId]: {
+          ...first.zones[zoneId],
+          kind: 'room',
+          name: 'Primary Room',
+        },
+      },
+      levels: {
+        ...first.levels,
+        [levelId]: {
+          ...first.levels[levelId],
+          vertexIds: ['v1', 'v2b', 'v3b', 'v4'],
+          wallIds: ['w1b', 'w2b', 'w3b', 'w4'],
+          zoneIds: [zoneId],
+        },
+      },
+    };
+
+    const result = rebuildZones(shiftedInput);
+
+    expect(result.zoneOrder[0]).toBe(zoneId);
+    expect(result.zones[zoneId]).toMatchObject({
+      kind: 'room',
+      name: 'Primary Room',
+    });
+  });
+
   it('drops the zone when the walls no longer form a closed loop even if the input still contains the old zone', () => {
     const rectangleDocument = createDocumentWithWalls({
       vertices: [
