@@ -72,10 +72,16 @@ function listVertexCoordinates(document: ArchitectureDocument): string[] {
 function expectRepairToBeStable(document: ArchitectureDocument) {
   const first = repairTopology(document);
   const second = repairTopology(first);
+  const firstLevelId = first.levelOrder[0];
+  const secondLevelId = second.levelOrder[0];
 
   expect(listNormalizedWallSegments(second)).toEqual(listNormalizedWallSegments(first));
   expect(listVertexCoordinates(second)).toEqual(listVertexCoordinates(first));
   expect(second.wallOrder).toEqual(first.wallOrder);
+  expect(second.levelOrder).toEqual(first.levelOrder);
+  expect(second.levels[secondLevelId]?.vertexIds).toEqual(first.levels[firstLevelId]?.vertexIds);
+  expect(second.levels[secondLevelId]?.wallIds).toEqual(first.levels[firstLevelId]?.wallIds);
+  expect(second.levels[secondLevelId]?.zoneIds).toEqual(first.levels[firstLevelId]?.zoneIds);
 }
 
 describe('repairTopology', () => {
@@ -207,7 +213,7 @@ describe('repairTopology', () => {
     ]);
   });
 
-  it('does not collapse collinear walls when attributes differ', () => {
+  it('does not collapse collinear walls when thickness differs', () => {
     const document = createDocumentWithWalls({
       vertices: [
         { id: 'v1', x: 0, y: 0 },
@@ -228,6 +234,73 @@ describe('repairTopology', () => {
       '0,0->2,0',
       '2,0->4,0',
     ]);
+    expect(next.wallOrder).toEqual(['w1', 'w2']);
+    expect(next.walls.w1!.thickness).toBe(0.2);
+    expect(next.walls.w2!.thickness).toBe(0.35);
+    expect(next.walls.w1!.height).toBe(3);
+    expect(next.walls.w2!.height).toBe(3);
+    expect(next.walls.w1!.kind).toBe('structural');
+    expect(next.walls.w2!.kind).toBe('structural');
+  });
+
+  it('does not collapse collinear walls when height differs', () => {
+    const document = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 0, y: 0 },
+        { id: 'v2', x: 2, y: 0 },
+        { id: 'v3', x: 4, y: 0 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v3' },
+      ],
+    });
+
+    document.walls.w2!.height = 4.5;
+
+    const next = repairTopology(document);
+
+    expect(listNormalizedWallSegments(next)).toEqual([
+      '0,0->2,0',
+      '2,0->4,0',
+    ]);
+    expect(next.wallOrder).toEqual(['w1', 'w2']);
+    expect(next.walls.w1!.height).toBe(3);
+    expect(next.walls.w2!.height).toBe(4.5);
+    expect(next.walls.w1!.thickness).toBe(0.2);
+    expect(next.walls.w2!.thickness).toBe(0.2);
+    expect(next.walls.w1!.kind).toBe('structural');
+    expect(next.walls.w2!.kind).toBe('structural');
+  });
+
+  it('does not collapse collinear walls when kind differs', () => {
+    const document = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 0, y: 0 },
+        { id: 'v2', x: 2, y: 0 },
+        { id: 'v3', x: 4, y: 0 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v3' },
+      ],
+    });
+
+    document.walls.w2!.kind = 'partition';
+
+    const next = repairTopology(document);
+
+    expect(listNormalizedWallSegments(next)).toEqual([
+      '0,0->2,0',
+      '2,0->4,0',
+    ]);
+    expect(next.wallOrder).toEqual(['w1', 'w2']);
+    expect(next.walls.w1!.kind).toBe('structural');
+    expect(next.walls.w2!.kind).toBe('partition');
+    expect(next.walls.w1!.thickness).toBe(0.2);
+    expect(next.walls.w2!.thickness).toBe(0.2);
+    expect(next.walls.w1!.height).toBe(3);
+    expect(next.walls.w2!.height).toBe(3);
   });
 
   it('does not keep changing a graph after the first repair pass', () => {
