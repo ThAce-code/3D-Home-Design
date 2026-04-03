@@ -63,6 +63,21 @@ function listNormalizedWallSegments(document: ArchitectureDocument): string[] {
   }).sort();
 }
 
+function listVertexCoordinates(document: ArchitectureDocument): string[] {
+  return Object.values(document.vertices)
+    .map((vertex) => `${vertex.x},${vertex.y}`)
+    .sort();
+}
+
+function expectRepairToBeStable(document: ArchitectureDocument) {
+  const first = repairTopology(document);
+  const second = repairTopology(first);
+
+  expect(listNormalizedWallSegments(second)).toEqual(listNormalizedWallSegments(first));
+  expect(listVertexCoordinates(second)).toEqual(listVertexCoordinates(first));
+  expect(second.wallOrder).toEqual(first.wallOrder);
+}
+
 describe('repairTopology', () => {
   it('splits an existing wall when a crossing wall is inserted', () => {
     const document = createDocumentWithWalls({
@@ -129,6 +144,106 @@ describe('repairTopology', () => {
     const next = repairTopology(documentWithDuplicateWalls);
 
     expect(next.wallOrder).toHaveLength(1);
+  });
+
+  it('removes isolated vertices left behind after duplicate wall cleanup', () => {
+    const document = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 0, y: 0 },
+        { id: 'v2', x: 4, y: 0 },
+        { id: 'v3', x: 8, y: 0 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v1' },
+      ],
+    });
+
+    const next = repairTopology(document);
+
+    expect(listVertexCoordinates(next)).toEqual(['0,0', '4,0']);
+  });
+
+  it('collapses a redundant collinear degree-2 split point', () => {
+    const document = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 0, y: 0 },
+        { id: 'v2', x: 2, y: 0 },
+        { id: 'v3', x: 4, y: 0 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v3' },
+      ],
+    });
+
+    const next = repairTopology(document);
+
+    expect(listNormalizedWallSegments(next)).toEqual(['0,0->4,0']);
+    expect(listVertexCoordinates(next)).toEqual(['0,0', '4,0']);
+  });
+
+  it('preserves a tee junction center during cleanup', () => {
+    const document = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 0, y: 0 },
+        { id: 'v2', x: 2, y: 0 },
+        { id: 'v3', x: 4, y: 0 },
+        { id: 'v4', x: 2, y: 2 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v3' },
+        { id: 'w3', startVertexId: 'v2', endVertexId: 'v4' },
+      ],
+    });
+
+    const next = repairTopology(document);
+
+    expect(listNormalizedWallSegments(next)).toEqual([
+      '0,0->2,0',
+      '2,0->2,2',
+      '2,0->4,0',
+    ]);
+  });
+
+  it('does not collapse collinear walls when attributes differ', () => {
+    const document = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 0, y: 0 },
+        { id: 'v2', x: 2, y: 0 },
+        { id: 'v3', x: 4, y: 0 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v3' },
+      ],
+    });
+
+    document.walls.w2!.thickness = 0.35;
+
+    const next = repairTopology(document);
+
+    expect(listNormalizedWallSegments(next)).toEqual([
+      '0,0->2,0',
+      '2,0->4,0',
+    ]);
+  });
+
+  it('does not keep changing a graph after the first repair pass', () => {
+    const document = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 0, y: 0 },
+        { id: 'v2', x: 2, y: 0 },
+        { id: 'v3', x: 4, y: 0 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v3' },
+      ],
+    });
+
+    expectRepairToBeStable(document);
   });
 
   it('reuses an existing endpoint when a new wall meets an endpoint exactly', () => {
