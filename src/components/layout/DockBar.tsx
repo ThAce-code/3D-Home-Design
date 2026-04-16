@@ -1,9 +1,10 @@
 import { useStore } from '../../store/useStore.js';
 import type { DockTab } from '../../types/camera.js';
 import { Home, Armchair, Palette, Ruler, Camera } from 'lucide-react';
+import { editorTheme } from '../../theme/editorTheme.js';
 
 const dockItems: { tab: DockTab; icon: typeof Home; label: string }[] = [
-  { tab: 'rooms', icon: Home, label: '房间' },
+  { tab: 'building', icon: Home, label: '建筑' },
   { tab: 'furniture', icon: Armchair, label: '家具' },
   { tab: 'materials', icon: Palette, label: '材质' },
   { tab: 'measure', icon: Ruler, label: '测量' },
@@ -18,10 +19,11 @@ export default function DockBar() {
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-end gap-2 px-3 py-2 rounded-2xl border"
       style={{
-        background: 'rgba(19,61,47,0.85)',
+        background: editorTheme.surface,
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        borderColor: 'rgba(248,245,240,0.06)',
+        borderColor: editorTheme.border,
+        boxShadow: '0 20px 48px -32px rgba(82, 56, 33, 0.45)',
       }}
     >
       {dockItems.map((item) => {
@@ -38,18 +40,18 @@ export default function DockBar() {
             <Icon
               size={22}
               className="transition-colors duration-150"
-              style={{ color: isActive ? '#28A375' : '#9AB0A6' }}
+              style={{ color: isActive ? editorTheme.accentStrong : editorTheme.textMuted }}
             />
             <span
               className="text-[11px] leading-none transition-colors duration-150"
-              style={{ color: isActive ? '#F8F5F0' : '#9AB0A6' }}
+              style={{ color: isActive ? editorTheme.text : editorTheme.textMuted }}
             >
               {item.label}
             </span>
             {isActive && (
               <span
                 className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-6 rounded-full"
-                style={{ background: '#28A375' }}
+                style={{ background: editorTheme.accentStrong }}
               />
             )}
           </button>

@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
 import { useStore } from '../store/useStore.js';
 import type { DockTab, TransformTool } from '../types/camera.js';
+import { useArchitectureDocumentStore } from '../store/architectureDocumentStore.js';
+import { useArchitectureEditorStore } from '../store/architectureEditorStore.js';
+import { createArchitectureHotkeyStoreController } from '../architecture/editing/hotkeyController.js';
 
 const dockKeys: Record<string, DockTab> = {
-  '1': 'rooms',
+  '1': 'building',
   '2': 'furniture',
   '3': 'materials',
   '4': 'measure',
@@ -11,6 +14,11 @@ const dockKeys: Record<string, DockTab> = {
 };
 
 const toolOrder: TransformTool[] = ['translate', 'rotate', 'scale'];
+
+const architectureHotkeyController = createArchitectureHotkeyStoreController({
+  editorStore: useArchitectureEditorStore,
+  documentStore: useArchitectureDocumentStore,
+});
 
 export function useGlobalHotkeys() {
   useEffect(() => {
@@ -33,7 +41,12 @@ export function useGlobalHotkeys() {
       // Delete
       if ((e.key === 'Delete' || e.key === 'Backspace') && !isInput) {
         const { selectedItemId, removeItem } = useStore.getState();
-        if (selectedItemId) removeItem(selectedItemId);
+        if (selectedItemId) {
+          removeItem(selectedItemId);
+          return;
+        }
+
+        architectureHotkeyController.deleteSelection();
         return;
       }
 
@@ -64,6 +77,7 @@ export function useGlobalHotkeys() {
       const { selectedItemId, selectItem, selectedAssetId, selectAsset } = useStore.getState();
       if (selectedItemId) selectItem(null);
       if (selectedAssetId) selectAsset(null);
+      architectureHotkeyController.clearSelectionOnSecondaryAction();
     };
 
     const isSecondaryClick = (event: MouseEvent | PointerEvent) => {

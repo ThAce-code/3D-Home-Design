@@ -29,3 +29,6 @@ tmp-*/
 .sisyphus/
 test-results/
 nul
+
+# Git worktrees
+.worktrees/
