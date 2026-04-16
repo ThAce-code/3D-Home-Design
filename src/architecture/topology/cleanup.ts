@@ -124,7 +124,6 @@ function isSafeCollinearCollapseCandidate(
   next: ArchitectureDocument,
   middleVertexId: string,
   connectedWallIds: string[],
-  degrees: Map<string, number>,
   epsilon: number
 ): null | {
   absorbedWallId: string;
@@ -169,10 +168,6 @@ function isSafeCollinearCollapseCandidate(
     return null;
   }
 
-  if (degrees.get(firstOtherVertexId) !== 1 || degrees.get(secondOtherVertexId) !== 1) {
-    return null;
-  }
-
   const firstVector: [number, number] = [
     firstOtherVertex.x - middleVertex.x,
     firstOtherVertex.y - middleVertex.y,
@@ -183,19 +178,6 @@ function isSafeCollinearCollapseCandidate(
   ];
 
   if (Math.abs(cross2D(firstVector, secondVector)) > epsilon) {
-    return null;
-  }
-
-  const firstLength = distanceBetweenPoints(
-    [middleVertex.x, middleVertex.y],
-    [firstOtherVertex.x, firstOtherVertex.y]
-  );
-  const secondLength = distanceBetweenPoints(
-    [middleVertex.x, middleVertex.y],
-    [secondOtherVertex.x, secondOtherVertex.y]
-  );
-
-  if (Math.abs(firstLength - secondLength) > epsilon) {
     return null;
   }
 
@@ -249,7 +231,6 @@ function collapseSafeCollinearVertices(next: ArchitectureDocument, epsilon: numb
         next,
         vertexId,
         connectedWallIds,
-        degrees,
         epsilon
       );
 
@@ -270,16 +251,20 @@ function collapseSafeCollinearVertices(next: ArchitectureDocument, epsilon: numb
 
 export function cleanupTopology(
   document: ArchitectureDocument,
-  epsilon = 1e-6
+  epsilon = 1e-6,
+  options?: { collapseCollinear?: boolean }
 ): ArchitectureDocument {
+  const { collapseCollinear = true } = options ?? {};
   const next = cloneArchitectureDocument(document);
   removeIllegalWalls(next, epsilon);
   removeDuplicateWalls(next);
   let connectivity = buildVertexConnectivity(next);
   removeIsolatedVertices(next, connectivity);
-  collapseSafeCollinearVertices(next, epsilon);
-  connectivity = buildVertexConnectivity(next);
-  removeIsolatedVertices(next, connectivity);
+  if (collapseCollinear) {
+    collapseSafeCollinearVertices(next, epsilon);
+    connectivity = buildVertexConnectivity(next);
+    removeIsolatedVertices(next, connectivity);
+  }
   next.zones = {};
   next.zoneOrder = [];
 
