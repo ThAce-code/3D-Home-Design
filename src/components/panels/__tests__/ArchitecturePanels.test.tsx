@@ -121,7 +121,9 @@ describe('architecture shell panels', () => {
     });
 
     expect(mountNode.querySelector('[data-testid="wall-property-panel"]')).not.toBeNull();
-    expect(mountNode.textContent).toContain('w1');
+    expect(mountNode.textContent).toContain('墙体');
+    expect(mountNode.textContent).toContain('4.00 m');
+    expect(mountNode.textContent).not.toContain('w1');
   });
 
   it('renders the zone property panel after clicking a zone mesh in architecture mode', () => {
@@ -146,7 +148,9 @@ describe('architecture shell panels', () => {
     });
 
     expect(mountNode.querySelector('[data-testid="zone-property-panel"]')).not.toBeNull();
-    expect(mountNode.textContent).toContain('z1');
+    expect(mountNode.textContent).toContain('房间');
+    expect(mountNode.textContent).toContain('12.00 m²');
+    expect(mountNode.textContent).not.toContain('z1');
   });
 
   it('prefers the zone panel when a wall ray hit resolves to an interior ground point', () => {
@@ -186,6 +190,7 @@ describe('architecture shell panels', () => {
 
     expect(mountNode.querySelector('[data-testid="zone-property-panel"]')).not.toBeNull();
     expect(mountNode.querySelector('[data-testid="wall-property-panel"]')).toBeNull();
-    expect(mountNode.textContent).toContain('z1');
+    expect(mountNode.textContent).toContain('12.00 m²');
+    expect(mountNode.textContent).not.toContain('z1');
   });
 });

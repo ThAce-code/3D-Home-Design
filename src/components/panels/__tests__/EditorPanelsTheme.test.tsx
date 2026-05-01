@@ -96,6 +96,7 @@ describe('editor panel theming', () => {
     expect(activeButton).not.toBeNull();
     expect(activeButton?.style.background).toBe(editorThemeVars.accentSoft);
     expect(activeButton?.style.color).toBe(editorThemeVars.accentStrong);
+    expect(mountNode.textContent).not.toMatch(/V1|disconnected|face extraction/i);
   });
 
   it('renders the asset panel with editor token colors for active category pills', () => {
@@ -173,6 +174,9 @@ describe('editor panel theming', () => {
     expect(panel?.style.borderColor).toBe(editorThemeVars.border);
     expect(input?.style.background).toBe(editorThemeVars.field);
     expect(input?.style.border).toBe(`1px solid ${editorThemeVars.fieldBorder}`);
+    expect(mountNode.textContent).toContain('4.00 m');
+    expect(mountNode.textContent).toContain('承重墙');
+    expect(mountNode.textContent).not.toContain('structural');
   });
 
   it('updates wall thickness through the wall property panel', () => {
@@ -193,20 +197,81 @@ describe('editor panel theming', () => {
     expect(useArchitectureDocumentStore.getState().document.walls.w1?.thickness).toBe(0.42);
   });
 
+  it('deletes a wall through the wall property panel', () => {
+    act(() => {
+      useArchitectureDocumentStore.getState().replaceDocument(createDocumentWithWallAndZone());
+      root.render(<WallPropertyPanel wallId="w1" />);
+    });
+
+    const deleteButton = Array.from(mountNode.querySelectorAll('button')).find((node) => node.textContent?.includes('删除墙体'));
+    expect(deleteButton).not.toBeNull();
+
+    act(() => {
+      deleteButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(useArchitectureDocumentStore.getState().document.walls.w1).toBeUndefined();
+  });
+
   it('renders the zone property panel with editor surface tokens', () => {
     act(() => {
       useArchitectureDocumentStore.getState().replaceDocument(createDocumentWithWallAndZone());
-      root.render(<ZonePropertyPanel zoneId="z1" />);
+    root.render(<ZonePropertyPanel zoneId="z1" />);
     });
 
     const panel = mountNode.querySelector('[data-testid="zone-property-panel"]') as HTMLDivElement | null;
-    const heading = Array.from(mountNode.querySelectorAll('h3')).find((node) => node.textContent === 'Zone');
+    const heading = Array.from(mountNode.querySelectorAll('h3')).find((node) => node.textContent === '房间');
+    const nameInput = mountNode.querySelector('input[aria-label="房间名称"]') as HTMLInputElement | null;
 
     expect(panel).not.toBeNull();
     expect(panel?.style.background).toBe(editorThemeVars.surfaceStrong);
     expect(panel?.style.borderColor).toBe(editorThemeVars.border);
     expect(heading?.style.color).toBe(editorThemeVars.text);
-    expect(mountNode.textContent).toMatch(/boundary points:/i);
-    expect(mountNode.textContent).not.toMatch(/boundary vertices:/i);
+    expect(nameInput?.placeholder).toBe('未命名房间');
+    expect(mountNode.textContent).toContain('12.00 m²');
+    expect(mountNode.textContent).not.toMatch(/boundary|z1|unknown/i);
+  });
+
+  it('updates zone name and kind through the zone property panel', () => {
+    act(() => {
+      useArchitectureDocumentStore.getState().replaceDocument(createDocumentWithWallAndZone());
+      root.render(<ZonePropertyPanel zoneId="z1" />);
+    });
+
+    const nameInput = mountNode.querySelector('input[aria-label="房间名称"]') as HTMLInputElement | null;
+    const kindSelect = mountNode.querySelector('select[aria-label="房间类型"]') as HTMLSelectElement | null;
+
+    expect(nameInput).not.toBeNull();
+    expect(kindSelect).not.toBeNull();
+
+    act(() => {
+      const inputSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+      inputSetter?.call(nameInput, '客厅');
+      nameInput!.dispatchEvent(new Event('change', { bubbles: true }));
+
+      const selectSetter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set;
+      selectSetter?.call(kindSelect, 'living_room');
+      kindSelect!.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    const zone = useArchitectureDocumentStore.getState().document.zones.z1;
+    expect(zone?.name).toBe('客厅');
+    expect(zone?.kind).toBe('living_room');
+  });
+
+  it('deletes a zone boundary through the zone property panel', () => {
+    act(() => {
+      useArchitectureDocumentStore.getState().replaceDocument(createDocumentWithWallAndZone());
+      root.render(<ZonePropertyPanel zoneId="z1" />);
+    });
+
+    const deleteButton = Array.from(mountNode.querySelectorAll('button')).find((node) => node.textContent?.includes('删除房间'));
+    expect(deleteButton).not.toBeNull();
+
+    act(() => {
+      deleteButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(useArchitectureDocumentStore.getState().document.zones.z1).toBeUndefined();
   });
 });

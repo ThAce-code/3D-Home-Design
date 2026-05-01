@@ -15,6 +15,48 @@ function removeWall(document: ArchitectureDocument, wallId: string): Architectur
   return repairTopology(syncLevelEntityIds(next));
 }
 
+function createBoundaryEdgeKey(a: string, b: string): string {
+  return a < b ? `${a}:${b}` : `${b}:${a}`;
+}
+
+function removeZone(document: ArchitectureDocument, zoneId: string): ArchitectureDocument {
+  const next = cloneArchitectureDocument(document);
+  const zone = next.zones[zoneId];
+
+  if (!zone) {
+    return next;
+  }
+
+  const boundaryEdges = new Set<string>();
+  for (let index = 0; index < zone.boundaryVertexIds.length; index += 1) {
+    const current = zone.boundaryVertexIds[index];
+    const nextIndex = (index + 1) % zone.boundaryVertexIds.length;
+    const following = zone.boundaryVertexIds[nextIndex];
+
+    if (current && following) {
+      boundaryEdges.add(createBoundaryEdgeKey(current, following));
+    }
+  }
+
+  for (const wallId of next.wallOrder) {
+    const wall = next.walls[wallId];
+
+    if (!wall) {
+      continue;
+    }
+
+    if (boundaryEdges.has(createBoundaryEdgeKey(wall.startVertexId, wall.endVertexId))) {
+      delete next.walls[wallId];
+    }
+  }
+
+  delete next.zones[zoneId];
+  next.wallOrder = next.wallOrder.filter((wallId) => Boolean(next.walls[wallId]));
+  next.zoneOrder = next.zoneOrder.filter((existingZoneId) => existingZoneId !== zoneId);
+
+  return repairTopology(syncLevelEntityIds(next));
+}
+
 function moveVertex(
   document: ArchitectureDocument,
   vertexId: string,
@@ -57,7 +99,7 @@ function deleteVertex(document: ArchitectureDocument, vertexId: string): Archite
 function setWallProps(
   document: ArchitectureDocument,
   wallId: string,
-  patch: ArchitectureCommand & { type: 'SET_WALL_PROPS' }['patch']
+  patch: Extract<ArchitectureCommand, { type: 'SET_WALL_PROPS' }>['patch']
 ): ArchitectureDocument {
   const next = cloneArchitectureDocument(document);
   const wall = next.walls[wallId];
@@ -76,6 +118,26 @@ function setWallProps(
   return syncLevelEntityIds(next);
 }
 
+function setZoneProps(
+  document: ArchitectureDocument,
+  zoneId: string,
+  patch: Extract<ArchitectureCommand, { type: 'SET_ZONE_PROPS' }>['patch']
+): ArchitectureDocument {
+  const next = cloneArchitectureDocument(document);
+  const zone = next.zones[zoneId];
+
+  if (!zone) {
+    return next;
+  }
+
+  next.zones[zoneId] = {
+    ...zone,
+    ...patch,
+  };
+
+  return syncLevelEntityIds(next);
+}
+
 export function reduceArchitectureCommand(
   document: ArchitectureDocument,
   command: ArchitectureCommand
@@ -87,10 +149,14 @@ export function reduceArchitectureCommand(
       return moveVertex(document, command.vertexId, command.to);
     case 'DELETE_WALL':
       return removeWall(document, command.wallId);
+    case 'DELETE_ZONE':
+      return removeZone(document, command.zoneId);
     case 'DELETE_VERTEX':
       return deleteVertex(document, command.vertexId);
     case 'SET_WALL_PROPS':
       return setWallProps(document, command.wallId, command.patch);
+    case 'SET_ZONE_PROPS':
+      return setZoneProps(document, command.zoneId, command.patch);
     default: {
       const exhaustiveCheck: never = command;
       return exhaustiveCheck;

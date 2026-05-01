@@ -1,4 +1,13 @@
-export type ZoneKind = 'room' | 'corridor' | 'balcony' | 'unknown';
+export type ZoneKind =
+  | 'room'
+  | 'living_room'
+  | 'bedroom'
+  | 'kitchen'
+  | 'bathroom'
+  | 'dining'
+  | 'corridor'
+  | 'balcony'
+  | 'unknown';
 
 export interface Zone {
   id: string;

@@ -23,7 +23,7 @@ export default function BuildingToolPanel() {
       <div className="flex flex-col gap-1">
         <h3 className="text-sm font-semibold" style={{ color: editorThemeVars.text }}>建筑工具</h3>
         <p className="text-xs leading-5" style={{ color: editorThemeVars.textMuted }}>
-          V1 仅支持 disconnected simple loops，不支持共享墙 face extraction。
+          绘制墙体，选择并调整房间边界。
         </p>
       </div>
 
