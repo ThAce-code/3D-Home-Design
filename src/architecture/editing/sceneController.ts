@@ -57,6 +57,8 @@ interface ArchitectureEditorControllerState {
   updateDraftWall: NonNullable<ArchitectureInteractionCommandHandlers['updateDraftWall']>;
   setWallToolModifiers: NonNullable<ArchitectureInteractionCommandHandlers['setWallToolModifiers']>;
   setWallNumericEntryEnabled: NonNullable<ArchitectureInteractionCommandHandlers['setWallNumericEntryEnabled']>;
+  setVertexDragNumericEntryEnabled?: NonNullable<ArchitectureInteractionCommandHandlers['setVertexDragNumericEntryEnabled']>;
+  setWallDragNumericEntryEnabled?: NonNullable<ArchitectureInteractionCommandHandlers['setWallDragNumericEntryEnabled']>;
   cancelDraftWall: NonNullable<ArchitectureInteractionCommandHandlers['cancelDraftWall']>;
   updateVertexDrag?: NonNullable<ArchitectureInteractionCommandHandlers['updateVertexDrag']>;
   commitVertexDrag?: NonNullable<ArchitectureInteractionCommandHandlers['commitVertexDrag']>;
@@ -223,6 +225,7 @@ export function createArchitectureSceneController({
         activeTool: state.activeTool,
         key: event.key,
         vertexDrag: state.vertexDrag ?? null,
+        wallDrag: state.wallDrag ?? null,
       });
 
       if (effects.shouldPreventDefault) {
@@ -273,6 +276,8 @@ export function createArchitectureSceneStoreController({
       updateDraftWall: (currentPoint, snappedVertexId) => editorStore.getState().updateDraftWall(currentPoint, snappedVertexId),
       setWallToolModifiers: (modifiers) => editorStore.getState().setWallToolModifiers(modifiers),
       setWallNumericEntryEnabled: (enabled) => editorStore.getState().setWallNumericEntryEnabled(enabled),
+      setVertexDragNumericEntryEnabled: (enabled) => editorStore.getState().setVertexDragNumericEntryEnabled?.(enabled),
+      setWallDragNumericEntryEnabled: (enabled) => editorStore.getState().setWallDragNumericEntryEnabled?.(enabled),
       cancelDraftWall: () => editorStore.getState().cancelDraftWall(),
       updateVertexDrag: (currentPosition, snappedToVertexId) => editorStore.getState().updateVertexDrag?.(currentPosition, snappedToVertexId),
       commitVertexDrag: () => editorStore.getState().commitVertexDrag?.(),

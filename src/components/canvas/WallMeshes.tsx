@@ -66,7 +66,8 @@ export default function WallMeshes() {
                 name={`wall:${wall.wallId}`}
                 rotation={[-Math.PI / 2, 0, 0]}
                 onPointerDown={(event) => {
-                  if (activeTool === 'select' && isSelected) {
+                  const shiftKey = event.shiftKey ?? event.nativeEvent?.shiftKey ?? false;
+                  if (activeTool === 'select' && isSelected && !shiftKey) {
                     event.stopPropagation?.();
                     const point = event.point ?? event.nativeEvent?.point;
                     if (point) {

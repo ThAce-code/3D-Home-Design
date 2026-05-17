@@ -95,4 +95,16 @@ describe('architectureEditorStore', () => {
     useArchitectureEditorStore.getState().cancelWallDrag();
     expect(useArchitectureEditorStore.getState().wallDrag).toBeNull();
   });
+
+  it('toggles numeric entry state for active vertex and wall drags', () => {
+    useArchitectureEditorStore.getState().startVertexDrag('v1', [0, 0]);
+    useArchitectureEditorStore.getState().setVertexDragNumericEntryEnabled(true);
+
+    expect(useArchitectureEditorStore.getState().vertexDrag?.numericEntryEnabled).toBe(true);
+
+    useArchitectureEditorStore.getState().startWallDrag(createDocumentWithWall(), 'w1', [2, 0]);
+    useArchitectureEditorStore.getState().setWallDragNumericEntryEnabled(true);
+
+    expect(useArchitectureEditorStore.getState().wallDrag?.numericEntryEnabled).toBe(true);
+  });
 });

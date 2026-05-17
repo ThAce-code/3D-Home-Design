@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { findNearestWallBodySnapCandidate } from '../../architecture/geometry/wallDraftSnap.js';
+import { applyArchitectureInteractionCommands } from '../../architecture/editing/interaction.js';
 import { reduceArchitectureCommand } from '../../architecture/editing/reducers.js';
+import { getVertexDragCommitEffects } from '../../architecture/editing/vertexDragInteraction.js';
+import { getWallDragCommitEffects } from '../../architecture/editing/wallDragInteraction.js';
 import { resolveWallNumericEntryPoint } from '../../architecture/editing/wallNumericEntry.js';
+import type { WallDragState } from '../../architecture/editing/tools.js';
 import { distanceBetweenPoints } from '../../architecture/topology/math.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
@@ -11,25 +15,48 @@ import { editorThemeVars } from '../../theme/editorTheme.js';
 const PANEL_OFFSET_LEFT = 288;
 const HUD_DEFAULT_LEFT = 16;
 const HUD_BOTTOM_CLEARING_DOCK = 96;
+const numericInputStyle = {
+  width: 72,
+  borderRadius: 6,
+  border: `1px solid ${editorThemeVars.fieldBorder}`,
+  background: editorThemeVars.field,
+  color: editorThemeVars.text,
+  padding: '4px 6px',
+  fontSize: 12,
+  outline: 'none',
+};
 
 export default function EditorStatusHud() {
   const document = useArchitectureDocumentStore((state) => state.document);
   const replaceDocument = useArchitectureDocumentStore((state) => state.replaceDocument);
   const draftWall = useArchitectureEditorStore((state) => state.draftWall);
   const vertexDrag = useArchitectureEditorStore((state) => state.vertexDrag);
+  const wallDrag = useArchitectureEditorStore((state) => state.wallDrag);
   const activeTool = useArchitectureEditorStore((state) => state.activeTool);
   const selection = useArchitectureEditorStore((state) => state.selection);
   const wallTool = useArchitectureEditorStore((state) => state.toolState.wall);
   const commitDraftWall = useArchitectureEditorStore((state) => state.commitDraftWall);
+  const commitVertexDrag = useArchitectureEditorStore((state) => state.commitVertexDrag);
+  const commitWallDrag = useArchitectureEditorStore((state) => state.commitWallDrag);
+  const setSelection = useArchitectureEditorStore((state) => state.setSelection);
   const setWallNumericEntryEnabled = useArchitectureEditorStore((state) => state.setWallNumericEntryEnabled);
+  const setVertexDragNumericEntryEnabled = useArchitectureEditorStore((state) => state.setVertexDragNumericEntryEnabled);
+  const setWallDragNumericEntryEnabled = useArchitectureEditorStore((state) => state.setWallDragNumericEntryEnabled);
   const setWallClosurePreview = useArchitectureEditorStore((state) => state.setWallClosurePreview);
   const dockOpen = useStore((state) => state.dockOpen);
-  const numericEntryActive = activeTool === 'wall' && Boolean(draftWall) && wallTool.constraints.numericEntryEnabled;
+  const wallDraftNumericEntryActive = activeTool === 'wall' && Boolean(draftWall) && wallTool.constraints.numericEntryEnabled;
+  const vertexDragNumericEntryActive = Boolean(vertexDrag?.numericEntryEnabled);
+  const wallDragNumericEntryActive = Boolean(wallDrag?.numericEntryEnabled);
   const currentLength = useMemo(() => (
     draftWall ? distanceBetweenPoints(draftWall.startPoint, draftWall.currentPoint) : 0
   ), [draftWall]);
   const [lengthInput, setLengthInput] = useState(() => currentLength.toFixed(2));
+  const [vertexXInput, setVertexXInput] = useState('0.00');
+  const [vertexYInput, setVertexYInput] = useState('0.00');
+  const [wallOffsetInput, setWallOffsetInput] = useState('0.00');
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const vertexXInputRef = useRef<HTMLInputElement | null>(null);
+  const wallOffsetInputRef = useRef<HTMLInputElement | null>(null);
   const lengthInputRef = useRef(lengthInput);
   const replaceOnNextDigitRef = useRef(true);
   const hints = resolveHints({
@@ -37,12 +64,13 @@ export default function EditorStatusHud() {
     document,
     draftWall,
     vertexDrag,
+    wallDrag,
     selection,
     wallTool,
   });
 
   useEffect(() => {
-    if (!numericEntryActive) {
+    if (!wallDraftNumericEntryActive) {
       return;
     }
 
@@ -50,16 +78,51 @@ export default function EditorStatusHud() {
     lengthInputRef.current = formattedLength;
     replaceOnNextDigitRef.current = true;
     setLengthInput(formattedLength);
-  }, [currentLength, numericEntryActive]);
+  }, [currentLength, wallDraftNumericEntryActive]);
 
   useEffect(() => {
-    if (!numericEntryActive) {
+    if (!wallDraftNumericEntryActive) {
       return;
     }
 
     inputRef.current?.focus();
     inputRef.current?.select();
-  }, [numericEntryActive]);
+  }, [wallDraftNumericEntryActive]);
+
+  useEffect(() => {
+    if (!vertexDragNumericEntryActive || !vertexDrag) {
+      return;
+    }
+
+    setVertexXInput(vertexDrag.currentPosition[0].toFixed(2));
+    setVertexYInput(vertexDrag.currentPosition[1].toFixed(2));
+  }, [vertexDrag, vertexDragNumericEntryActive]);
+
+  useEffect(() => {
+    if (!vertexDragNumericEntryActive) {
+      return;
+    }
+
+    vertexXInputRef.current?.focus();
+    vertexXInputRef.current?.select();
+  }, [vertexDragNumericEntryActive]);
+
+  useEffect(() => {
+    if (!wallDragNumericEntryActive || !wallDrag) {
+      return;
+    }
+
+    setWallOffsetInput(getWallDragNormalOffset(wallDrag).toFixed(2));
+  }, [wallDrag, wallDragNumericEntryActive]);
+
+  useEffect(() => {
+    if (!wallDragNumericEntryActive) {
+      return;
+    }
+
+    wallOffsetInputRef.current?.focus();
+    wallOffsetInputRef.current?.select();
+  }, [wallDragNumericEntryActive]);
 
   const submitNumericLength = (value: string) => {
     if (!draftWall) {
@@ -92,8 +155,63 @@ export default function EditorStatusHud() {
     setLengthInput(value);
   };
 
+  const submitVertexDragNumeric = () => {
+    if (!vertexDrag) {
+      return;
+    }
+
+    const x = Number.parseFloat(vertexXInput);
+    const y = Number.parseFloat(vertexYInput);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      return;
+    }
+
+    applyArchitectureInteractionCommands(
+      getVertexDragCommitEffects({
+        document,
+        vertexId: vertexDrag.vertexId,
+        targetPosition: [x, y],
+      }),
+      {
+        replaceDocument,
+        commitVertexDrag,
+        setSelection,
+      },
+    );
+  };
+
+  const submitWallDragNumeric = () => {
+    if (!wallDrag) {
+      return;
+    }
+
+    const offset = Number.parseFloat(wallOffsetInput);
+    const normal = getWallDragNormal(wallDrag);
+    if (!Number.isFinite(offset) || !normal) {
+      return;
+    }
+
+    applyArchitectureInteractionCommands(
+      getWallDragCommitEffects({
+        document,
+        wallDrag: {
+          ...wallDrag,
+          currentOffset: [
+            normal[0] * offset,
+            normal[1] * offset,
+          ],
+        },
+      }),
+      {
+        replaceDocument,
+        commitWallDrag,
+        setSelection,
+      },
+    );
+  };
+
   useEffect(() => {
-    if (!numericEntryActive) {
+    if (!wallDraftNumericEntryActive) {
       return undefined;
     }
 
@@ -149,7 +267,7 @@ export default function EditorStatusHud() {
       window.removeEventListener('keydown', handleNumericKeyDown, true);
     };
   }, [
-    numericEntryActive,
+    wallDraftNumericEntryActive,
     draftWall,
     document,
     replaceDocument,
@@ -161,6 +279,16 @@ export default function EditorStatusHud() {
   const handleNumericSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     submitNumericLength(lengthInputRef.current);
+  };
+
+  const handleVertexDragNumericSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submitVertexDragNumeric();
+  };
+
+  const handleWallDragNumericSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submitWallDragNumeric();
   };
 
   if (!hints.length) {
@@ -189,7 +317,80 @@ export default function EditorStatusHud() {
         lineHeight: 1.4,
       }}
     >
-      {numericEntryActive ? (
+      {vertexDragNumericEntryActive ? (
+        <form
+          onSubmit={handleVertexDragNumericSubmit}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            pointerEvents: 'auto',
+          }}
+        >
+          <span>X</span>
+          <input
+            ref={vertexXInputRef}
+            data-testid="vertex-drag-x-input"
+            type="number"
+            step="0.01"
+            value={vertexXInput}
+            onChange={(event) => setVertexXInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                setVertexDragNumericEntryEnabled(false);
+              }
+              event.stopPropagation();
+            }}
+            style={numericInputStyle}
+          />
+          <span>Y</span>
+          <input
+            data-testid="vertex-drag-y-input"
+            type="number"
+            step="0.01"
+            value={vertexYInput}
+            onChange={(event) => setVertexYInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                setVertexDragNumericEntryEnabled(false);
+              }
+              event.stopPropagation();
+            }}
+            style={numericInputStyle}
+          />
+          <span>m</span>
+        </form>
+      ) : null}
+      {wallDragNumericEntryActive ? (
+        <form
+          onSubmit={handleWallDragNumericSubmit}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            pointerEvents: 'auto',
+          }}
+        >
+          <span>偏移</span>
+          <input
+            ref={wallOffsetInputRef}
+            data-testid="wall-drag-offset-input"
+            type="number"
+            step="0.01"
+            value={wallOffsetInput}
+            onChange={(event) => setWallOffsetInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                setWallDragNumericEntryEnabled(false);
+              }
+              event.stopPropagation();
+            }}
+            style={numericInputStyle}
+          />
+          <span>m</span>
+        </form>
+      ) : null}
+      {wallDraftNumericEntryActive ? (
         <form
           onSubmit={handleNumericSubmit}
           style={{
@@ -211,16 +412,7 @@ export default function EditorStatusHud() {
             onKeyDown={(event) => {
               event.stopPropagation();
             }}
-            style={{
-              width: 72,
-              borderRadius: 6,
-              border: `1px solid ${editorThemeVars.fieldBorder}`,
-              background: editorThemeVars.field,
-              color: editorThemeVars.text,
-              padding: '4px 6px',
-              fontSize: 12,
-              outline: 'none',
-            }}
+            style={numericInputStyle}
           />
           <span>m</span>
         </form>
@@ -237,6 +429,7 @@ function resolveHints({
   document,
   draftWall,
   vertexDrag,
+  wallDrag,
   selection,
   wallTool,
 }: {
@@ -244,14 +437,27 @@ function resolveHints({
   document: ReturnType<typeof useArchitectureDocumentStore.getState>['document'];
   draftWall: ReturnType<typeof useArchitectureEditorStore.getState>['draftWall'];
   vertexDrag: ReturnType<typeof useArchitectureEditorStore.getState>['vertexDrag'];
+  wallDrag: ReturnType<typeof useArchitectureEditorStore.getState>['wallDrag'];
   selection: ReturnType<typeof useArchitectureEditorStore.getState>['selection'];
   wallTool: ReturnType<typeof useArchitectureEditorStore.getState>['toolState']['wall'];
 }) {
   if (vertexDrag) {
+    if (vertexDrag.numericEntryEnabled) {
+      return ['顶点精确输入 · Enter 确认 · Esc 取消'];
+    }
+
     return [
-      '拖动中 · 释放放置 · Esc 取消',
+      '拖动中 · 释放放置 · Tab 输入坐标 · Esc 取消',
       vertexDrag.snappedToVertexId ? '吸附到端点' : null,
     ].filter((hint): hint is string => Boolean(hint));
+  }
+
+  if (wallDrag) {
+    return [
+      wallDrag.numericEntryEnabled
+        ? '墙体精确偏移 · Enter 确认 · Esc 取消'
+        : '墙体拖动中 · 释放放置 · Tab 输入偏移 · Esc 取消',
+    ];
   }
 
   if (activeTool === 'wall' && draftWall) {
@@ -287,4 +493,25 @@ function resolveHints({
   }
 
   return [];
+}
+
+function getWallDragNormal(wallDrag: WallDragState): Point2 | null {
+  const dx = wallDrag.endVertexOrigin[0] - wallDrag.startVertexOrigin[0];
+  const dy = wallDrag.endVertexOrigin[1] - wallDrag.startVertexOrigin[1];
+  const length = Math.hypot(dx, dy);
+
+  if (length <= 1e-9) {
+    return null;
+  }
+
+  return [-dy / length, dx / length];
+}
+
+function getWallDragNormalOffset(wallDrag: WallDragState): number {
+  const normal = getWallDragNormal(wallDrag);
+  if (!normal) {
+    return 0;
+  }
+
+  return wallDrag.currentOffset[0] * normal[0] + wallDrag.currentOffset[1] * normal[1];
 }

@@ -17,6 +17,7 @@ export interface VertexDragState {
   startPosition: Point2;
   currentPosition: Point2;
   snappedToVertexId: string | null;
+  numericEntryEnabled: boolean;
 }
 
 export interface WallDragState {
@@ -27,6 +28,7 @@ export interface WallDragState {
   endVertexOrigin: Point2;
   grabOffset: Point2;
   currentOffset: Point2;
+  numericEntryEnabled: boolean;
 }
 
 export interface ArchitectureSelection {

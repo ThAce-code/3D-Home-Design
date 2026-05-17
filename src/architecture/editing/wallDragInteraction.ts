@@ -44,6 +44,7 @@ export function createWallDragState(args: {
       args.grabPoint[1] - midpoint[1],
     ],
     currentOffset: [0, 0],
+    numericEntryEnabled: false,
   };
 }
 

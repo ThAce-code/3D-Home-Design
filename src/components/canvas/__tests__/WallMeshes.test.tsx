@@ -218,4 +218,53 @@ describe('WallMeshes', () => {
       currentOffset: [0, 0],
     });
   });
+
+  it('lets shift-click on a selected wall toggle selection instead of starting wall drag', () => {
+    buildWallMeshDescriptorsMock.mockReturnValue([
+      {
+        wallId: 'w1',
+        levelId: 'level-1',
+        origin: [0, 0],
+        length: 4,
+        thickness: 0.2,
+        height: 3,
+        angle: 0,
+        start: [0, 0],
+        end: [4, 0],
+        footprintPoints: [
+          [0, -0.1],
+          [4, -0.1],
+          [4, 0.1],
+          [0, 0.1],
+        ],
+      },
+    ]);
+
+    act(() => {
+      useArchitectureDocumentStore.getState().replaceDocument(createDocumentWithWall());
+      useArchitectureEditorStore.getState().setSelection({
+        vertexIds: [],
+        wallIds: ['w1'],
+        zoneIds: [],
+      });
+      root.render(<WallMeshes />);
+    });
+
+    const wallMesh = mountNode.querySelector('[name="wall:w1"]');
+    if (!wallMesh) {
+      throw new Error('missing wall mesh');
+    }
+
+    const event = new MouseEvent('pointerdown', { bubbles: true, shiftKey: true });
+    Object.defineProperty(event, 'point', {
+      value: { x: 2, z: 0 },
+    });
+
+    act(() => {
+      wallMesh.dispatchEvent(event);
+    });
+
+    expect(useArchitectureEditorStore.getState().wallDrag).toBeNull();
+    expect(useArchitectureEditorStore.getState().selection.wallIds).toEqual([]);
+  });
 });
