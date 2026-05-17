@@ -55,6 +55,21 @@ export function resolveEditHandles(
 
     addVertexHandle(document, handles, addedVertexIds, wall.startVertexId);
     addVertexHandle(document, handles, addedVertexIds, wall.endVertexId);
+
+    const startVertex = document.vertices[wall.startVertexId];
+    const endVertex = document.vertices[wall.endVertexId];
+    if (startVertex && endVertex) {
+      handles.push({
+        id: `handle:midpoint:${wallId}`,
+        kind: 'wall-midpoint',
+        position: [
+          (startVertex.x + endVertex.x) / 2,
+          (startVertex.y + endVertex.y) / 2,
+        ],
+        entityId: wallId,
+        entityType: 'wall',
+      });
+    }
   }
 
   for (const vertexId of selection.vertexIds) {

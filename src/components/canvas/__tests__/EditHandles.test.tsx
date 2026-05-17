@@ -72,6 +72,7 @@ describe('EditHandles', () => {
 
     expect(mountNode.querySelector('[data-testid="handle:vertex:v1"]')).not.toBeNull();
     expect(mountNode.querySelector('[data-testid="handle:vertex:v2"]')).not.toBeNull();
+    expect(mountNode.querySelector('[data-testid="handle:midpoint:w1"]')).not.toBeNull();
   });
 
   it('renders no handles without a selection', () => {
@@ -122,6 +123,42 @@ describe('EditHandles', () => {
       vertexId: 'v1',
       startPosition: [0, 0],
       currentPosition: [0, 0],
+    });
+  });
+
+  it('splits the selected wall from pointer down on a midpoint handle and selects the new vertex', () => {
+    act(() => {
+      useArchitectureDocumentStore.getState().replaceDocument(createDocumentWithWall());
+      useArchitectureEditorStore.getState().setSelection({
+        vertexIds: [],
+        wallIds: ['w1'],
+        zoneIds: [],
+      });
+      root.render(<EditHandles />);
+    });
+
+    const handle = mountNode.querySelector('[data-testid="handle:midpoint:w1"]');
+    if (!handle) {
+      throw new Error('missing midpoint edit handle');
+    }
+
+    act(() => {
+      handle.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    });
+
+    const nextDocument = useArchitectureDocumentStore.getState().document;
+    const selection = useArchitectureEditorStore.getState().selection;
+    const selectedVertex = nextDocument.vertices[selection.vertexIds[0]];
+
+    expect(nextDocument.wallOrder).toHaveLength(2);
+    expect(selection).toMatchObject({
+      vertexIds: [expect.any(String)],
+      wallIds: [],
+      zoneIds: [],
+    });
+    expect(selectedVertex).toMatchObject({
+      x: 2,
+      y: 0,
     });
   });
 });

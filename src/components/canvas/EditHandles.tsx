@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { resolveEditHandles, type EditHandle } from '../../architecture/editing/editHandle.js';
-import { createEmptyHover } from '../../architecture/editing/tools.js';
+import { reduceArchitectureCommand } from '../../architecture/editing/reducers.js';
+import { createEmptyHover, createEmptySelection } from '../../architecture/editing/tools.js';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import { editorTheme } from '../../theme/editorTheme.js';
@@ -49,6 +50,59 @@ function VertexHandle({ handle }: { handle: EditHandle }) {
   );
 }
 
+function MidpointHandle({ handle }: { handle: EditHandle }) {
+  const document = useArchitectureDocumentStore((state) => state.document);
+  const replaceDocument = useArchitectureDocumentStore((state) => state.replaceDocument);
+  const hover = useArchitectureEditorStore((state) => state.hover);
+  const setHover = useArchitectureEditorStore((state) => state.setHover);
+  const clearHover = useArchitectureEditorStore((state) => state.clearHover);
+  const setSelection = useArchitectureEditorStore((state) => state.setSelection);
+  const isHovered = hover.wallId === handle.entityId;
+  const color = isHovered ? editorTheme.accentStrong : editorTheme.accent;
+  const scale = isHovered ? 1.2 : 1;
+
+  return (
+    <group
+      name={handle.id}
+      data-testid={handle.id}
+      position={[handle.position[0], 0, handle.position[1]]}
+      scale={[scale, scale, scale]}
+      onPointerEnter={() => {
+        setHover({ ...createEmptyHover(), wallId: handle.entityId });
+      }}
+      onPointerLeave={() => {
+        clearHover();
+      }}
+      onPointerDown={(event) => {
+        event.stopPropagation?.();
+        const nextDocument = reduceArchitectureCommand(document, {
+          type: 'SPLIT_WALL',
+          wallId: handle.entityId,
+          splitPoint: handle.position,
+        });
+        const midpointVertexId = nextDocument.walls[handle.entityId]?.endVertexId;
+
+        replaceDocument(nextDocument);
+        setSelection({
+          ...createEmptySelection(),
+          vertexIds: midpointVertexId && nextDocument.vertices[midpointVertexId]
+            ? [midpointVertexId]
+            : [],
+        });
+      }}
+    >
+      <mesh name={`${handle.id}:hit`} rotation={[-Math.PI / 2, 0, Math.PI / 4]} position={[0, 0.006, 0]}>
+        <planeGeometry args={[0.22, 0.22]} />
+        <meshBasicMaterial color={editorTheme.accent} transparent opacity={0.18} />
+      </mesh>
+      <mesh name={`${handle.id}:diamond`} rotation={[-Math.PI / 2, 0, Math.PI / 4]} position={[0, 0.008, 0]}>
+        <planeGeometry args={[0.14, 0.14]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
+    </group>
+  );
+}
+
 export default function EditHandles() {
   const document = useArchitectureDocumentStore((state) => state.document);
   const selection = useArchitectureEditorStore((state) => state.selection);
@@ -65,7 +119,9 @@ export default function EditHandles() {
   return (
     <group name="edit-handles">
       {handles.map((handle) => (
-        <VertexHandle key={handle.id} handle={handle} />
+        handle.kind === 'wall-midpoint'
+          ? <MidpointHandle key={handle.id} handle={handle} />
+          : <VertexHandle key={handle.id} handle={handle} />
       ))}
     </group>
   );

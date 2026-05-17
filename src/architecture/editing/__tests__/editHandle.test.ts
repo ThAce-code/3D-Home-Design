@@ -48,7 +48,7 @@ function createDocumentWithConnectedWalls() {
 }
 
 describe('resolveEditHandles', () => {
-  it('returns endpoint handles for a selected wall', () => {
+  it('returns endpoint and midpoint handles for a selected wall', () => {
     const handles = resolveEditHandles(
       createDocumentWithConnectedWalls(),
       createSelection({ wallIds: ['w1'] }),
@@ -69,6 +69,13 @@ describe('resolveEditHandles', () => {
         entityId: 'v2',
         entityType: 'vertex',
       },
+      {
+        id: 'handle:midpoint:w1',
+        kind: 'wall-midpoint',
+        position: [2, 0],
+        entityId: 'w1',
+        entityType: 'wall',
+      },
     ]);
   });
 
@@ -78,7 +85,15 @@ describe('resolveEditHandles', () => {
       createSelection({ wallIds: ['w1', 'w2'] }),
     );
 
-    expect(handles.map((handle) => handle.entityId)).toEqual(['v1', 'v2', 'v3']);
+    expect(handles.filter((handle) => handle.kind === 'vertex-endpoint').map((handle) => handle.entityId)).toEqual([
+      'v1',
+      'v2',
+      'v3',
+    ]);
+    expect(handles.filter((handle) => handle.kind === 'wall-midpoint').map((handle) => handle.entityId)).toEqual([
+      'w1',
+      'w2',
+    ]);
   });
 
   it('returns no handles for an empty selection', () => {
