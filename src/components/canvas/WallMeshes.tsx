@@ -19,6 +19,7 @@ export default function WallMeshes() {
   const hover = useArchitectureEditorStore((state) => state.hover);
   const setHover = useArchitectureEditorStore((state) => state.setHover);
   const clearHover = useArchitectureEditorStore((state) => state.clearHover);
+  const startWallDrag = useArchitectureEditorStore((state) => state.startWallDrag);
   const walls = buildWallMeshDescriptors(document);
   const wallShapes = useMemo(() => walls.map((wall) => {
     const shape = new THREE.Shape();
@@ -65,6 +66,15 @@ export default function WallMeshes() {
                 name={`wall:${wall.wallId}`}
                 rotation={[-Math.PI / 2, 0, 0]}
                 onPointerDown={(event) => {
+                  if (activeTool === 'select' && isSelected) {
+                    event.stopPropagation?.();
+                    const point = event.point ?? event.nativeEvent?.point;
+                    if (point) {
+                      startWallDrag(document, wall.wallId, [point.x, point.z]);
+                    }
+                    return;
+                  }
+
                   meshController.handleWallPointerDown(wall.wallId, event);
                 }}
                 onPointerEnter={() => {

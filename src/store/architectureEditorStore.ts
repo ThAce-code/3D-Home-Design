@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { ArchitectureDocument } from '../architecture/domain/document.js';
 import type { Point2 } from '../architecture/topology/math.js';
 import {
   createDefaultArchitectureToolState,
@@ -12,7 +13,9 @@ import {
   type ArchitectureToolState,
   type DraftWallState,
   type VertexDragState,
+  type WallDragState,
 } from '../architecture/editing/tools.js';
+import { createWallDragState } from '../architecture/editing/wallDragInteraction.js';
 import {
   armWallTool,
   createDefaultWallToolState,
@@ -26,6 +29,7 @@ export interface ArchitectureEditorState {
   activeTool: ArchitectureTool;
   draftWall: DraftWallState | null;
   vertexDrag: VertexDragState | null;
+  wallDrag: WallDragState | null;
   cursorPoint: Point2 | null;
   toolState: ArchitectureToolState;
   selection: ArchitectureSelection;
@@ -40,6 +44,10 @@ export interface ArchitectureEditorState {
   updateVertexDrag: (currentPosition: Point2, snappedToVertexId?: string | null) => void;
   commitVertexDrag: () => void;
   cancelVertexDrag: () => void;
+  startWallDrag: (document: ArchitectureDocument, wallId: string, grabPoint: Point2) => void;
+  updateWallDrag: (currentOffset: Point2) => void;
+  commitWallDrag: () => void;
+  cancelWallDrag: () => void;
   setCursorPoint: (point: Point2 | null) => void;
   setSelection: (selection: ArchitectureSelection) => void;
   clearSelection: () => void;
@@ -57,6 +65,7 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
   activeTool: DEFAULT_ARCHITECTURE_TOOL,
   draftWall: null,
   vertexDrag: null,
+  wallDrag: null,
   cursorPoint: null,
   toolState: createDefaultArchitectureToolState(),
   selection: createEmptySelection(),
@@ -66,6 +75,7 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
     activeTool: tool,
     draftWall: tool === 'wall' ? state.draftWall : null,
     vertexDrag: tool === 'select' ? state.vertexDrag : null,
+    wallDrag: tool === 'select' ? state.wallDrag : null,
     cursorPoint: tool === 'wall' ? state.cursorPoint : null,
     toolState: {
       ...state.toolState,
@@ -75,6 +85,7 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
   startDraftWall: (startPoint, snappedVertexId = null) => set({
     activeTool: 'wall',
     vertexDrag: null,
+    wallDrag: null,
     cursorPoint: startPoint,
     draftWall: {
       startPoint,
@@ -109,6 +120,7 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
   }),
   startVertexDrag: (vertexId, startPosition) => set({
     activeTool: 'select',
+    wallDrag: null,
     vertexDrag: {
       vertexId,
       startPosition,
@@ -130,6 +142,34 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
   }),
   cancelVertexDrag: () => set({
     vertexDrag: null,
+  }),
+  startWallDrag: (document, wallId, grabPoint) => set(() => {
+    const wallDrag = createWallDragState({
+      document,
+      wallId,
+      grabPoint,
+    });
+
+    return {
+      activeTool: 'select',
+      draftWall: null,
+      vertexDrag: null,
+      wallDrag,
+    };
+  }),
+  updateWallDrag: (currentOffset) => set((state) => ({
+    wallDrag: state.wallDrag
+      ? {
+        ...state.wallDrag,
+        currentOffset,
+      }
+      : state.wallDrag,
+  })),
+  commitWallDrag: () => set({
+    wallDrag: null,
+  }),
+  cancelWallDrag: () => set({
+    wallDrag: null,
   }),
   setCursorPoint: (cursorPoint) => set({
     cursorPoint,

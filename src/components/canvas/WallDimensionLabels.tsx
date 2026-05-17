@@ -1,5 +1,6 @@
 import { Html } from '@react-three/drei';
 import { useMemo } from 'react';
+import { getWallDragPreviewPositions } from '../../architecture/editing/wallDragInteraction.js';
 import type { Point2 } from '../../architecture/topology/math.js';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
@@ -15,8 +16,13 @@ export default function WallDimensionLabels() {
   const document = useArchitectureDocumentStore((state) => state.document);
   const selection = useArchitectureEditorStore((state) => state.selection);
   const vertexDrag = useArchitectureEditorStore((state) => state.vertexDrag);
+  const wallDrag = useArchitectureEditorStore((state) => state.wallDrag);
   const labels = useMemo<WallLabelDescriptor[]>(() => {
     const wallIds = new Set(selection.wallIds);
+
+    if (wallDrag) {
+      wallIds.add(wallDrag.wallId);
+    }
 
     if (vertexDrag) {
       for (const wallId of document.wallOrder) {
@@ -39,12 +45,19 @@ export default function WallDimensionLabels() {
         return [];
       }
 
-      const start: Point2 = vertexDrag?.vertexId === wall.startVertexId
-        ? vertexDrag.currentPosition
-        : [startVertex.x, startVertex.y];
-      const end: Point2 = vertexDrag?.vertexId === wall.endVertexId
-        ? vertexDrag.currentPosition
-        : [endVertex.x, endVertex.y];
+      const wallDragPreview = wallDrag?.wallId === wallId
+        ? getWallDragPreviewPositions({ wallDrag })
+        : null;
+      const start: Point2 = wallDragPreview
+        ? wallDragPreview.startPosition
+        : vertexDrag?.vertexId === wall.startVertexId
+          ? vertexDrag.currentPosition
+          : [startVertex.x, startVertex.y];
+      const end: Point2 = wallDragPreview
+        ? wallDragPreview.endPosition
+        : vertexDrag?.vertexId === wall.endVertexId
+          ? vertexDrag.currentPosition
+          : [endVertex.x, endVertex.y];
       const dx = end[0] - start[0];
       const dy = end[1] - start[1];
 
@@ -54,7 +67,7 @@ export default function WallDimensionLabels() {
         length: Math.hypot(dx, dy),
       }];
     });
-  }, [document, selection.wallIds, vertexDrag]);
+  }, [document, selection.wallIds, vertexDrag, wallDrag]);
 
   if (!labels.length) {
     return null;

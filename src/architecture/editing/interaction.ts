@@ -111,6 +111,16 @@ export type ArchitectureInteractionCommand =
   }
   | {
     type: 'cancel-vertex-drag';
+  }
+  | {
+    type: 'update-wall-drag';
+    currentOffset: Point2;
+  }
+  | {
+    type: 'commit-wall-drag';
+  }
+  | {
+    type: 'cancel-wall-drag';
   };
 
 interface ArchitectureSceneEffects {
@@ -136,6 +146,9 @@ export interface ArchitectureInteractionCommandHandlers {
   updateVertexDrag?: (currentPosition: Point2, snappedToVertexId?: string | null) => void;
   commitVertexDrag?: () => void;
   cancelVertexDrag?: () => void;
+  updateWallDrag?: (currentOffset: Point2) => void;
+  commitWallDrag?: () => void;
+  cancelWallDrag?: () => void;
 }
 
 function createEmptySelection(): ArchitectureSelection {
@@ -190,6 +203,15 @@ export function applyArchitectureInteractionCommands(
         break;
       case 'cancel-vertex-drag':
         handlers.cancelVertexDrag?.();
+        break;
+      case 'update-wall-drag':
+        handlers.updateWallDrag?.(command.currentOffset);
+        break;
+      case 'commit-wall-drag':
+        handlers.commitWallDrag?.();
+        break;
+      case 'cancel-wall-drag':
+        handlers.cancelWallDrag?.();
         break;
     }
   });

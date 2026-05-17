@@ -7,6 +7,7 @@ import ZoneMeshes from './ZoneMeshes.js';
 import DraftWallPreview from './DraftWallPreview.js';
 import EditHandles from './EditHandles.js';
 import VertexDragPreview from './VertexDragPreview.js';
+import WallDragPreview from './WallDragPreview.js';
 import WallDimensionLabels from './WallDimensionLabels.js';
 
 const sceneController = createArchitectureSceneStoreController({
@@ -45,6 +46,7 @@ export default function ArchitectureScene() {
       <WallDimensionLabels />
       <DraftWallPreview />
       <VertexDragPreview />
+      <WallDragPreview />
     </group>
   );
 }

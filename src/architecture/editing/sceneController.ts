@@ -1,5 +1,5 @@
 import type { ArchitectureDocument } from '../domain/document.js';
-import type { DraftWallState, ArchitectureTool, ArchitectureViewportState, VertexDragState } from './tools.js';
+import type { DraftWallState, ArchitectureTool, ArchitectureViewportState, VertexDragState, WallDragState } from './tools.js';
 import type { WallToolState } from './wallTool.js';
 import type {
   ArchitectureDocumentControllerState,
@@ -19,12 +19,18 @@ import {
   getVertexDragCommitEffects,
   resolveVertexDragSnap,
 } from './vertexDragInteraction.js';
+import {
+  getWallDragCommitEffects,
+  getWallDragOffsetForPoint,
+  resolveWallDragSnap,
+} from './wallDragInteraction.js';
 
 interface ArchitectureSceneControllerState {
   activeTool: ArchitectureTool;
   document: ArchitectureDocument;
   draftWall: DraftWallState | null;
   vertexDrag?: VertexDragState | null;
+  wallDrag?: WallDragState | null;
   viewport: ArchitectureViewportState;
   wallTool: WallToolState;
 }
@@ -38,6 +44,7 @@ interface ArchitectureEditorControllerState {
   activeTool: ArchitectureTool;
   draftWall: DraftWallState | null;
   vertexDrag?: VertexDragState | null;
+  wallDrag?: WallDragState | null;
   viewport: ArchitectureViewportState;
   toolState: {
     wall: WallToolState;
@@ -54,6 +61,9 @@ interface ArchitectureEditorControllerState {
   updateVertexDrag?: NonNullable<ArchitectureInteractionCommandHandlers['updateVertexDrag']>;
   commitVertexDrag?: NonNullable<ArchitectureInteractionCommandHandlers['commitVertexDrag']>;
   cancelVertexDrag?: NonNullable<ArchitectureInteractionCommandHandlers['cancelVertexDrag']>;
+  updateWallDrag?: NonNullable<ArchitectureInteractionCommandHandlers['updateWallDrag']>;
+  commitWallDrag?: NonNullable<ArchitectureInteractionCommandHandlers['commitWallDrag']>;
+  cancelWallDrag?: NonNullable<ArchitectureInteractionCommandHandlers['cancelWallDrag']>;
 }
 
 interface CreateArchitectureSceneStoreControllerArgs {
@@ -126,6 +136,20 @@ export function createArchitectureSceneController({
         return;
       }
 
+      if (state.wallDrag) {
+        const rawOffset = getWallDragOffsetForPoint({
+          wallDrag: state.wallDrag,
+          currentPoint: point,
+        });
+        const currentOffset = resolveWallDragSnap({
+          rawOffset,
+          viewport: state.viewport,
+        });
+
+        handlers.updateWallDrag?.(currentOffset);
+        return;
+      }
+
       const effects = getArchitectureScenePointerMoveEffects({
         activeTool: state.activeTool,
         document: state.document,
@@ -142,25 +166,45 @@ export function createArchitectureSceneController({
       const point = getArchitectureScenePoint(event);
       const state = getState();
 
-      if (!state.vertexDrag) {
+      if (state.vertexDrag) {
+        const targetPosition = point
+          ? resolveVertexDragSnap({
+            document: state.document,
+            dragVertexId: state.vertexDrag.vertexId,
+            rawPoint: point,
+            viewport: state.viewport,
+          }).point
+          : state.vertexDrag.currentPosition;
+        const commands = getVertexDragCommitEffects({
+          document: state.document,
+          vertexId: state.vertexDrag.vertexId,
+          targetPosition,
+        });
+
+        applyArchitectureInteractionCommands(commands, handlers);
         return;
       }
 
-      const targetPosition = point
-        ? resolveVertexDragSnap({
+      if (state.wallDrag) {
+        const currentOffset = point
+          ? resolveWallDragSnap({
+            rawOffset: getWallDragOffsetForPoint({
+              wallDrag: state.wallDrag,
+              currentPoint: point,
+            }),
+            viewport: state.viewport,
+          })
+          : state.wallDrag.currentOffset;
+        const commands = getWallDragCommitEffects({
           document: state.document,
-          dragVertexId: state.vertexDrag.vertexId,
-          rawPoint: point,
-          viewport: state.viewport,
-        }).point
-        : state.vertexDrag.currentPosition;
-      const commands = getVertexDragCommitEffects({
-        document: state.document,
-        vertexId: state.vertexDrag.vertexId,
-        targetPosition,
-      });
+          wallDrag: {
+            ...state.wallDrag,
+            currentOffset,
+          },
+        });
 
-      applyArchitectureInteractionCommands(commands, handlers);
+        applyArchitectureInteractionCommands(commands, handlers);
+      }
     },
 
     handleContextMenu(event: ArchitectureSceneContextMenuEvent) {
@@ -214,6 +258,7 @@ export function createArchitectureSceneStoreController({
         document: documentState.document,
         draftWall: editorState.draftWall,
         vertexDrag: editorState.vertexDrag ?? null,
+        wallDrag: editorState.wallDrag ?? null,
         viewport: editorState.viewport,
         wallTool: editorState.toolState.wall,
       };
@@ -232,6 +277,9 @@ export function createArchitectureSceneStoreController({
       updateVertexDrag: (currentPosition, snappedToVertexId) => editorStore.getState().updateVertexDrag?.(currentPosition, snappedToVertexId),
       commitVertexDrag: () => editorStore.getState().commitVertexDrag?.(),
       cancelVertexDrag: () => editorStore.getState().cancelVertexDrag?.(),
+      updateWallDrag: (currentOffset) => editorStore.getState().updateWallDrag?.(currentOffset),
+      commitWallDrag: () => editorStore.getState().commitWallDrag?.(),
+      cancelWallDrag: () => editorStore.getState().cancelWallDrag?.(),
     },
   });
 }

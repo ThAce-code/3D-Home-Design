@@ -99,4 +99,17 @@ describe('WallDimensionLabels', () => {
 
     expect(mountNode.querySelector('[data-testid="wall-dimension-label:w1"]')?.textContent).toBe('5.00 m');
   });
+
+  it('moves the selected wall label with wall body drag preview positions', () => {
+    act(() => {
+      const document = createDocumentWithWall();
+      useArchitectureDocumentStore.getState().replaceDocument(document);
+      useArchitectureEditorStore.getState().startWallDrag(document, 'w1', [2, 0]);
+      useArchitectureEditorStore.getState().updateWallDrag([1, 2]);
+      root.render(<WallDimensionLabels />);
+    });
+
+    expect(mountNode.querySelector('[data-testid="wall-dimension-label:w1"]')?.textContent).toBe('4.00 m');
+    expect(mountNode.querySelector('[data-html-position="3,0.12,2"]')).not.toBeNull();
+  });
 });

@@ -252,6 +252,69 @@ describe('architecture scene controller', () => {
     expect(handlers.commitVertexDrag).toHaveBeenCalledTimes(1);
   });
 
+  it('updates and commits wall drag state from pointer move and pointer up', () => {
+    let document = createEmptyArchitectureDocument();
+    document = applyDrawWall(document, [0, 0], [4, 0]);
+    const wallId = document.wallOrder[0];
+    const wall = document.walls[wallId];
+    const handlers = {
+      setSelection: vi.fn(),
+      setWallClosurePreview: vi.fn(),
+      startDraftWall: vi.fn(),
+      replaceDocument: vi.fn(),
+      commitDraftWall: vi.fn(),
+      setCursorPoint: vi.fn(),
+      updateDraftWall: vi.fn(),
+      setWallToolModifiers: vi.fn(),
+      setWallNumericEntryEnabled: vi.fn(),
+      cancelDraftWall: vi.fn(),
+      updateWallDrag: vi.fn(),
+      commitWallDrag: vi.fn(),
+    };
+    let wallDrag = {
+      wallId,
+      startVertexId: wall.startVertexId,
+      endVertexId: wall.endVertexId,
+      startVertexOrigin: [0, 0] as [number, number],
+      endVertexOrigin: [4, 0] as [number, number],
+      grabOffset: [0, 0] as [number, number],
+      currentOffset: [0, 0] as [number, number],
+    };
+    const controller = createArchitectureSceneController({
+      getState: () => ({
+        activeTool: 'select',
+        document,
+        draftWall: null,
+        wallDrag,
+        viewport: createDefaultViewport(),
+        wallTool: createDefaultWallToolState(),
+      }),
+      handlers,
+    });
+
+    controller.handlePointerMove({
+      point: { x: 3, z: 2 },
+    });
+
+    expect(handlers.updateWallDrag).toHaveBeenCalledWith([1, 2]);
+
+    wallDrag = {
+      ...wallDrag,
+      currentOffset: [1, 2],
+    };
+    controller.handlePointerUp({
+      point: { x: 3, z: 2 },
+    });
+
+    expect(handlers.replaceDocument).toHaveBeenCalledTimes(1);
+    expect(handlers.commitWallDrag).toHaveBeenCalledTimes(1);
+    expect(handlers.setSelection).toHaveBeenCalledWith({
+      vertexIds: [],
+      wallIds: [wallId],
+      zoneIds: [],
+    });
+  });
+
   it('cancels active vertex drag from select-tool escape key events', () => {
     const handlers = {
       setSelection: vi.fn(),
