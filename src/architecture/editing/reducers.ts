@@ -5,6 +5,9 @@ import {
 } from '../domain/document.js';
 import type { ArchitectureCommand } from './commands.js';
 import { applyDrawWall, repairTopology } from '../topology/repair.js';
+import type { Point2 } from '../topology/math.js';
+
+const REPAIR_EPSILON = 1e-6;
 
 function removeWall(document: ArchitectureDocument, wallId: string): ArchitectureDocument {
   const next = cloneArchitectureDocument(document);
@@ -78,6 +81,50 @@ function moveVertex(
   return repairTopology(syncLevelEntityIds(next));
 }
 
+function splitWall(
+  document: ArchitectureDocument,
+  wallId: string,
+  splitPoint: Point2,
+): ArchitectureDocument {
+  const next = cloneArchitectureDocument(document);
+  const wall = next.walls[wallId];
+
+  if (!wall) {
+    return next;
+  }
+
+  const midpointVertexId = crypto.randomUUID();
+  const newWallId = crypto.randomUUID();
+
+  next.vertices[midpointVertexId] = {
+    id: midpointVertexId,
+    x: splitPoint[0],
+    y: splitPoint[1],
+  };
+
+  next.walls[wallId] = {
+    ...wall,
+    endVertexId: midpointVertexId,
+  };
+
+  next.walls[newWallId] = {
+    ...wall,
+    id: newWallId,
+    startVertexId: midpointVertexId,
+  };
+
+  const insertIndex = next.wallOrder.indexOf(wallId);
+  if (insertIndex === -1) {
+    next.wallOrder.push(newWallId);
+  } else {
+    next.wallOrder.splice(insertIndex + 1, 0, newWallId);
+  }
+
+  return repairTopology(syncLevelEntityIds(next), REPAIR_EPSILON, {
+    collapseCollinear: false,
+  });
+}
+
 function deleteVertex(document: ArchitectureDocument, vertexId: string): ArchitectureDocument {
   const next = cloneArchitectureDocument(document);
   const connectedWallIds = next.wallOrder.filter((wallId) => {
@@ -147,6 +194,8 @@ export function reduceArchitectureCommand(
       return applyDrawWall(document, command.start, command.end);
     case 'MOVE_VERTEX':
       return moveVertex(document, command.vertexId, command.to);
+    case 'SPLIT_WALL':
+      return splitWall(document, command.wallId, command.splitPoint);
     case 'DELETE_WALL':
       return removeWall(document, command.wallId);
     case 'DELETE_ZONE':

@@ -178,6 +178,7 @@ export function createArchitectureSceneController({
       const effects = getArchitectureSceneKeyDownEffects({
         activeTool: state.activeTool,
         key: event.key,
+        vertexDrag: state.vertexDrag ?? null,
       });
 
       if (effects.shouldPreventDefault) {

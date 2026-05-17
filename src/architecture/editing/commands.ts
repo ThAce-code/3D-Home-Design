@@ -8,6 +8,7 @@ import type { Point2 } from '../topology/math.js';
 export type ArchitectureCommand =
   | { type: 'DRAW_WALL'; start: Point2; end: Point2 }
   | { type: 'MOVE_VERTEX'; vertexId: string; to: Point2 }
+  | { type: 'SPLIT_WALL'; wallId: string; splitPoint: Point2 }
   | { type: 'DELETE_WALL'; wallId: string }
   | { type: 'DELETE_ZONE'; zoneId: string }
   | { type: 'DELETE_VERTEX'; vertexId: string }

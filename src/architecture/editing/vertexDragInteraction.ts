@@ -44,21 +44,33 @@ export function getVertexDragCommitEffects(args: {
   vertexId: string;
   targetPosition: Point2;
 }): ArchitectureInteractionCommand[] {
+  const nextDocument = reduceArchitectureCommand(args.document, {
+    type: 'MOVE_VERTEX',
+    vertexId: args.vertexId,
+    to: args.targetPosition,
+  });
+  const connectedWallIds = nextDocument.vertices[args.vertexId]
+    ? nextDocument.wallOrder.filter((wallId) => {
+      const wall = nextDocument.walls[wallId];
+
+      return wall?.startVertexId === args.vertexId || wall?.endVertexId === args.vertexId;
+    })
+    : [];
+
   return [
     {
       type: 'replace-document',
-      document: reduceArchitectureCommand(args.document, {
-        type: 'MOVE_VERTEX',
-        vertexId: args.vertexId,
-        to: args.targetPosition,
-      }),
+      document: nextDocument,
     },
     {
       type: 'commit-vertex-drag',
     },
     {
       type: 'set-selection',
-      selection: createEmptySelection(),
+      selection: {
+        ...createEmptySelection(),
+        wallIds: connectedWallIds,
+      },
     },
   ];
 }

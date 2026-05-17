@@ -34,6 +34,7 @@ interface UpdateWallDraftPointerArgs {
 interface ArchitectureSceneKeyboardArgs {
   activeTool: ArchitectureTool;
   key: string;
+  vertexDrag?: VertexDragState | null;
 }
 
 interface ArchitectureScenePointEvent {
@@ -454,7 +455,43 @@ export function getArchitectureScenePointerMoveEffects({
 export function getArchitectureSceneKeyDownEffects({
   activeTool,
   key,
+  vertexDrag,
 }: ArchitectureSceneKeyboardArgs): ArchitectureSceneEffects {
+  if (key === 'Escape') {
+    const commands: ArchitectureInteractionCommand[] = [];
+
+    if (vertexDrag) {
+      commands.push({
+        type: 'cancel-vertex-drag',
+      });
+    }
+
+    if (activeTool === 'wall') {
+      commands.push(
+        {
+          type: 'set-wall-closure-preview',
+          candidate: null,
+        },
+        {
+          type: 'set-wall-numeric-entry-enabled',
+          enabled: false,
+        },
+        {
+          type: 'cancel-draft-wall',
+        },
+      );
+    }
+
+    if (activeTool === 'select') {
+      commands.push({
+        type: 'set-selection',
+        selection: createEmptySelection(),
+      });
+    }
+
+    return { commands };
+  }
+
   if (activeTool !== 'wall') {
     return { commands: [] };
   }
@@ -488,24 +525,6 @@ export function getArchitectureSceneKeyDownEffects({
         {
           type: 'set-wall-numeric-entry-enabled',
           enabled: true,
-        },
-      ],
-    };
-  }
-
-  if (key === 'Escape') {
-    return {
-      commands: [
-        {
-          type: 'set-wall-closure-preview',
-          candidate: null,
-        },
-        {
-          type: 'set-wall-numeric-entry-enabled',
-          enabled: false,
-        },
-        {
-          type: 'cancel-draft-wall',
         },
       ],
     };

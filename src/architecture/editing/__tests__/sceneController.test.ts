@@ -251,4 +251,47 @@ describe('architecture scene controller', () => {
     expect(handlers.replaceDocument).toHaveBeenCalledTimes(1);
     expect(handlers.commitVertexDrag).toHaveBeenCalledTimes(1);
   });
+
+  it('cancels active vertex drag from select-tool escape key events', () => {
+    const handlers = {
+      setSelection: vi.fn(),
+      setWallClosurePreview: vi.fn(),
+      startDraftWall: vi.fn(),
+      replaceDocument: vi.fn(),
+      commitDraftWall: vi.fn(),
+      setCursorPoint: vi.fn(),
+      updateDraftWall: vi.fn(),
+      setWallToolModifiers: vi.fn(),
+      setWallNumericEntryEnabled: vi.fn(),
+      cancelDraftWall: vi.fn(),
+      cancelVertexDrag: vi.fn(),
+    };
+    const controller = createArchitectureSceneController({
+      getState: () => ({
+        activeTool: 'select',
+        document: createEmptyArchitectureDocument(),
+        draftWall: null,
+        vertexDrag: {
+          vertexId: 'v1',
+          startPosition: [0, 0],
+          currentPosition: [2, 0],
+          snappedToVertexId: null,
+        },
+        viewport: createDefaultViewport(),
+        wallTool: createDefaultWallToolState(),
+      }),
+      handlers,
+    });
+
+    controller.handleKeyDown({
+      key: 'Escape',
+    });
+
+    expect(handlers.cancelVertexDrag).toHaveBeenCalledTimes(1);
+    expect(handlers.setSelection).toHaveBeenCalledWith({
+      vertexIds: [],
+      wallIds: [],
+      zoneIds: [],
+    });
+  });
 });

@@ -67,7 +67,7 @@ describe('vertex drag interaction', () => {
     });
   });
 
-  it('builds commands that move the vertex and end the drag', () => {
+  it('builds commands that move the vertex, end the drag, and select connected walls', () => {
     const document = createDocumentWithVertices();
     const commands = getVertexDragCommitEffects({
       document,
@@ -84,5 +84,13 @@ describe('vertex drag interaction', () => {
     if (commands[0]?.type === 'replace-document') {
       expect(commands[0].document.vertices.v1).toMatchObject({ x: 2, y: 2 });
     }
+    expect(commands[2]).toEqual({
+      type: 'set-selection',
+      selection: {
+        vertexIds: [],
+        wallIds: ['w1'],
+        zoneIds: [],
+      },
+    });
   });
 });

@@ -346,6 +346,35 @@ describe('wall draft interaction', () => {
     });
   });
 
+  it('builds select-tool escape commands that cancel active vertex drag and clear selection', () => {
+    const result = getArchitectureSceneKeyDownEffects({
+      activeTool: 'select',
+      key: 'Escape',
+      vertexDrag: {
+        vertexId: 'v1',
+        startPosition: [0, 0],
+        currentPosition: [2, 0],
+        snappedToVertexId: null,
+      },
+    });
+
+    expect(result).toEqual({
+      commands: [
+        {
+          type: 'cancel-vertex-drag',
+        },
+        {
+          type: 'set-selection',
+          selection: {
+            vertexIds: [],
+            wallIds: [],
+            zoneIds: [],
+          },
+        },
+      ],
+    });
+  });
+
   it('builds delete commands when the delete tool clicks a wall mesh', () => {
     let document = createEmptyArchitectureDocument();
     document = applyDrawWall(document, [0, 0], [4, 0]);
