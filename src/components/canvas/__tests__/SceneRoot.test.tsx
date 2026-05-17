@@ -147,7 +147,7 @@ describe('SceneRoot', () => {
       );
     });
 
-    const hud = mountNode.querySelector('[data-testid="wall-draft-hud"]');
+    const hud = mountNode.querySelector('[data-testid="editor-status-hud"]');
 
     expect(hud).not.toBeNull();
     expect(hud?.textContent).toContain('按墙中线绘制');

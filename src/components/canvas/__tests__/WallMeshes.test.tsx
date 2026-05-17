@@ -3,6 +3,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useArchitectureDocumentStore } from '../../../store/architectureDocumentStore';
 import { useArchitectureEditorStore } from '../../../store/architectureEditorStore';
+import { editorTheme } from '../../../theme/editorTheme';
 
 const moveToSpy = vi.fn();
 const lineToSpy = vi.fn();
@@ -99,5 +100,41 @@ describe('WallMeshes', () => {
     expect(lineToSpy).toHaveBeenNthCalledWith(3, 3.9, -0.1);
     expect(lineToSpy).toHaveBeenNthCalledWith(4, 0, -0.1);
     expect(closePathSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the selected wall material color for the selected wall', () => {
+    buildWallMeshDescriptorsMock.mockReturnValue([
+      {
+        wallId: 'w-selected',
+        levelId: 'level-1',
+        origin: [0, 0],
+        length: 4,
+        thickness: 0.2,
+        height: 3,
+        angle: 0,
+        start: [0, 0],
+        end: [4, 0],
+        footprintPoints: [
+          [0, -0.1],
+          [4, -0.1],
+          [4, 0.1],
+          [0, 0.1],
+        ],
+      },
+    ]);
+
+    act(() => {
+      useArchitectureEditorStore.getState().setSelection({
+        vertexIds: [],
+        wallIds: ['w-selected'],
+        zoneIds: [],
+      });
+      root.render(<WallMeshes />);
+    });
+
+    const material = mountNode.querySelector('[name="wall:w-selected"] meshstandardmaterial');
+
+    expect(material?.getAttribute('color')).toBe(editorTheme.selected);
+    expect(material?.getAttribute('opacity')).toBe('0.85');
   });
 });

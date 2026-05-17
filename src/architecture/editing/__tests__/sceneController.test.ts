@@ -197,4 +197,58 @@ describe('architecture scene controller', () => {
       zoneIds: [document.zoneOrder[0]],
     });
   });
+
+  it('updates and commits vertex drag state from pointer move and pointer up', () => {
+    let document = createEmptyArchitectureDocument();
+    document = applyDrawWall(document, [0, 0], [4, 0]);
+    const vertexId = document.walls[document.wallOrder[0]].startVertexId;
+    const handlers = {
+      setSelection: vi.fn(),
+      setWallClosurePreview: vi.fn(),
+      startDraftWall: vi.fn(),
+      replaceDocument: vi.fn(),
+      commitDraftWall: vi.fn(),
+      setCursorPoint: vi.fn(),
+      updateDraftWall: vi.fn(),
+      setWallToolModifiers: vi.fn(),
+      setWallNumericEntryEnabled: vi.fn(),
+      cancelDraftWall: vi.fn(),
+      updateVertexDrag: vi.fn(),
+      commitVertexDrag: vi.fn(),
+    };
+    let vertexDrag = {
+      vertexId,
+      startPosition: [0, 0] as [number, number],
+      currentPosition: [0, 0] as [number, number],
+      snappedToVertexId: null,
+    };
+    const controller = createArchitectureSceneController({
+      getState: () => ({
+        activeTool: 'select',
+        document,
+        draftWall: null,
+        vertexDrag,
+        viewport: createDefaultViewport(),
+        wallTool: createDefaultWallToolState(),
+      }),
+      handlers,
+    });
+
+    controller.handlePointerMove({
+      point: { x: 2.04, z: 0.02 },
+    });
+
+    expect(handlers.updateVertexDrag).toHaveBeenCalledWith([2, 0], null);
+
+    vertexDrag = {
+      ...vertexDrag,
+      currentPosition: [2, 0],
+    };
+    controller.handlePointerUp({
+      point: { x: 2, z: 0 },
+    });
+
+    expect(handlers.replaceDocument).toHaveBeenCalledTimes(1);
+    expect(handlers.commitVertexDrag).toHaveBeenCalledTimes(1);
+  });
 });

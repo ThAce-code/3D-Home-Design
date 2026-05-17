@@ -4,6 +4,7 @@ import type {
   DraftWallState,
   ArchitectureTool,
   ArchitectureViewportState,
+  VertexDragState,
 } from './tools.js';
 import type { Point2 } from '../topology/math.js';
 import type { WallToolAxisLock, WallToolState, WallClosurePreviewCandidate } from './wallTool.js';
@@ -98,6 +99,17 @@ export type ArchitectureInteractionCommand =
   }
   | {
     type: 'cancel-draft-wall';
+  }
+  | {
+    type: 'update-vertex-drag';
+    currentPosition: Point2;
+    snappedToVertexId: string | null;
+  }
+  | {
+    type: 'commit-vertex-drag';
+  }
+  | {
+    type: 'cancel-vertex-drag';
   };
 
 interface ArchitectureSceneEffects {
@@ -120,6 +132,9 @@ export interface ArchitectureInteractionCommandHandlers {
   setWallToolModifiers?: (modifiers: { shiftKey?: boolean; altKey?: boolean }) => void;
   setWallNumericEntryEnabled?: (enabled: boolean) => void;
   cancelDraftWall?: () => void;
+  updateVertexDrag?: (currentPosition: Point2, snappedToVertexId?: string | null) => void;
+  commitVertexDrag?: () => void;
+  cancelVertexDrag?: () => void;
 }
 
 function createEmptySelection(): ArchitectureSelection {
@@ -165,6 +180,15 @@ export function applyArchitectureInteractionCommands(
         break;
       case 'cancel-draft-wall':
         handlers.cancelDraftWall?.();
+        break;
+      case 'update-vertex-drag':
+        handlers.updateVertexDrag?.(command.currentPosition, command.snappedToVertexId);
+        break;
+      case 'commit-vertex-drag':
+        handlers.commitVertexDrag?.();
+        break;
+      case 'cancel-vertex-drag':
+        handlers.cancelVertexDrag?.();
         break;
     }
   });

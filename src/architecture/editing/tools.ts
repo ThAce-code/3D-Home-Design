@@ -12,6 +12,13 @@ export interface DraftWallState {
   snappedVertexId: string | null;
 }
 
+export interface VertexDragState {
+  vertexId: string;
+  startPosition: Point2;
+  currentPosition: Point2;
+  snappedToVertexId: string | null;
+}
+
 export interface ArchitectureSelection {
   vertexIds: string[];
   wallIds: string[];

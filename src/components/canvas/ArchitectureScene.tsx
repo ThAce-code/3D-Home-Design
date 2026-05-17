@@ -5,6 +5,9 @@ import { createArchitectureSceneStoreController } from '../../architecture/editi
 import WallMeshes from './WallMeshes.js';
 import ZoneMeshes from './ZoneMeshes.js';
 import DraftWallPreview from './DraftWallPreview.js';
+import EditHandles from './EditHandles.js';
+import VertexDragPreview from './VertexDragPreview.js';
+import WallDimensionLabels from './WallDimensionLabels.js';
 
 const sceneController = createArchitectureSceneStoreController({
   editorStore: useArchitectureEditorStore,
@@ -30,6 +33,7 @@ export default function ArchitectureScene() {
         position={[0, -0.01, 0]}
         onPointerDown={sceneController.handlePointerDown}
         onPointerMove={sceneController.handlePointerMove}
+        onPointerUp={sceneController.handlePointerUp}
         onContextMenu={sceneController.handleContextMenu}
       >
         <planeGeometry args={[200, 200]} />
@@ -37,7 +41,10 @@ export default function ArchitectureScene() {
       </mesh>
       <ZoneMeshes />
       <WallMeshes />
+      <EditHandles />
+      <WallDimensionLabels />
       <DraftWallPreview />
+      <VertexDragPreview />
     </group>
   );
 }

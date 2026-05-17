@@ -62,11 +62,13 @@ describe('ArchitectureScene', () => {
   let mountNode: HTMLDivElement;
   let root: Root;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     useArchitectureDocumentStore.setState(useArchitectureDocumentStore.getInitialState());
     useArchitectureEditorStore.setState(useArchitectureEditorStore.getInitialState());
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     mountNode = document.createElement('div');
     document.body.appendChild(mountNode);
@@ -79,6 +81,7 @@ describe('ArchitectureScene', () => {
     });
     mountNode.remove();
     consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
     useArchitectureDocumentStore.setState(useArchitectureDocumentStore.getInitialState());
     useArchitectureEditorStore.setState(useArchitectureEditorStore.getInitialState());
   });
