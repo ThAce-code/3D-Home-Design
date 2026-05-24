@@ -2,16 +2,16 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import { buildWallMeshDescriptors } from '../../architecture/geometry/wallMeshes.js';
-import { findZoneIdContainingPoint } from '../../architecture/geometry/zoneSelection.js';
-import { isPointNearWallFootprint } from '../../architecture/geometry/wallSelection.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
-import { reduceArchitectureCommand } from '../../architecture/editing/reducers.js';
+import { createArchitectureMeshStoreController } from '../../architecture/editing/meshController.js';
+
+const meshController = createArchitectureMeshStoreController({
+  editorStore: useArchitectureEditorStore,
+  documentStore: useArchitectureDocumentStore,
+});
 
 export default function WallMeshes() {
   const document = useArchitectureDocumentStore((state) => state.document);
-  const replaceDocument = useArchitectureDocumentStore((state) => state.replaceDocument);
-  const activeTool = useArchitectureEditorStore((state) => state.activeTool);
-  const setSelection = useArchitectureEditorStore((state) => state.setSelection);
   const walls = buildWallMeshDescriptors(document);
   const wallShapes = useMemo(() => walls.map((wall) => {
     const shape = new THREE.Shape();
@@ -47,63 +47,7 @@ export default function WallMeshes() {
             name={`wall:${wall.wallId}`}
             rotation={[-Math.PI / 2, 0, 0]}
             onPointerDown={(event) => {
-              if (activeTool === 'delete') {
-                event.stopPropagation();
-                replaceDocument(reduceArchitectureCommand(document, {
-                  type: 'DELETE_WALL',
-                  wallId: wall.wallId,
-                }));
-                setSelection({
-                  vertexIds: [],
-                  wallIds: [],
-                  zoneIds: [],
-                });
-                return;
-              }
-
-              if (activeTool !== 'select') {
-                return;
-              }
-
-              const intersections = ('intersections' in event && Array.isArray(event.intersections))
-                ? event.intersections
-                : ('nativeEvent' in event
-                  && event.nativeEvent
-                  && 'intersections' in event.nativeEvent
-                  && Array.isArray(event.nativeEvent.intersections)
-                  ? event.nativeEvent.intersections
-                  : []);
-              const groundIntersection = intersections.find((intersection) => {
-                  const name = intersection.object?.name ?? '';
-
-                  return name === 'architecture-interaction-plane' || name === 'floor-plane';
-                });
-              const groundPoint = groundIntersection
-                ? [groundIntersection.point.x, groundIntersection.point.z] as [number, number]
-                : null;
-              const zoneId = groundPoint ? findZoneIdContainingPoint(document, groundPoint) : null;
-              const shouldPreferZone = Boolean(
-                zoneId
-                && groundPoint
-                && !isPointNearWallFootprint(document, wall.wallId, groundPoint)
-              );
-
-              event.stopPropagation();
-
-              if (shouldPreferZone && zoneId) {
-                setSelection({
-                  vertexIds: [],
-                  wallIds: [],
-                  zoneIds: [zoneId],
-                });
-                return;
-              }
-
-              setSelection({
-                vertexIds: [],
-                wallIds: [wall.wallId],
-                zoneIds: [],
-              });
+              meshController.handleWallPointerDown(wall.wallId, event);
             }}
           >
             <extrudeGeometry args={[wall.shape, wall.extrudeSettings]} />

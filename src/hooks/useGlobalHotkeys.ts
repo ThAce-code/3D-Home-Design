@@ -3,7 +3,7 @@ import { useStore } from '../store/useStore.js';
 import type { DockTab, TransformTool } from '../types/camera.js';
 import { useArchitectureDocumentStore } from '../store/architectureDocumentStore.js';
 import { useArchitectureEditorStore } from '../store/architectureEditorStore.js';
-import { reduceArchitectureCommand } from '../architecture/editing/reducers.js';
+import { createArchitectureHotkeyStoreController } from '../architecture/editing/hotkeyController.js';
 
 const dockKeys: Record<string, DockTab> = {
   '1': 'building',
@@ -14,6 +14,11 @@ const dockKeys: Record<string, DockTab> = {
 };
 
 const toolOrder: TransformTool[] = ['translate', 'rotate', 'scale'];
+
+const architectureHotkeyController = createArchitectureHotkeyStoreController({
+  editorStore: useArchitectureEditorStore,
+  documentStore: useArchitectureDocumentStore,
+});
 
 export function useGlobalHotkeys() {
   useEffect(() => {
@@ -41,19 +46,7 @@ export function useGlobalHotkeys() {
           return;
         }
 
-        const architectureSelection = useArchitectureEditorStore.getState().selection;
-        const wallId = architectureSelection.wallIds[0];
-        const vertexId = architectureSelection.vertexIds[0];
-
-        if (wallId || vertexId) {
-          const currentDocument = useArchitectureDocumentStore.getState().document;
-          const replaceDocument = useArchitectureDocumentStore.getState().replaceDocument;
-
-          replaceDocument(reduceArchitectureCommand(currentDocument, wallId
-            ? { type: 'DELETE_WALL', wallId }
-            : { type: 'DELETE_VERTEX', vertexId: vertexId! }));
-          useArchitectureEditorStore.getState().clearSelection();
-        }
+        architectureHotkeyController.deleteSelection();
         return;
       }
 
@@ -84,19 +77,7 @@ export function useGlobalHotkeys() {
       const { selectedItemId, selectItem, selectedAssetId, selectAsset } = useStore.getState();
       if (selectedItemId) selectItem(null);
       if (selectedAssetId) selectAsset(null);
-
-      const architectureState = useArchitectureEditorStore.getState();
-      if (
-        architectureState.selection.wallIds.length
-        || architectureState.selection.vertexIds.length
-        || architectureState.selection.zoneIds.length
-      ) {
-        architectureState.clearSelection();
-      }
-      if (architectureState.draftWall) {
-        architectureState.cancelDraftWall();
-      }
-      architectureState.setWallClosurePreview(null);
+      architectureHotkeyController.clearSelectionOnSecondaryAction();
     };
 
     const isSecondaryClick = (event: MouseEvent | PointerEvent) => {
