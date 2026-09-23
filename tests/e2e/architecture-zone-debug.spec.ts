@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { ArchitectureDocument } from '../../src/architecture/domain/document.js';
 
 async function getCanvasLockState(page: Page) {
   return await page.evaluate(() => {
@@ -13,12 +14,7 @@ declare global {
       markHasEnteredOnce: () => void;
       setPointerLocked: (value: boolean) => void;
       setAltUnlocked: (value: boolean) => void;
-      getDocument: () => {
-        document: {
-          zoneOrder: string[];
-          zones: Record<string, unknown>;
-        };
-      };
+      getDocument: () => { document: ArchitectureDocument };
       replaceDocument: (document: unknown) => void;
       setActiveTool: (tool: string) => void;
       setSelection: (selection: { vertexIds: string[]; wallIds: string[]; zoneIds: string[] }) => void;
@@ -175,7 +171,7 @@ test('diagnoses zone raycast and selection in a real browser canvas', async ({ p
     console.log(`[browser:${message.type()}] ${message.text()}`);
   });
 
-  await page.goto('/');
+  await page.goto('/editor');
   await page.waitForFunction(() => Boolean(window.__architectureDebug));
   await page.getByTestId('lock-overlay').click();
   await expect.poll(() => getCanvasLockState(page)).toBe(true);
@@ -251,7 +247,7 @@ test('diagnoses zone raycast and selection in a real browser canvas', async ({ p
 });
 
 test('keeps zone selectable from an oblique camera even when a far wall is in the raycast stack', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/editor');
   await page.waitForFunction(() => Boolean(window.__architectureDebug));
   await page.getByTestId('lock-overlay').click();
   await expect.poll(() => getCanvasLockState(page)).toBe(true);
@@ -302,12 +298,13 @@ test('keeps zone selectable from an oblique camera even when a far wall is in th
 });
 
 test('keeps visible wall faces selectable in the unlocked editor camera', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/editor');
   await page.waitForFunction(() => Boolean(window.__architectureDebug));
   await page.getByTestId('lock-overlay').click();
   await expect.poll(() => getCanvasLockState(page)).toBe(true);
 
   await seedRectangleZone(page);
+  await expect.poll(() => page.evaluate(() => window.__architectureDebug?.listObjectsByPrefix('wall:').length ?? 0)).toBe(4);
 
   const wallTarget = await page.evaluate(() => {
     const debug = window.__architectureDebug;
@@ -352,7 +349,7 @@ test('keeps visible wall faces selectable in the unlocked editor camera', async 
 });
 
 test('creates and selects a zone from a near-closed rectangle draw sequence', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/editor');
   await page.waitForFunction(() => Boolean(window.__architectureDebug));
   await page.getByTestId('lock-overlay').click();
   await expect.poll(() => getCanvasLockState(page)).toBe(true);

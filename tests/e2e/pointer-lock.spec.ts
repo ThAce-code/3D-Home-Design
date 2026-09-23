@@ -17,7 +17,7 @@ async function getCanvasLockState(page: Page) {
 
 test('locks pointer on click and unlocks on Alt (first-enter overlay hides after entering once)', async ({ page }) => {
   await resetDb(page)
-  await page.goto('/')
+  await page.goto('/editor')
 
   const overlay = page.getByTestId('lock-overlay')
   await expect(overlay).toBeVisible()
