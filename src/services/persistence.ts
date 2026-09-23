@@ -1,5 +1,4 @@
 import { openDB } from 'idb';
-import type { Room } from '../types/room.js';
 import type { FurnitureItem } from '../types/furniture.js';
 
 const DB_NAME = 'home-design-v2';
@@ -7,7 +6,6 @@ const DB_VERSION = 1;
 const STORE_NAME = 'state';
 
 export interface PersistData {
-  rooms: Room[];
   items: FurnitureItem[];
 }
 

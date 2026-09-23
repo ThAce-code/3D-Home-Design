@@ -3,7 +3,7 @@ import type { DockTab } from '../../types/camera.js';
 import { Home, Armchair, Palette, Ruler, Camera } from 'lucide-react';
 
 const dockItems: { tab: DockTab; icon: typeof Home; label: string }[] = [
-  { tab: 'rooms', icon: Home, label: '房间' },
+  { tab: 'building', icon: Home, label: '建筑' },
   { tab: 'furniture', icon: Armchair, label: '家具' },
   { tab: 'materials', icon: Palette, label: '材质' },
   { tab: 'measure', icon: Ruler, label: '测量' },

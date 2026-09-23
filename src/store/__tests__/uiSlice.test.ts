@@ -4,8 +4,8 @@ import { useStore } from '../useStore';
 describe('uiSlice', () => {
   beforeEach(() => { useStore.setState(useStore.getInitialState()); });
 
-  it('default activeTab is rooms', () => {
-    expect(useStore.getState().activeTab).toBe('rooms');
+  it('default activeTab is building', () => {
+    expect(useStore.getState().activeTab).toBe('building');
   });
   it('setActiveTab switches tab', () => {
     useStore.getState().setActiveTab('furniture');

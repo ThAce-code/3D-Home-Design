@@ -1,6 +1,9 @@
 import { useStore } from '../../store/useStore.js';
 import { Move, RotateCw, Maximize2, Trash2, Copy } from 'lucide-react';
 import type { TransformTool } from '../../types/camera.js';
+import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
+import WallPropertyPanel from './WallPropertyPanel.js';
+import ZonePropertyPanel from './ZonePropertyPanel.js';
 
 const tools: { value: TransformTool; icon: typeof Move; label: string }[] = [
   { value: 'translate', icon: Move, label: '移动' },
@@ -8,7 +11,12 @@ const tools: { value: TransformTool; icon: typeof Move; label: string }[] = [
   { value: 'scale', icon: Maximize2, label: '缩放' },
 ];
 
-export default function PropertyPanel() {
+interface Props {
+  architectureModeEnabled?: boolean;
+}
+
+export default function PropertyPanel({ architectureModeEnabled = false }: Props) {
+  const architectureSelection = useArchitectureEditorStore((state) => state.selection);
   const items = useStore((s) => s.items);
   const selectedItemId = useStore((s) => s.selectedItemId);
   const updateItem = useStore((s) => s.updateItem);
@@ -16,6 +24,20 @@ export default function PropertyPanel() {
   const assets = useStore((s) => s.assets);
   const transformTool = useStore((s) => s.transformTool);
   const setTransformTool = useStore((s) => s.setTransformTool);
+
+  if (architectureModeEnabled) {
+    const wallId = architectureSelection.wallIds[0];
+    if (wallId) {
+      return <WallPropertyPanel wallId={wallId} />;
+    }
+
+    const zoneId = architectureSelection.zoneIds[0];
+    if (zoneId) {
+      return <ZonePropertyPanel zoneId={zoneId} />;
+    }
+
+    return null;
+  }
 
   const item = items.find((i) => i.id === selectedItemId);
   if (!item) return null;

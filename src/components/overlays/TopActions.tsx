@@ -1,11 +1,23 @@
 import { Save, Settings } from 'lucide-react';
 import { useStore } from '../../store/useStore.js';
 import { saveState } from '../../services/persistence.js';
+import { saveArchitectureDocument } from '../../hooks/useArchitecturePersistence.js';
+import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 
-export default function TopActions() {
+interface Props {
+  architectureModeEnabled?: boolean;
+}
+
+export default function TopActions({ architectureModeEnabled = false }: Props) {
   const handleSave = async () => {
-    const { rooms, items } = useStore.getState();
-    await saveState({ rooms, items });
+    if (architectureModeEnabled) {
+      const { document } = useArchitectureDocumentStore.getState();
+      await saveArchitectureDocument(document);
+      return;
+    }
+
+    const { items } = useStore.getState();
+    await saveState({ items });
   };
 
   const btnStyle = {
