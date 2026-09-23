@@ -1,4 +1,5 @@
 import { useStore } from '../../store/useStore.js';
+import { editorTheme } from '../../theme/editorTheme.js';
 
 export default function Crosshair() {
   const pointerLocked = useStore((s) => s.pointerLocked);
@@ -8,7 +9,7 @@ export default function Crosshair() {
   if (altUnlocked) return null;
   if (!pointerLocked && !selectedAssetId) return null;
 
-  const color = selectedAssetId ? '#28A375' : 'rgba(248,245,240,0.6)';
+  const color = selectedAssetId ? editorTheme.accentStrong : editorTheme.crosshair;
 
   return (
     <div className="fixed top-1/2 left-1/2 w-5 h-5 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-50">

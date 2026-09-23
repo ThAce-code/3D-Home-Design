@@ -26,7 +26,7 @@ declare global {
 }
 
 test('renders seeded horizontal and vertical walls with expected world bounds', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/editor');
   await page.waitForFunction(() => Boolean(window.__architectureDebug));
 
   await page.evaluate(async () => {

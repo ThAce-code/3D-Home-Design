@@ -4,6 +4,7 @@ import MaterialPanel from '../panels/MaterialPanel.js';
 import MeasurePanel from '../panels/MeasurePanel.js';
 import ExportPanel from '../panels/ExportPanel.js';
 import BuildingToolPanel from '../panels/BuildingToolPanel.js';
+import { editorTheme } from '../../theme/editorTheme.js';
 
 const panelMap = {
   building: BuildingToolPanel,
@@ -30,11 +31,12 @@ export default function LeftPanel({ architectureModeEnabled = false }: Props) {
         bottom: 96,
         width: 256,
         maxHeight: 'calc(100vh - 120px)',
-        background: 'rgba(19,61,47,0.85)',
+        background: editorTheme.surface,
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        borderColor: 'rgba(248,245,240,0.06)',
+        borderColor: editorTheme.border,
         borderRadius: 12,
+        boxShadow: '0 24px 56px -36px rgba(82, 56, 33, 0.48)',
         transform: dockOpen ? 'translateX(0)' : 'translateX(-280px)',
         opacity: dockOpen ? 1 : 0,
         pointerEvents: dockOpen ? 'auto' : 'none',

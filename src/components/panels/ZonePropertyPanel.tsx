@@ -1,4 +1,5 @@
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
+import { editorThemeVars } from '../../theme/editorTheme.js';
 
 interface Props {
   zoneId: string;
@@ -18,21 +19,22 @@ export default function ZonePropertyPanel({ zoneId }: Props) {
       className="fixed right-4 top-1/2 -translate-y-1/2 z-50 border overflow-hidden"
       style={{
         width: 260,
-        background: 'rgba(19,61,47,0.85)',
+        background: editorThemeVars.surfaceStrong,
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        borderColor: 'rgba(248,245,240,0.06)',
+        borderColor: editorThemeVars.border,
         borderRadius: 12,
+        boxShadow: '0 24px 56px -36px rgba(82, 56, 33, 0.48)',
       }}
     >
       <div className="p-4 flex flex-col gap-2">
-        <h3 className="text-sm font-semibold" style={{ color: '#F8F5F0' }}>Zone</h3>
-        <p className="text-xs" style={{ color: '#9AB0A6' }}>{zoneId}</p>
-        <p className="text-sm" style={{ color: '#F8F5F0' }}>
+        <h3 className="text-sm font-semibold" style={{ color: editorThemeVars.text }}>Zone</h3>
+        <p className="text-xs" style={{ color: editorThemeVars.textMuted }}>{zoneId}</p>
+        <p className="text-sm" style={{ color: editorThemeVars.text }}>
           kind: {zone.kind}
         </p>
-        <p className="text-sm" style={{ color: '#F8F5F0' }}>
-          boundary vertices: {zone.boundaryVertexIds.length}
+        <p className="text-sm" style={{ color: editorThemeVars.text }}>
+          boundary points: {zone.boundaryVertexIds.length}
         </p>
       </div>
     </div>

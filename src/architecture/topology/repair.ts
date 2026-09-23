@@ -63,16 +63,21 @@ export function applyDrawWall(
   };
   next.wallOrder.push(wallId);
 
-  return repairTopology(syncLevelEntityIds(next));
+  return repairTopology(syncLevelEntityIds(next), DEFAULT_REPAIR_EPSILON, {
+    collapseCollinear: false,
+  });
 }
 
 export function repairTopology(
   document: ArchitectureDocument,
-  epsilon = DEFAULT_REPAIR_EPSILON
+  epsilon = DEFAULT_REPAIR_EPSILON,
+  options?: { collapseCollinear?: boolean }
 ): ArchitectureDocument {
   const splitDocument = splitIntersectingWalls(document, epsilon);
   const mergedDocument = mergeVertices(splitDocument, epsilon);
-  const cleanedDocument = cleanupTopology(mergedDocument, epsilon);
+  const cleanedDocument = cleanupTopology(mergedDocument, epsilon, {
+    collapseCollinear: options?.collapseCollinear,
+  });
 
   return rebuildZones(cleanedDocument, epsilon);
 }

@@ -17,7 +17,7 @@ async function getCanvasLockState(page: Page) {
 
 test('shows updated flight hint after toggling flying mode', async ({ page }) => {
   await resetDb(page)
-  await page.goto('/')
+  await page.goto('/editor')
 
   await page.getByTestId('lock-overlay').click()
   await expect.poll(() => getCanvasLockState(page)).toBe(true)

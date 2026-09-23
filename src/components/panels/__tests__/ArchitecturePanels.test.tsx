@@ -12,6 +12,14 @@ import ArchitectureScene from '../../canvas/ArchitectureScene';
 import LeftPanel from '../../layout/LeftPanel';
 import PropertyPanel from '../PropertyPanel';
 
+function queryWallMesh(root: ParentNode, wallId: string) {
+  return root.querySelector(`[name="wall:${wallId}"]`);
+}
+
+function queryZoneMesh(root: ParentNode, zoneId: string) {
+  return root.querySelector(`[name="zone:${zoneId}"]`);
+}
+
 function createDocumentWithWallAndZone(): ArchitectureDocument {
   const document = createEmptyArchitectureDocument();
   const levelId = document.levelOrder[0];
@@ -102,7 +110,7 @@ describe('architecture shell panels', () => {
       );
     });
 
-    const wallMesh = mountNode.querySelector('[data-testid="architecture-wall-w1"]');
+    const wallMesh = queryWallMesh(mountNode, 'w1');
 
     if (!wallMesh) {
       throw new Error('missing wall mesh');
@@ -127,7 +135,7 @@ describe('architecture shell panels', () => {
       );
     });
 
-    const zoneMesh = mountNode.querySelector('[data-testid="architecture-zone-z1"]');
+    const zoneMesh = queryZoneMesh(mountNode, 'z1');
 
     if (!zoneMesh) {
       throw new Error('missing zone mesh');
@@ -152,7 +160,7 @@ describe('architecture shell panels', () => {
       );
     });
 
-    const wallMesh = mountNode.querySelector('[data-testid="architecture-wall-w1"]');
+    const wallMesh = queryWallMesh(mountNode, 'w1');
 
     if (!wallMesh) {
       throw new Error('missing wall mesh');
