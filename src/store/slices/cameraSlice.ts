@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand';
+import type { AppState } from '../useStore.js';
 
 export interface CameraSlice {
   isFlying: boolean;
@@ -11,7 +12,7 @@ export interface CameraSlice {
   setHasEnteredOnce: () => void;
 }
 
-export const createCameraSlice: StateCreator<CameraSlice, [['zustand/immer', never]], [], CameraSlice> = (set) => ({
+export const createCameraSlice: StateCreator<AppState, [['zustand/immer', never]], [], CameraSlice> = (set) => ({
   isFlying: false,
   pointerLocked: false,
   altUnlocked: false,

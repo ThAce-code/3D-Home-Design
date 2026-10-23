@@ -1,3 +1,4 @@
+import type { ArchitectureTool } from '../tools';
 import { describe, expect, it, vi } from 'vitest';
 import { createArchitectureToolStoreController } from '../toolController';
 
@@ -6,7 +7,7 @@ describe('architecture tool controller', () => {
     const firstSetActiveTool = vi.fn();
     const latestSetActiveTool = vi.fn();
     let editorState = {
-      activeTool: 'select' as const,
+      activeTool: 'select' as ArchitectureTool,
       setActiveTool: firstSetActiveTool,
     };
 

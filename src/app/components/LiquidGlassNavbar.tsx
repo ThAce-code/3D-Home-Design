@@ -1,10 +1,10 @@
-import type { MouseEvent as ReactMouseEvent } from 'react';
+import type { MouseEvent as ReactMouseEvent, SyntheticEvent } from 'react';
 import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from 'motion/react';
 
 type LiquidGlassNavbarProps = {
   logoSrc: string;
   logoFallbackSrc: string;
-  onLogoError: (event: ReactMouseEvent<HTMLImageElement> | Event, fallbackSrc: string) => void;
+  onLogoError: (event: SyntheticEvent<HTMLImageElement> | Event, fallbackSrc: string) => void;
   onNavigateHome: () => void;
   onAuthAction: () => void;
 };

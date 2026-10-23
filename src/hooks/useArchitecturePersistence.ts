@@ -30,7 +30,7 @@ export async function loadArchitectureDocument(): Promise<ArchitectureDocument |
 }
 
 export function useArchitecturePersistence(enabled = true) {
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (!enabled) {

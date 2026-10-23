@@ -19,7 +19,7 @@ describe('Architecture-first shell state', () => {
   });
 
   it('does not expose legacy room state on the app store', () => {
-    const state = useStore.getState() as Record<string, unknown>;
+    const state = useStore.getState();
 
     expect('rooms' in state).toBe(false);
     expect('selectedRoomId' in state).toBe(false);

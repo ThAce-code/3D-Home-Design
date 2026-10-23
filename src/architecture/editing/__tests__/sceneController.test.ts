@@ -1,3 +1,4 @@
+import type { ArchitectureTool } from '../tools';
 import { describe, expect, it, vi } from 'vitest';
 import { createEmptyArchitectureDocument } from '../../domain/document';
 import { applyDrawWall } from '../../topology/repair';
@@ -9,6 +10,44 @@ import {
 } from '../sceneController';
 
 describe('architecture scene controller', () => {
+  it.each(['vertex', 'wall'] as const)('freezes the %s drag until numeric input is submitted or cancelled', (kind) => {
+    const handlers = {
+      updateVertexDrag: vi.fn(),
+      updateWallDrag: vi.fn(),
+      replaceDocument: vi.fn(),
+      commitVertexDrag: vi.fn(),
+      commitWallDrag: vi.fn(),
+    };
+    const controller = createArchitectureSceneController({
+      getState: () => ({
+        activeTool: 'select',
+        document: createEmptyArchitectureDocument(),
+        draftWall: null,
+        vertexDrag: kind === 'vertex' ? {
+          vertexId: 'v1', startPosition: [0, 0], currentPosition: [1, 0],
+          snappedToVertexId: null, numericEntryEnabled: true,
+        } : null,
+        wallDrag: kind === 'wall' ? {
+          wallId: 'w1', startVertexId: 'v1', endVertexId: 'v2',
+          startVertexOrigin: [0, 0], endVertexOrigin: [4, 0],
+          grabOffset: [0, 0], currentOffset: [0, 1], numericEntryEnabled: true,
+        } : null,
+        viewport: createDefaultViewport(),
+        wallTool: createDefaultWallToolState(),
+      }),
+      handlers,
+    });
+
+    controller.handlePointerMove({ point: { x: 10, z: 10 } });
+    controller.handlePointerUp({ point: { x: 10, z: 10 } });
+
+    expect(handlers.updateVertexDrag).not.toHaveBeenCalled();
+    expect(handlers.updateWallDrag).not.toHaveBeenCalled();
+    expect(handlers.replaceDocument).not.toHaveBeenCalled();
+    expect(handlers.commitVertexDrag).not.toHaveBeenCalled();
+    expect(handlers.commitWallDrag).not.toHaveBeenCalled();
+  });
+
   it('selects the containing zone from a scene pointer-down event', () => {
     let document = createEmptyArchitectureDocument();
     document = applyDrawWall(document, [0, 0], [4, 0]);
@@ -136,7 +175,7 @@ describe('architecture scene controller', () => {
     const latestNumericEntryHandler = vi.fn();
     const latestSelectionHandler = vi.fn();
     let editorState = {
-      activeTool: 'wall' as const,
+      activeTool: 'wall' as ArchitectureTool,
       draftWall: null,
       viewport: createDefaultViewport(),
       toolState: {
@@ -221,6 +260,7 @@ describe('architecture scene controller', () => {
       startPosition: [0, 0] as [number, number],
       currentPosition: [0, 0] as [number, number],
       snappedToVertexId: null,
+      numericEntryEnabled: false,
     };
     const controller = createArchitectureSceneController({
       getState: () => ({
@@ -279,6 +319,7 @@ describe('architecture scene controller', () => {
       endVertexOrigin: [4, 0] as [number, number],
       grabOffset: [0, 0] as [number, number],
       currentOffset: [0, 0] as [number, number],
+      numericEntryEnabled: false,
     };
     const controller = createArchitectureSceneController({
       getState: () => ({
@@ -339,6 +380,7 @@ describe('architecture scene controller', () => {
           startPosition: [0, 0],
           currentPosition: [2, 0],
           snappedToVertexId: null,
+          numericEntryEnabled: false,
         },
         viewport: createDefaultViewport(),
         wallTool: createDefaultWallToolState(),

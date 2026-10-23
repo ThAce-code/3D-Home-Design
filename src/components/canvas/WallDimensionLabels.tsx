@@ -82,6 +82,7 @@ export default function WallDimensionLabels() {
           center
           transform={false}
           zIndexRange={[20, 0]}
+          style={{ pointerEvents: 'none' }}
         >
           <div
             data-testid={`wall-dimension-label:${label.wallId}`}
@@ -95,6 +96,7 @@ export default function WallDimensionLabels() {
               fontSize: 12,
               lineHeight: 1.2,
               whiteSpace: 'nowrap',
+              transform: 'translateY(-26px)',
               pointerEvents: 'none',
               boxShadow: '0 8px 20px rgba(47, 36, 24, 0.12)',
             }}

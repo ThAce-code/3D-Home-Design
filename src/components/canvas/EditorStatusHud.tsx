@@ -6,7 +6,7 @@ import { getVertexDragCommitEffects } from '../../architecture/editing/vertexDra
 import { getWallDragCommitEffects } from '../../architecture/editing/wallDragInteraction.js';
 import { resolveWallNumericEntryPoint } from '../../architecture/editing/wallNumericEntry.js';
 import type { WallDragState } from '../../architecture/editing/tools.js';
-import { distanceBetweenPoints } from '../../architecture/topology/math.js';
+import { distanceBetweenPoints, type Point2 } from '../../architecture/topology/math.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import { useStore } from '../../store/useStore.js';
@@ -40,8 +40,8 @@ export default function EditorStatusHud() {
   const commitWallDrag = useArchitectureEditorStore((state) => state.commitWallDrag);
   const setSelection = useArchitectureEditorStore((state) => state.setSelection);
   const setWallNumericEntryEnabled = useArchitectureEditorStore((state) => state.setWallNumericEntryEnabled);
-  const setVertexDragNumericEntryEnabled = useArchitectureEditorStore((state) => state.setVertexDragNumericEntryEnabled);
-  const setWallDragNumericEntryEnabled = useArchitectureEditorStore((state) => state.setWallDragNumericEntryEnabled);
+  const cancelVertexDrag = useArchitectureEditorStore((state) => state.cancelVertexDrag);
+  const cancelWallDrag = useArchitectureEditorStore((state) => state.cancelWallDrag);
   const setWallClosurePreview = useArchitectureEditorStore((state) => state.setWallClosurePreview);
   const dockOpen = useStore((state) => state.dockOpen);
   const wallDraftNumericEntryActive = activeTool === 'wall' && Boolean(draftWall) && wallTool.constraints.numericEntryEnabled;
@@ -331,13 +331,15 @@ export default function EditorStatusHud() {
           <input
             ref={vertexXInputRef}
             data-testid="vertex-drag-x-input"
+            aria-label="顶点 X 坐标"
             type="number"
             step="0.01"
             value={vertexXInput}
             onChange={(event) => setVertexXInput(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Escape') {
-                setVertexDragNumericEntryEnabled(false);
+                event.preventDefault();
+                cancelVertexDrag();
               }
               event.stopPropagation();
             }}
@@ -346,19 +348,22 @@ export default function EditorStatusHud() {
           <span>Y</span>
           <input
             data-testid="vertex-drag-y-input"
+            aria-label="顶点 Y 坐标"
             type="number"
             step="0.01"
             value={vertexYInput}
             onChange={(event) => setVertexYInput(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Escape') {
-                setVertexDragNumericEntryEnabled(false);
+                event.preventDefault();
+                cancelVertexDrag();
               }
               event.stopPropagation();
             }}
             style={numericInputStyle}
           />
           <span>m</span>
+          <button type="submit">确认</button>
         </form>
       ) : null}
       {wallDragNumericEntryActive ? (
@@ -375,13 +380,15 @@ export default function EditorStatusHud() {
           <input
             ref={wallOffsetInputRef}
             data-testid="wall-drag-offset-input"
+            aria-label="墙体偏移距离"
             type="number"
             step="0.01"
             value={wallOffsetInput}
             onChange={(event) => setWallOffsetInput(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Escape') {
-                setWallDragNumericEntryEnabled(false);
+                event.preventDefault();
+                cancelWallDrag();
               }
               event.stopPropagation();
             }}

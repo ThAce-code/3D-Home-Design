@@ -69,9 +69,9 @@ export default function WallMeshes() {
                   const shiftKey = event.shiftKey ?? event.nativeEvent?.shiftKey ?? false;
                   if (activeTool === 'select' && isSelected && !shiftKey) {
                     event.stopPropagation?.();
-                    const point = event.point ?? event.nativeEvent?.point;
+                    const point = event.point ?? (event.nativeEvent as PointerEvent & { point?: THREE.Vector3 })?.point;
                     if (point) {
-                      startWallDrag(document, wall.wallId, [point.x, point.z]);
+                      startWallDrag(document, wall.wallId, [point.x, point.z], point.y);
                     }
                     return;
                   }

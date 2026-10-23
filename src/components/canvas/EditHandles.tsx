@@ -34,17 +34,17 @@ function VertexHandle({ handle }: { handle: EditHandle }) {
         startVertexDrag(handle.entityId, handle.position);
       }}
     >
-      <mesh name={`${handle.id}:hit`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.006, 0]}>
+      <mesh name={`${handle.id}:hit`} renderOrder={10} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.006, 0]}>
         <circleGeometry args={[0.18, 24]} />
-        <meshBasicMaterial color={editorTheme.handleRing} transparent opacity={0.35} />
+        <meshBasicMaterial color={editorTheme.handle} transparent opacity={0.2} depthTest={false} depthWrite={false} />
       </mesh>
-      <mesh name={`${handle.id}:disc`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.008, 0]}>
+      <mesh name={`${handle.id}:disc`} renderOrder={11} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.008, 0]}>
         <circleGeometry args={[0.12, 24]} />
-        <meshBasicMaterial color={color} />
+        <meshBasicMaterial color={color} depthTest={false} depthWrite={false} />
       </mesh>
-      <mesh name={`${handle.id}:knob`} position={[0, 0.08, 0]}>
+      <mesh name={`${handle.id}:knob`} renderOrder={12} position={[0, 0.08, 0]}>
         <sphereGeometry args={[0.06, 16, 16]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial color={color} depthTest={false} depthWrite={false} />
       </mesh>
     </group>
   );
@@ -91,13 +91,13 @@ function MidpointHandle({ handle }: { handle: EditHandle }) {
         });
       }}
     >
-      <mesh name={`${handle.id}:hit`} rotation={[-Math.PI / 2, 0, Math.PI / 4]} position={[0, 0.006, 0]}>
+      <mesh name={`${handle.id}:hit`} renderOrder={10} rotation={[-Math.PI / 2, 0, Math.PI / 4]} position={[0, 0.006, 0]}>
         <planeGeometry args={[0.22, 0.22]} />
-        <meshBasicMaterial color={editorTheme.accent} transparent opacity={0.18} />
+        <meshBasicMaterial color={editorTheme.accent} transparent opacity={0.18} depthTest={false} depthWrite={false} />
       </mesh>
-      <mesh name={`${handle.id}:diamond`} rotation={[-Math.PI / 2, 0, Math.PI / 4]} position={[0, 0.008, 0]}>
+      <mesh name={`${handle.id}:diamond`} renderOrder={11} rotation={[-Math.PI / 2, 0, Math.PI / 4]} position={[0, 0.008, 0]}>
         <planeGeometry args={[0.14, 0.14]} />
-        <meshBasicMaterial color={color} />
+        <meshBasicMaterial color={color} depthTest={false} depthWrite={false} />
       </mesh>
     </group>
   );

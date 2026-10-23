@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand';
+import type { AppState } from '../useStore.js';
 import { v4 as uuid } from 'uuid';
 import type { FurnitureItem } from '../../types/furniture.js';
 
@@ -11,7 +12,7 @@ export interface FurnitureSlice {
   selectItem: (id: string | null) => void;
 }
 
-export const createFurnitureSlice: StateCreator<FurnitureSlice, [['zustand/immer', never]], [], FurnitureSlice> = (set) => ({
+export const createFurnitureSlice: StateCreator<AppState, [['zustand/immer', never]], [], FurnitureSlice> = (set) => ({
   items: [],
   selectedItemId: null,
   addItem: (assetId, position, scale, baseSize) => set((s) => {

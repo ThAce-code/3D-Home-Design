@@ -1,9 +1,10 @@
-import { Save, Settings } from 'lucide-react';
+import { Eye, Save, Settings } from 'lucide-react';
 import { useStore } from '../../store/useStore.js';
 import { saveState } from '../../services/persistence.js';
 import { saveArchitectureDocument } from '../../hooks/useArchitecturePersistence.js';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import { editorTheme } from '../../theme/editorTheme.js';
+import { enterSceneNavigation } from '../../services/navigation.js';
 
 interface Props {
   architectureModeEnabled?: boolean;
@@ -37,11 +38,22 @@ export default function TopActions({ architectureModeEnabled = false }: Props) {
     <div className="fixed top-4 right-4 z-50 flex gap-2">
       <button
         type="button"
+        aria-label="保存设计"
         onClick={handleSave}
         className="flex items-center justify-center transition-opacity hover:opacity-100"
         style={btnStyle}
       >
         <Save size={18} />
+      </button>
+      <button
+        type="button"
+        onClick={() => { void enterSceneNavigation(); }}
+        aria-label="浏览场景"
+        title="浏览场景"
+        className="flex items-center justify-center transition-opacity hover:opacity-100"
+        style={btnStyle}
+      >
+        <Eye size={18} />
       </button>
       <button
         type="button"

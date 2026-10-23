@@ -16,6 +16,7 @@ const sceneController = createArchitectureSceneStoreController({
 });
 
 export default function ArchitectureScene() {
+  const wallDrag = useArchitectureEditorStore((state) => state.wallDrag);
   useEffect(() => {
     window.addEventListener('keydown', sceneController.handleKeyDown);
     window.addEventListener('keyup', sceneController.handleKeyUp);
@@ -31,7 +32,7 @@ export default function ArchitectureScene() {
       <mesh
         name="architecture-interaction-plane"
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -0.01, 0]}
+        position={[0, wallDrag?.grabHeight ?? -0.01, 0]}
         onPointerDown={sceneController.handlePointerDown}
         onPointerMove={sceneController.handlePointerMove}
         onPointerUp={sceneController.handlePointerUp}

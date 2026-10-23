@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { ArchitectureSelection, DraftWallState } from '../tools';
 import { createEmptyArchitectureDocument } from '../../domain/document';
 import { createArchitectureHotkeyStoreController } from '../hotkeyController';
 
@@ -39,8 +40,8 @@ describe('architecture hotkey controller', () => {
         vertexIds: [],
         wallIds: [],
         zoneIds: [],
-      },
-      draftWall: null,
+      } as ArchitectureSelection,
+      draftWall: null as DraftWallState | null,
       clearSelection: firstClearSelection,
       cancelDraftWall: vi.fn(),
       setWallClosurePreview: vi.fn(),
@@ -64,7 +65,7 @@ describe('architecture hotkey controller', () => {
         vertexIds: [],
         wallIds: ['w1'],
         zoneIds: [],
-      },
+      } as ArchitectureSelection,
       clearSelection: latestClearSelection,
     };
     documentState = {
@@ -90,8 +91,8 @@ describe('architecture hotkey controller', () => {
         vertexIds: [],
         wallIds: [],
         zoneIds: [],
-      },
-      draftWall: null,
+      } as ArchitectureSelection,
+      draftWall: null as DraftWallState | null,
       clearSelection: firstClearSelection,
       cancelDraftWall: vi.fn(),
       setWallClosurePreview: vi.fn(),
@@ -113,7 +114,7 @@ describe('architecture hotkey controller', () => {
         vertexIds: [],
         wallIds: ['w1'],
         zoneIds: [],
-      },
+      } as ArchitectureSelection,
       draftWall: {
         startPoint: [0, 0],
         currentPoint: [4, 0],

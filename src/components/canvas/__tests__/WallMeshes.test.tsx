@@ -205,7 +205,7 @@ describe('WallMeshes', () => {
 
     const event = new MouseEvent('pointerdown', { bubbles: true });
     Object.defineProperty(event, 'point', {
-      value: { x: 2.5, z: 0 },
+      value: { x: 2.5, y: 3, z: 0 },
     });
 
     act(() => {
@@ -215,6 +215,7 @@ describe('WallMeshes', () => {
     expect(useArchitectureEditorStore.getState().wallDrag).toMatchObject({
       wallId: 'w1',
       grabOffset: [0.5, 0],
+      grabHeight: 3,
       currentOffset: [0, 0],
     });
   });

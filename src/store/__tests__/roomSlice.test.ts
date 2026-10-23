@@ -7,7 +7,7 @@ describe('legacy room slice removal', () => {
   });
 
   it('does not expose room collections on the app store', () => {
-    const state = useStore.getState() as Record<string, unknown>;
+    const state = useStore.getState();
 
     expect('rooms' in state).toBe(false);
     expect('selectedRoomId' in state).toBe(false);
@@ -15,7 +15,7 @@ describe('legacy room slice removal', () => {
   });
 
   it('does not expose room mutation actions on the app store', () => {
-    const state = useStore.getState() as Record<string, unknown>;
+    const state = useStore.getState();
 
     expect('addRoom' in state).toBe(false);
     expect('updateRoom' in state).toBe(false);

@@ -24,6 +24,8 @@ test('locks pointer on click and unlocks on Alt (first-enter overlay hides after
 
   await overlay.click()
   await expect.poll(() => getCanvasLockState(page)).toBe(true)
+  await expect(overlay).toBeHidden()
+  await expect.poll(() => page.evaluate(() => window.__architectureDebug?.getUiState().hasEnteredOnce)).toBe(true)
 
   await page.keyboard.down('Alt')
   await expect.poll(() => getCanvasLockState(page)).toBe(false)

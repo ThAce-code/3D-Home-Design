@@ -355,6 +355,7 @@ describe('wall draft interaction', () => {
         startPosition: [0, 0],
         currentPosition: [2, 0],
         snappedToVertexId: null,
+        numericEntryEnabled: false,
       },
     });
 

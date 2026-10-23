@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand';
+import type { AppState } from '../useStore.js';
 import type { Asset } from '../../types/furniture.js';
 import type { Category } from '../../services/api.js';
 import * as api from '../../services/api.js';
@@ -17,7 +18,7 @@ export interface AssetSlice {
   selectAsset: (id: string | null) => void;
 }
 
-export const createAssetSlice: StateCreator<AssetSlice, [['zustand/immer', never]], [], AssetSlice> = (set) => ({
+export const createAssetSlice: StateCreator<AppState, [['zustand/immer', never]], [], AssetSlice> = (set) => ({
   assets: [],
   categories: [],
   selectedAssetId: null,

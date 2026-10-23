@@ -1,3 +1,4 @@
+import type { ArchitectureTool } from '../tools';
 import { describe, expect, it, vi } from 'vitest';
 import { createEmptyArchitectureDocument } from '../../domain/document';
 import { applyDrawWall } from '../../topology/repair';
@@ -15,7 +16,7 @@ describe('architecture mesh controller', () => {
     const firstSelectionHandler = vi.fn();
     const latestSelectionHandler = vi.fn();
     let editorState = {
-      activeTool: 'wall' as const,
+      activeTool: 'wall' as ArchitectureTool,
       selection: {
         vertexIds: [],
         wallIds: [],
@@ -79,7 +80,7 @@ describe('architecture mesh controller', () => {
     const firstSelectionHandler = vi.fn();
     const latestSelectionHandler = vi.fn();
     let editorState = {
-      activeTool: 'wall' as const,
+      activeTool: 'wall' as ArchitectureTool,
       selection: {
         vertexIds: [],
         wallIds: [],

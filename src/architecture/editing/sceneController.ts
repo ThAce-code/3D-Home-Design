@@ -128,6 +128,7 @@ export function createArchitectureSceneController({
 
       const state = getState();
       if (state.vertexDrag) {
+        if (state.vertexDrag.numericEntryEnabled) return;
         const snap = resolveVertexDragSnap({
           document: state.document,
           dragVertexId: state.vertexDrag.vertexId,
@@ -139,6 +140,7 @@ export function createArchitectureSceneController({
       }
 
       if (state.wallDrag) {
+        if (state.wallDrag.numericEntryEnabled) return;
         const rawOffset = getWallDragOffsetForPoint({
           wallDrag: state.wallDrag,
           currentPoint: point,
@@ -169,6 +171,7 @@ export function createArchitectureSceneController({
       const state = getState();
 
       if (state.vertexDrag) {
+        if (state.vertexDrag.numericEntryEnabled) return;
         const targetPosition = point
           ? resolveVertexDragSnap({
             document: state.document,
@@ -188,6 +191,7 @@ export function createArchitectureSceneController({
       }
 
       if (state.wallDrag) {
+        if (state.wallDrag.numericEntryEnabled) return;
         const currentOffset = point
           ? resolveWallDragSnap({
             rawOffset: getWallDragOffsetForPoint({

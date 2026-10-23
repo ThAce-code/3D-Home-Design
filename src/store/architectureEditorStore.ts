@@ -45,7 +45,7 @@ export interface ArchitectureEditorState {
   commitVertexDrag: () => void;
   cancelVertexDrag: () => void;
   setVertexDragNumericEntryEnabled: (numericEntryEnabled: boolean) => void;
-  startWallDrag: (document: ArchitectureDocument, wallId: string, grabPoint: Point2) => void;
+  startWallDrag: (document: ArchitectureDocument, wallId: string, grabPoint: Point2, grabHeight?: number) => void;
   updateWallDrag: (currentOffset: Point2) => void;
   commitWallDrag: () => void;
   cancelWallDrag: () => void;
@@ -154,7 +154,7 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
       }
       : state.vertexDrag,
   })),
-  startWallDrag: (document, wallId, grabPoint) => set(() => {
+  startWallDrag: (document, wallId, grabPoint, grabHeight = 0) => set(() => {
     const wallDrag = createWallDragState({
       document,
       wallId,
@@ -165,7 +165,7 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
       activeTool: 'select',
       draftWall: null,
       vertexDrag: null,
-      wallDrag,
+      wallDrag: wallDrag ? { ...wallDrag, grabHeight } : null,
     };
   }),
   updateWallDrag: (currentOffset) => set((state) => ({

@@ -14,32 +14,6 @@ export interface ClosedLoop {
   wallIds: string[];
 }
 
-// V1 loop extraction intentionally only accepts disconnected simple cycles.
-// Graphs with shared walls or higher-order faces are rejected for now.
-
-function compareVertexIds(
-  leftVertexId: string,
-  rightVertexId: string,
-  document: ArchitectureDocument
-): number {
-  const leftVertex = document.vertices[leftVertexId];
-  const rightVertex = document.vertices[rightVertexId];
-
-  if (!leftVertex || !rightVertex) {
-    return leftVertexId.localeCompare(rightVertexId);
-  }
-
-  if (leftVertex.x !== rightVertex.x) {
-    return leftVertex.x - rightVertex.x;
-  }
-
-  if (leftVertex.y !== rightVertex.y) {
-    return leftVertex.y - rightVertex.y;
-  }
-
-  return leftVertexId.localeCompare(rightVertexId);
-}
-
 function getPoint(document: ArchitectureDocument, vertexId: string): Point2 {
   const vertex = document.vertices[vertexId];
 
@@ -202,32 +176,6 @@ function buildCoreAdjacency(adjacency: Map<string, AdjacencyEdge[]>): Map<string
   }
 
   return core;
-}
-
-function collectConnectedVertexIds(
-  startVertexId: string,
-  adjacency: Map<string, AdjacencyEdge[]>
-): string[] {
-  const visited = new Set<string>();
-  const stack = [startVertexId];
-
-  while (stack.length > 0) {
-    const vertexId = stack.pop();
-
-    if (!vertexId || visited.has(vertexId)) {
-      continue;
-    }
-
-    visited.add(vertexId);
-
-    for (const edge of adjacency.get(vertexId) ?? []) {
-      if (!visited.has(edge.otherVertexId)) {
-        stack.push(edge.otherVertexId);
-      }
-    }
-  }
-
-  return [...visited];
 }
 
 function createHalfEdgeKey(fromVertexId: string, edge: AdjacencyEdge): string {

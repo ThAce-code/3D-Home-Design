@@ -27,6 +27,7 @@ export interface WallDragState {
   startVertexOrigin: Point2;
   endVertexOrigin: Point2;
   grabOffset: Point2;
+  grabHeight?: number;
   currentOffset: Point2;
   numericEntryEnabled: boolean;
 }
