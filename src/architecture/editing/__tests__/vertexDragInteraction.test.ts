@@ -32,6 +32,16 @@ function createDocumentWithVertices() {
 }
 
 describe('vertex drag interaction', () => {
+  it.each([[3.95, 0.04], [2.04, 1.96]])('keeps raw point %j when snapping is disabled', (x, y) => {
+    const result = resolveVertexDragSnap({
+      document: createDocumentWithVertices(),
+      dragVertexId: 'v1',
+      rawPoint: [x, y],
+      viewport: { ...createDefaultViewport(), snapEnabled: false, gridSize: 1, snapTolerance: 0.15 },
+    });
+    expect(result).toEqual({ point: [x, y], snappedToVertexId: null });
+  });
+
   it('snaps to another endpoint while excluding the dragged vertex', () => {
     const result = resolveVertexDragSnap({
       document: createDocumentWithVertices(),

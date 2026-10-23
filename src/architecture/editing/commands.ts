@@ -12,6 +12,7 @@ export type ArchitectureCommand =
   | { type: 'DELETE_WALL'; wallId: string }
   | { type: 'DELETE_ZONE'; zoneId: string }
   | { type: 'DELETE_VERTEX'; vertexId: string }
+  | { type: 'DELETE_SELECTION'; wallIds: string[]; vertexIds: string[]; zoneIds: string[] }
   | {
     type: 'SET_WALL_PROPS';
     wallId: string;

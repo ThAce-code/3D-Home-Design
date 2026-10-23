@@ -83,6 +83,69 @@ async function documentState(page: Page) {
   return page.evaluate(() => window.__architectureDebug!.getDocument().document);
 }
 
+test('review regression: preserves typed room-name spaces and normalizes only on blur', async ({ page }, testInfo) => {
+  const zoneId = await openRoom(page);
+  const center = await moveTo(page, 2, 1.5);
+  await page.mouse.click(center.clientX, center.clientY);
+  const name = page.getByRole('textbox', { name: '房间名称' });
+  await name.pressSequentially('  Living room  ');
+  await expect(name).toHaveValue('  Living room  ');
+  await name.press('Tab');
+  await expect(name).toHaveValue('Living room');
+  expect((await documentState(page)).zones[zoneId].name).toBe('Living room');
+  await page.screenshot({ path: testInfo.outputPath('room-name-spaces.png') });
+  await name.fill('   ');
+  await name.press('Tab');
+  await expect(name).toHaveValue('');
+  expect((await documentState(page)).zones[zoneId].name).toBeNull();
+  await name.pressSequentially('Living room');
+  await name.press('Delete');
+  expect((await documentState(page)).wallOrder).toHaveLength(4);
+});
+
+test('review regression: Delete removes the selected room and its boundary walls', async ({ page }) => {
+  await openRoom(page);
+  const center = await moveTo(page, 2, 1.5);
+  await page.mouse.click(center.clientX, center.clientY);
+  await expect(page.getByTestId('zone-property-panel')).toBeVisible();
+  await page.keyboard.press('Delete');
+  await expect.poll(async () => (await documentState(page)).wallOrder).toEqual([]);
+  expect((await documentState(page)).zoneOrder).toEqual([]);
+  await expect(page.getByTestId('zone-property-panel')).toBeHidden();
+});
+
+test('review regression: Delete removes every Shift-selected wall', async ({ page }) => {
+  await openRoom(page);
+  await clickWall(page);
+  await clickWall(page, 'w2', true);
+  await expect.poll(() => page.evaluate(() => window.__architectureDebug!.getEditorState().selection.wallIds)).toEqual(['w1', 'w2']);
+  await page.keyboard.press('Delete');
+  await expect.poll(async () => (await documentState(page)).wallOrder).toEqual(['w3', 'w4']);
+  expect((await documentState(page)).zoneOrder).toEqual([]);
+});
+
+for (const target of [[-1.03, 0.04], [0.04, 2.97]]) {
+  test(`review regression: disabled snapping keeps vertex drag raw at ${target}`, async ({ page }) => {
+    await openRoom(page);
+    await page.evaluate(async () => {
+      const modulePath = '/src/store/architectureEditorStore.ts';
+      const { useArchitectureEditorStore } = await import(modulePath);
+      useArchitectureEditorStore.getState().setSnapEnabled(false);
+    });
+    await startVertexDrag(page);
+    await moveTo(page, target[0], target[1]);
+    const drag = await page.evaluate(() => window.__architectureDebug!.getEditorState().vertexDrag!);
+    expect(drag.snappedToVertexId).toBeNull();
+    expect(drag.currentPosition[0]).toBeCloseTo(target[0], 2);
+    expect(drag.currentPosition[1]).toBeCloseTo(target[1], 2);
+    await page.mouse.up();
+    const vertex = (await documentState(page)).vertices.v1;
+    expect(vertex.x).toBeCloseTo(target[0], 2);
+    expect(vertex.y).toBeCloseTo(target[1], 2);
+    expect((await documentState(page)).wallOrder).toHaveLength(4);
+  });
+}
+
 test('selects canvas walls with the unlocked pointer and toggles multiselection', async ({ page }) => {
   await openRoom(page);
   await clickWall(page);

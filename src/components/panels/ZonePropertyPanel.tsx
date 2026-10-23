@@ -76,8 +76,7 @@ export default function ZonePropertyPanel({ zoneId }: Props) {
   };
 
   const handleNameChange = (value: string) => {
-    const trimmed = value.trim();
-    zonePropertyController.patchZone(zoneId, { name: trimmed.length > 0 ? trimmed : null });
+    zonePropertyController.patchZone(zoneId, { name: value.length > 0 ? value : null });
   };
 
   const handleDelete = () => {
@@ -115,6 +114,7 @@ export default function ZonePropertyPanel({ zoneId }: Props) {
             value={zone.name ?? ''}
             placeholder="未命名房间"
             onChange={(event) => handleNameChange(event.target.value)}
+            onBlur={() => handleNameChange((zone.name ?? '').trim())}
             className="rounded-md px-2 py-1.5 text-sm outline-none"
             style={inputStyle}
           />
