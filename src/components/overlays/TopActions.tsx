@@ -1,16 +1,21 @@
-import { Eye, Save, Settings } from 'lucide-react';
+import { Eye, Redo2, Save, Settings, Undo2 } from 'lucide-react';
 import { useStore } from '../../store/useStore.js';
 import { saveState } from '../../services/persistence.js';
 import { saveArchitectureDocument } from '../../hooks/useArchitecturePersistence.js';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import { editorTheme } from '../../theme/editorTheme.js';
 import { enterSceneNavigation } from '../../services/navigation.js';
+import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
+import { architectureHistoryActions } from '../../services/architectureHistory.js';
 
 interface Props {
   architectureModeEnabled?: boolean;
 }
 
 export default function TopActions({ architectureModeEnabled = false }: Props) {
+  const canUndo = useArchitectureDocumentStore((state) => state.pastDocuments.length > 0);
+  const canRedo = useArchitectureDocumentStore((state) => state.futureDocuments.length > 0);
+  const hasPreview = useArchitectureEditorStore((state) => Boolean(state.draftWall || state.vertexDrag || state.wallDrag));
   const handleSave = async () => {
     if (architectureModeEnabled) {
       const { document } = useArchitectureDocumentStore.getState();
@@ -45,6 +50,32 @@ export default function TopActions({ architectureModeEnabled = false }: Props) {
       >
         <Save size={18} />
       </button>
+      {architectureModeEnabled ? (
+        <>
+          <button
+            type="button"
+            aria-label="撤销"
+            title="撤销 (Ctrl+Z)"
+            disabled={!canUndo && !hasPreview}
+            onClick={() => architectureHistoryActions.perform('undo')}
+            style={{ ...btnStyle, opacity: canUndo || hasPreview ? 1 : 0.35 }}
+            className="flex items-center justify-center disabled:cursor-not-allowed"
+          >
+            <Undo2 size={18} />
+          </button>
+          <button
+            type="button"
+            aria-label="重做"
+            title="重做 (Ctrl+Shift+Z / Ctrl+Y)"
+            disabled={!canRedo && !hasPreview}
+            onClick={() => architectureHistoryActions.perform('redo')}
+            style={{ ...btnStyle, opacity: canRedo || hasPreview ? 1 : 0.35 }}
+            className="flex items-center justify-center disabled:cursor-not-allowed"
+          >
+            <Redo2 size={18} />
+          </button>
+        </>
+      ) : null}
       <button
         type="button"
         onClick={() => { void enterSceneNavigation(); }}

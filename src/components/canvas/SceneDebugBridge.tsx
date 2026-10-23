@@ -43,6 +43,7 @@ interface DebugObjectSummary {
 interface ArchitectureDebugBridge {
   getDocument: () => ArchitectureDocumentState;
   replaceDocument: ArchitectureDocumentState['replaceDocument'];
+  loadDocument: ArchitectureDocumentState['loadDocument'];
   resetDocument: ArchitectureDocumentState['resetDocument'];
   getEditorState: () => ArchitectureEditorState;
   setActiveTool: ArchitectureEditorState['setActiveTool'];
@@ -191,6 +192,7 @@ export default function SceneDebugBridge() {
     window.__architectureDebug = {
       getDocument: useArchitectureDocumentStore.getState,
       replaceDocument: useArchitectureDocumentStore.getState().replaceDocument,
+      loadDocument: useArchitectureDocumentStore.getState().loadDocument,
       resetDocument: useArchitectureDocumentStore.getState().resetDocument,
       getEditorState: useArchitectureEditorStore.getState,
       setActiveTool: useArchitectureEditorStore.getState().setActiveTool,
