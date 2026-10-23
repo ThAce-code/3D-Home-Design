@@ -1,7 +1,7 @@
 import type { Level } from './level.js';
 import type { Vertex } from './vertex.js';
 import type { Wall } from './wall.js';
-import type { Zone } from './zone.js';
+import type { Zone, ZoneTombstone } from './zone.js';
 
 export interface ArchitectureDocument {
   levels: Record<string, Level>;
@@ -11,6 +11,7 @@ export interface ArchitectureDocument {
   wallOrder: string[];
   zones: Record<string, Zone>;
   zoneOrder: string[];
+  zoneTombstones: ZoneTombstone[];
 }
 
 export const DEFAULT_LEVEL_NAME = 'Level 1';
@@ -41,6 +42,7 @@ export function createEmptyArchitectureDocument(): ArchitectureDocument {
     wallOrder: [],
     zones: {},
     zoneOrder: [],
+    zoneTombstones: [],
   };
 }
 
@@ -81,6 +83,14 @@ export function cloneArchitectureDocument(document: ArchitectureDocument): Archi
       ])
     ),
     zoneOrder: [...document.zoneOrder],
+    zoneTombstones: (document.zoneTombstones ?? []).map((tombstone) => ({
+      ...tombstone,
+      geometry: {
+        ...tombstone.geometry,
+        centroid: [...tombstone.geometry.centroid],
+        points: tombstone.geometry.points.map((point) => [...point]),
+      },
+    })),
   };
 }
 

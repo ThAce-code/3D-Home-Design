@@ -4,7 +4,7 @@ import {
   type ArchitectureDocument,
 } from '../../domain/document';
 import { applyDrawWall, repairTopology } from '../repair';
-import { rebuildZones } from '../zones';
+import { MAX_TOMBSTONES, rebuildZones } from '../zones';
 
 function createDocumentWithWalls(args: {
   vertices: Array<{ id: string; x: number; y: number }>;
@@ -884,5 +884,137 @@ describe('rebuildZones', () => {
     const result = rebuildZones(tinyLoopDocument);
 
     expect(result.zoneOrder).toEqual([]);
+  });
+
+  it('recovers a zone id and metadata from a tombstone when a broken loop is re-closed', () => {
+    const closedDocument = createDocumentWithWalls({
+      vertices: [
+        { id: 'v1', x: 0, y: 0 },
+        { id: 'v2', x: 4, y: 0 },
+        { id: 'v3', x: 4, y: 3 },
+        { id: 'v4', x: 0, y: 3 },
+      ],
+      walls: [
+        { id: 'w1', startVertexId: 'v1', endVertexId: 'v2' },
+        { id: 'w2', startVertexId: 'v2', endVertexId: 'v3' },
+        { id: 'w3', startVertexId: 'v3', endVertexId: 'v4' },
+        { id: 'w4', startVertexId: 'v4', endVertexId: 'v1' },
+      ],
+    });
+    const withZone = rebuildZones(closedDocument);
+    const originalZoneId = withZone.zoneOrder[0];
+    withZone.zones[originalZoneId] = {
+      ...withZone.zones[originalZoneId],
+      kind: 'room',
+      name: 'Living Room',
+    };
+
+    const broken: ArchitectureDocument = {
+      ...withZone,
+      walls: Object.fromEntries(
+        Object.entries(withZone.walls).filter(([wallId]) => wallId !== 'w3')
+      ),
+      wallOrder: withZone.wallOrder.filter((wallId) => wallId !== 'w3'),
+    };
+    const withoutZone = repairTopology(broken);
+
+    expect(withoutZone.zoneOrder).toEqual([]);
+    expect(withoutZone.zoneTombstones).toHaveLength(1);
+    expect(withoutZone.zoneTombstones[0]).toMatchObject({
+      id: originalZoneId,
+      kind: 'room',
+      name: 'Living Room',
+    });
+
+    const restored: ArchitectureDocument = {
+      ...withoutZone,
+      walls: withZone.walls,
+      wallOrder: withZone.wallOrder,
+    };
+    const recovered = rebuildZones(restored);
+
+    expect(recovered.zoneOrder).toEqual([originalZoneId]);
+    expect(recovered.zones[originalZoneId]).toMatchObject({
+      kind: 'room',
+      name: 'Living Room',
+    });
+    expect(recovered.zoneTombstones).toEqual([]);
+  });
+
+  it('does not let a tombstone interfere with a living zone while another room is restored', () => {
+    const twoRoomDocument = createDocumentWithWalls({
+      vertices: [
+        { id: 'a1', x: 0, y: 0 },
+        { id: 'a2', x: 4, y: 0 },
+        { id: 'a3', x: 4, y: 3 },
+        { id: 'a4', x: 0, y: 3 },
+        { id: 'b1', x: 6, y: 0 },
+        { id: 'b2', x: 10, y: 0 },
+        { id: 'b3', x: 10, y: 3 },
+        { id: 'b4', x: 6, y: 3 },
+      ],
+      walls: [
+        { id: 'wa1', startVertexId: 'a1', endVertexId: 'a2' },
+        { id: 'wa2', startVertexId: 'a2', endVertexId: 'a3' },
+        { id: 'wa3', startVertexId: 'a3', endVertexId: 'a4' },
+        { id: 'wa4', startVertexId: 'a4', endVertexId: 'a1' },
+        { id: 'wb1', startVertexId: 'b1', endVertexId: 'b2' },
+        { id: 'wb2', startVertexId: 'b2', endVertexId: 'b3' },
+        { id: 'wb3', startVertexId: 'b3', endVertexId: 'b4' },
+        { id: 'wb4', startVertexId: 'b4', endVertexId: 'b1' },
+      ],
+    });
+    const withTwoZones = rebuildZones(twoRoomDocument);
+    const [zoneIdA, zoneIdB] = withTwoZones.zoneOrder;
+    const brokenA: ArchitectureDocument = {
+      ...withTwoZones,
+      walls: Object.fromEntries(
+        Object.entries(withTwoZones.walls).filter(([wallId]) => wallId !== 'wa3')
+      ),
+      wallOrder: withTwoZones.wallOrder.filter((wallId) => wallId !== 'wa3'),
+    };
+
+    const afterBreak = repairTopology(brokenA);
+
+    expect(afterBreak.zoneOrder).toEqual([zoneIdB]);
+    expect(afterBreak.zoneTombstones.map((tombstone) => tombstone.id)).toEqual([zoneIdA]);
+
+    const restored = rebuildZones({
+      ...afterBreak,
+      walls: withTwoZones.walls,
+      wallOrder: withTwoZones.wallOrder,
+    });
+
+    expect(restored.zoneOrder).toContain(zoneIdA);
+    expect(restored.zoneOrder).toContain(zoneIdB);
+    expect(restored.zoneTombstones).toEqual([]);
+  });
+
+  it('evicts the oldest tombstones when the tombstone cap is exceeded', () => {
+    const document = createEmptyArchitectureDocument();
+    const levelId = document.levelOrder[0];
+    document.zoneTombstones = Array.from({ length: MAX_TOMBSTONES + 1 }, (_, index) => ({
+      id: `tomb-${index}`,
+      levelId,
+      kind: 'unknown' as const,
+      name: null,
+      geometry: {
+        area: 1,
+        centroid: [index, 0] as [number, number],
+        points: [
+          [index, 0],
+          [index + 1, 0],
+          [index + 1, 1],
+          [index, 1],
+        ] as Array<[number, number]>,
+      },
+      signature: `tomb-${index}`,
+    }));
+
+    const result = rebuildZones(document);
+
+    expect(result.zoneTombstones).toHaveLength(MAX_TOMBSTONES);
+    expect(result.zoneTombstones[0].id).toBe('tomb-1');
+    expect(result.zoneTombstones[MAX_TOMBSTONES - 1].id).toBe(`tomb-${MAX_TOMBSTONES}`);
   });
 });

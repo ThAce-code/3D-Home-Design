@@ -12,6 +12,25 @@ export interface DraftWallState {
   snappedVertexId: string | null;
 }
 
+export interface VertexDragState {
+  vertexId: string;
+  startPosition: Point2;
+  currentPosition: Point2;
+  snappedToVertexId: string | null;
+  numericEntryEnabled: boolean;
+}
+
+export interface WallDragState {
+  wallId: string;
+  startVertexId: string;
+  endVertexId: string;
+  startVertexOrigin: Point2;
+  endVertexOrigin: Point2;
+  grabOffset: Point2;
+  currentOffset: Point2;
+  numericEntryEnabled: boolean;
+}
+
 export interface ArchitectureSelection {
   vertexIds: string[];
   wallIds: string[];

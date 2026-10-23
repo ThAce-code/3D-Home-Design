@@ -1,5 +1,5 @@
 import type { ArchitectureDocument } from '../domain/document.js';
-import type { ArchitectureTool } from './tools.js';
+import type { ArchitectureSelection, ArchitectureTool } from './tools.js';
 import type {
   ArchitectureDocumentControllerState,
   StoreAccessor,
@@ -14,6 +14,7 @@ import {
 interface ArchitectureMeshControllerState {
   activeTool: ArchitectureTool;
   document: ArchitectureDocument;
+  selection: ArchitectureSelection;
 }
 
 interface CreateArchitectureMeshControllerArgs {
@@ -23,6 +24,7 @@ interface CreateArchitectureMeshControllerArgs {
 
 interface ArchitectureMeshEditorControllerState {
   activeTool: ArchitectureTool;
+  selection: ArchitectureSelection;
   setSelection: NonNullable<ArchitectureInteractionCommandHandlers['setSelection']>;
 }
 
@@ -45,6 +47,7 @@ interface ArchitectureMeshIntersectionEvent {
     };
   }>;
   nativeEvent?: {
+    shiftKey?: boolean;
     intersections?: Array<{
       object?: {
         name?: string;
@@ -55,10 +58,15 @@ interface ArchitectureMeshIntersectionEvent {
       };
     }>;
   };
+  shiftKey?: boolean;
 }
 
 interface ArchitectureZoneMeshEvent {
   stopPropagation?: () => void;
+  nativeEvent?: {
+    shiftKey?: boolean;
+  };
+  shiftKey?: boolean;
 }
 
 function getWallMeshIntersections(event: ArchitectureMeshIntersectionEvent) {
@@ -85,6 +93,8 @@ export function createArchitectureMeshController({
         activeTool: state.activeTool,
         document: state.document,
         wallId,
+        currentSelection: state.selection,
+        shiftKey: event.shiftKey ?? event.nativeEvent?.shiftKey ?? false,
         intersections: getWallMeshIntersections(event),
       });
 
@@ -100,6 +110,8 @@ export function createArchitectureMeshController({
       const effects = getZoneMeshPointerDownEffects({
         activeTool: state.activeTool,
         zoneId,
+        currentSelection: state.selection,
+        shiftKey: event.shiftKey ?? event.nativeEvent?.shiftKey ?? false,
       });
 
       if (effects.shouldStopPropagation) {
@@ -122,6 +134,7 @@ export function createArchitectureMeshStoreController({
 
       return {
         activeTool: editorState.activeTool,
+        selection: editorState.selection,
         document: documentState.document,
       };
     },

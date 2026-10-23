@@ -79,5 +79,5 @@ export function repairTopology(
     collapseCollinear: options?.collapseCollinear,
   });
 
-  return rebuildZones(cleanedDocument, epsilon);
+  return rebuildZones(cleanedDocument, epsilon, document);
 }

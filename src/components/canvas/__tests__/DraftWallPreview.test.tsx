@@ -9,6 +9,7 @@ import {
 } from '../../../architecture/domain/document';
 import { useArchitectureDocumentStore } from '../../../store/architectureDocumentStore';
 import { useArchitectureEditorStore } from '../../../store/architectureEditorStore';
+import { useStore } from '../../../store/useStore';
 import { editorTheme } from '../../../theme/editorTheme';
 
 describe('DraftWallPreview', () => {
@@ -19,6 +20,7 @@ describe('DraftWallPreview', () => {
   beforeEach(() => {
     useArchitectureDocumentStore.setState(useArchitectureDocumentStore.getInitialState());
     useArchitectureEditorStore.setState(useArchitectureEditorStore.getInitialState());
+    useStore.setState(useStore.getInitialState());
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     mountNode = document.createElement('div');
@@ -34,6 +36,7 @@ describe('DraftWallPreview', () => {
     consoleErrorSpy.mockRestore();
     useArchitectureDocumentStore.setState(useArchitectureDocumentStore.getInitialState());
     useArchitectureEditorStore.setState(useArchitectureEditorStore.getInitialState());
+    useStore.setState(useStore.getInitialState());
   });
 
   it('uses the level default wall thickness instead of snap tolerance', () => {
@@ -78,6 +81,7 @@ describe('DraftWallPreview', () => {
     expect(hud?.textContent).toContain('正交锁定');
     expect(hud?.textContent).toContain('释放以闭合');
     expect(hud?.textContent).toContain('按 Tab 输入长度');
+    expect(hud?.textContent).toContain('长度 4.00 m');
   });
 
   it('shows a HUD hint when the draft point is snapped onto a wall body', () => {
@@ -113,6 +117,22 @@ describe('DraftWallPreview', () => {
     const hud = mountNode.querySelector('[data-testid="wall-draft-hud"]');
 
     expect(hud?.textContent).toContain('吸附到墙线');
+  });
+
+  it('keeps the wall drawing HUD clear of the open left tool panel and bottom dock', () => {
+    act(() => {
+      useStore.setState({ dockOpen: true });
+      useArchitectureEditorStore.getState().setActiveTool('wall');
+      useArchitectureEditorStore.getState().startDraftWall([0, 0], null);
+      useArchitectureEditorStore.getState().updateDraftWall([4, 0], null);
+      root.render(<WallDraftHud />);
+    });
+
+    const hud = mountNode.querySelector('[data-testid="wall-draft-hud"]') as HTMLDivElement | null;
+
+    expect(hud).not.toBeNull();
+    expect(hud?.style.left).toBe('288px');
+    expect(hud?.style.bottom).toBe('96px');
   });
 
   it('renders a square footprint on the ground before the first wall click', () => {

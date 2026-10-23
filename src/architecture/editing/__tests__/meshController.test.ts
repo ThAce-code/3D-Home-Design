@@ -16,6 +16,11 @@ describe('architecture mesh controller', () => {
     const latestSelectionHandler = vi.fn();
     let editorState = {
       activeTool: 'wall' as const,
+      selection: {
+        vertexIds: [],
+        wallIds: [],
+        zoneIds: [],
+      },
       setSelection: firstSelectionHandler,
     };
     let documentState = {
@@ -33,6 +38,11 @@ describe('architecture mesh controller', () => {
 
     editorState = {
       activeTool: 'select',
+      selection: {
+        vertexIds: [],
+        wallIds: [],
+        zoneIds: [],
+      },
       setSelection: latestSelectionHandler,
     };
     documentState = {
@@ -70,6 +80,11 @@ describe('architecture mesh controller', () => {
     const latestSelectionHandler = vi.fn();
     let editorState = {
       activeTool: 'wall' as const,
+      selection: {
+        vertexIds: [],
+        wallIds: [],
+        zoneIds: [],
+      },
       setSelection: firstSelectionHandler,
     };
     const controller = createArchitectureMeshStoreController({
@@ -86,6 +101,11 @@ describe('architecture mesh controller', () => {
 
     editorState = {
       activeTool: 'select',
+      selection: {
+        vertexIds: [],
+        wallIds: [],
+        zoneIds: [],
+      },
       setSelection: latestSelectionHandler,
     };
 
@@ -98,6 +118,46 @@ describe('architecture mesh controller', () => {
       vertexIds: [],
       wallIds: [],
       zoneIds: ['z-room'],
+    });
+  });
+
+  it('passes shiftKey and current selection into wall mesh selection effects', () => {
+    let document = createEmptyArchitectureDocument();
+    document = applyDrawWall(document, [0, 0], [4, 0]);
+    document = applyDrawWall(document, [0, 1], [4, 1]);
+    const [firstWallId, secondWallId] = document.wallOrder;
+    const latestSelectionHandler = vi.fn();
+    const controller = createArchitectureMeshStoreController({
+      editorStore: {
+        getState: () => ({
+          activeTool: 'select',
+          selection: {
+            vertexIds: [],
+            wallIds: [firstWallId],
+            zoneIds: [],
+          },
+          setSelection: latestSelectionHandler,
+        }),
+      },
+      documentStore: {
+        getState: () => ({
+          document,
+          replaceDocument: vi.fn(),
+        }),
+      },
+    });
+
+    controller.handleWallPointerDown(secondWallId, {
+      stopPropagation: vi.fn(),
+      nativeEvent: {
+        shiftKey: true,
+      },
+    });
+
+    expect(latestSelectionHandler).toHaveBeenCalledWith({
+      vertexIds: [],
+      wallIds: [firstWallId, secondWallId],
+      zoneIds: [],
     });
   });
 });

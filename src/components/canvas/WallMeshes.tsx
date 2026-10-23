@@ -4,6 +4,8 @@ import { useArchitectureDocumentStore } from '../../store/architectureDocumentSt
 import { buildWallMeshDescriptors } from '../../architecture/geometry/wallMeshes.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import { createArchitectureMeshStoreController } from '../../architecture/editing/meshController.js';
+import { createEmptyHover } from '../../architecture/editing/tools.js';
+import { editorTheme } from '../../theme/editorTheme.js';
 
 const meshController = createArchitectureMeshStoreController({
   editorStore: useArchitectureEditorStore,
@@ -12,6 +14,12 @@ const meshController = createArchitectureMeshStoreController({
 
 export default function WallMeshes() {
   const document = useArchitectureDocumentStore((state) => state.document);
+  const activeTool = useArchitectureEditorStore((state) => state.activeTool);
+  const selection = useArchitectureEditorStore((state) => state.selection);
+  const hover = useArchitectureEditorStore((state) => state.hover);
+  const setHover = useArchitectureEditorStore((state) => state.setHover);
+  const clearHover = useArchitectureEditorStore((state) => state.clearHover);
+  const startWallDrag = useArchitectureEditorStore((state) => state.startWallDrag);
   const walls = buildWallMeshDescriptors(document);
   const wallShapes = useMemo(() => walls.map((wall) => {
     const shape = new THREE.Shape();
@@ -38,22 +46,53 @@ export default function WallMeshes() {
   return (
     <group name="wall-meshes">
       {wallShapes.map((wall) => (
-        <group
-          key={wall.wallId}
-          position={[wall.origin[0], 0, wall.origin[1]]}
-          rotation={[0, -wall.angle, 0]}
-        >
-          <mesh
-            name={`wall:${wall.wallId}`}
-            rotation={[-Math.PI / 2, 0, 0]}
-            onPointerDown={(event) => {
-              meshController.handleWallPointerDown(wall.wallId, event);
-            }}
-          >
-            <extrudeGeometry args={[wall.shape, wall.extrudeSettings]} />
-            <meshStandardMaterial color="#d9ddd6" />
-          </mesh>
-        </group>
+        (() => {
+          const isSelected = selection.wallIds.includes(wall.wallId);
+          const isHovered = hover.wallId === wall.wallId;
+          const color = isSelected
+            ? editorTheme.selected
+            : isHovered
+              ? editorTheme.hovered
+              : '#d9ddd6';
+          const opacity = isSelected ? 0.85 : isHovered ? 0.75 : 1;
+
+          return (
+            <group
+              key={wall.wallId}
+              position={[wall.origin[0], 0, wall.origin[1]]}
+              rotation={[0, -wall.angle, 0]}
+            >
+              <mesh
+                name={`wall:${wall.wallId}`}
+                rotation={[-Math.PI / 2, 0, 0]}
+                onPointerDown={(event) => {
+                  const shiftKey = event.shiftKey ?? event.nativeEvent?.shiftKey ?? false;
+                  if (activeTool === 'select' && isSelected && !shiftKey) {
+                    event.stopPropagation?.();
+                    const point = event.point ?? event.nativeEvent?.point;
+                    if (point) {
+                      startWallDrag(document, wall.wallId, [point.x, point.z]);
+                    }
+                    return;
+                  }
+
+                  meshController.handleWallPointerDown(wall.wallId, event);
+                }}
+                onPointerEnter={() => {
+                  if (activeTool === 'select') {
+                    setHover({ ...createEmptyHover(), wallId: wall.wallId });
+                  }
+                }}
+                onPointerLeave={() => {
+                  clearHover();
+                }}
+              >
+                <extrudeGeometry args={[wall.shape, wall.extrudeSettings]} />
+                <meshStandardMaterial color={color} transparent={opacity < 1} opacity={opacity} />
+              </mesh>
+            </group>
+          );
+        })()
       ))}
     </group>
   );

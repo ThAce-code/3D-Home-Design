@@ -1,4 +1,4 @@
-import { act } from 'react';
+import { act, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -14,6 +14,17 @@ import {
 } from '../../../architecture/editing/interaction';
 import { createDefaultViewport } from '../../../architecture/editing/tools';
 import { armWallTool, createDefaultWallToolState, updateWallToolModifiers } from '../../../architecture/editing/wallTool';
+
+vi.mock('@react-three/drei', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@react-three/drei')>();
+
+  return {
+    ...actual,
+    Html: ({ children, position }: { children: ReactNode; position: [number, number, number] }) => (
+      <div data-html-position={position.join(',')}>{children}</div>
+    ),
+  };
+});
 
 function createDocumentWithWallAndZone(): ArchitectureDocument {
   const document = createEmptyArchitectureDocument();
@@ -62,11 +73,13 @@ describe('ArchitectureScene', () => {
   let mountNode: HTMLDivElement;
   let root: Root;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     useArchitectureDocumentStore.setState(useArchitectureDocumentStore.getInitialState());
     useArchitectureEditorStore.setState(useArchitectureEditorStore.getInitialState());
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     mountNode = document.createElement('div');
     document.body.appendChild(mountNode);
@@ -79,6 +92,7 @@ describe('ArchitectureScene', () => {
     });
     mountNode.remove();
     consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
     useArchitectureDocumentStore.setState(useArchitectureDocumentStore.getInitialState());
     useArchitectureEditorStore.setState(useArchitectureEditorStore.getInitialState());
   });
@@ -112,6 +126,19 @@ describe('ArchitectureScene', () => {
     });
 
     expect(mountNode.querySelector('[name="draft-wall-preview"]')).not.toBeNull();
+  });
+
+  it('renders a wall body drag preview while a selected wall is being dragged', () => {
+    act(() => {
+      const document = createDocumentWithWallAndZone();
+      useArchitectureDocumentStore.getState().replaceDocument(document);
+      useArchitectureEditorStore.getState().startWallDrag(document, 'w1', [2, 0]);
+      useArchitectureEditorStore.getState().updateWallDrag([1, 2]);
+      root.render(<ArchitectureScene />);
+    });
+
+    expect(mountNode.querySelector('[name="wall-drag-preview"]')).not.toBeNull();
+    expect(mountNode.querySelector('[name="wall-drag-wall:w1"]')).not.toBeNull();
   });
 
   it('starts, updates, and commits a draft wall through the wall interaction helpers', () => {

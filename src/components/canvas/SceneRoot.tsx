@@ -3,7 +3,7 @@ import { Grid } from '@react-three/drei';
 import type { ReactNode } from 'react';
 import ArchitectureScene from './ArchitectureScene.js';
 import SceneDebugBridge from './SceneDebugBridge.js';
-import WallDraftHud from './WallDraftHud.js';
+import EditorStatusHud from './EditorStatusHud.js';
 import { editorTheme } from '../../theme/editorTheme.js';
 
 interface Props {
@@ -41,7 +41,7 @@ export default function SceneRoot({ children, showArchitectureScene = false }: P
         {showArchitectureScene ? <ArchitectureScene /> : null}
         {children}
       </Canvas>
-      <WallDraftHud />
+      <EditorStatusHud />
     </div>
   );
 }

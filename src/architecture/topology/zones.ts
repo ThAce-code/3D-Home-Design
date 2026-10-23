@@ -3,12 +3,13 @@ import {
   syncLevelEntityIds,
   type ArchitectureDocument,
 } from '../domain/document.js';
-import type { Zone } from '../domain/zone.js';
+import type { Zone, ZoneTombstone } from '../domain/zone.js';
 import { cross2D, dot2D, subtractPoints, type Point2 } from './math.js';
 import { findClosedLoops } from './loops.js';
 import { matchZones, type NextLoopMatchInput, type PreviousZoneMatchInput } from './zoneMatcher.js';
 
 export const MIN_VALID_ZONE_AREA = 0.25;
+export const MAX_TOMBSTONES = 50;
 
 interface BoundaryGeometry {
   area: number;
@@ -456,27 +457,44 @@ function intersectTriangleWithTriangle(
 
 export function rebuildZones(
   document: ArchitectureDocument,
-  epsilon = 1e-6
+  epsilon = 1e-6,
+  previousDocument: ArchitectureDocument = document
 ): ArchitectureDocument {
   const next = cloneArchitectureDocument(document);
   const loops = findClosedLoops(next, epsilon);
   const previousZoneById = new Map<string, Zone>();
   const previousZones: PreviousZoneMatchInput[] = [];
 
-  for (const zoneId of document.zoneOrder) {
-    const zone = document.zones[zoneId];
+  for (const zoneId of previousDocument.zoneOrder) {
+    const zone = previousDocument.zones[zoneId];
 
     if (!zone) {
       continue;
     }
 
-    const signature = createBoundarySignature(document, zone.boundaryVertexIds, epsilon);
+    const signature = createBoundarySignature(previousDocument, zone.boundaryVertexIds, epsilon);
     previousZoneById.set(zoneId, zone);
     previousZones.push({
-      geometry: buildBoundaryGeometry(document, zone.boundaryVertexIds, epsilon),
+      geometry: buildBoundaryGeometry(previousDocument, zone.boundaryVertexIds, epsilon),
       levelId: zone.levelId,
       signature,
       zoneId,
+    });
+  }
+
+  const tombstoneById = new Map<string, ZoneTombstone>();
+
+  for (const tombstone of previousDocument.zoneTombstones ?? []) {
+    if (previousZoneById.has(tombstone.id)) {
+      continue;
+    }
+
+    tombstoneById.set(tombstone.id, tombstone);
+    previousZones.push({
+      geometry: tombstone.geometry,
+      levelId: tombstone.levelId,
+      signature: tombstone.signature,
+      zoneId: tombstone.id,
     });
   }
 
@@ -516,6 +534,40 @@ export function rebuildZones(
     previousZones,
   }).reusedZoneIdByLoopIndex;
 
+  const matchedZoneIds = new Set(reusableZoneIdByLoopIndex.values());
+  const newTombstones: ZoneTombstone[] = [];
+
+  for (const zoneId of previousDocument.zoneOrder) {
+    if (matchedZoneIds.has(zoneId)) {
+      continue;
+    }
+
+    const zone = previousDocument.zones[zoneId];
+
+    if (!zone) {
+      continue;
+    }
+
+    const geometry = buildBoundaryGeometry(previousDocument, zone.boundaryVertexIds, epsilon);
+
+    if (!geometry) {
+      continue;
+    }
+
+    newTombstones.push({
+      id: zone.id,
+      levelId: zone.levelId,
+      kind: zone.kind,
+      name: zone.name,
+      geometry: {
+        area: geometry.area,
+        centroid: geometry.centroid,
+        points: geometry.points,
+      },
+      signature: createBoundarySignature(previousDocument, zone.boundaryVertexIds, epsilon),
+    });
+  }
+
   next.zones = {};
   next.zoneOrder = [];
 
@@ -525,16 +577,30 @@ export function rebuildZones(
     const previousZone = reusableZoneId
       ? previousZoneById.get(reusableZoneId)
       : null;
+    const tombstone = reusableZoneId
+      ? tombstoneById.get(reusableZoneId)
+      : null;
 
     next.zones[zoneId] = {
       id: zoneId,
       levelId: loop.levelId,
       boundaryVertexIds: loop.canonicalBoundaryVertexIds,
-      kind: previousZone?.kind ?? 'unknown',
-      name: previousZone?.name ?? null,
+      kind: previousZone?.kind ?? tombstone?.kind ?? 'unknown',
+      name: previousZone?.name ?? tombstone?.name ?? null,
     };
     next.zoneOrder.push(zoneId);
   }
+
+  const consumedTombstoneIds = new Set(
+    [...matchedZoneIds].filter((zoneId) => tombstoneById.has(zoneId))
+  );
+  const survivingTombstones = (previousDocument.zoneTombstones ?? []).filter(
+    (tombstone) => !consumedTombstoneIds.has(tombstone.id)
+  );
+  const allTombstones = [...survivingTombstones, ...newTombstones];
+  next.zoneTombstones = allTombstones.length > MAX_TOMBSTONES
+    ? allTombstones.slice(-MAX_TOMBSTONES)
+    : allTombstones;
 
   return syncLevelEntityIds(next);
 }
