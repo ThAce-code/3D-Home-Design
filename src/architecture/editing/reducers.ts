@@ -5,12 +5,57 @@ import {
 } from '../domain/document.js';
 import type { ArchitectureCommand } from './commands.js';
 import { applyDrawWall, repairTopology } from '../topology/repair.js';
+import type { Point2 } from '../topology/math.js';
+
+const REPAIR_EPSILON = 1e-6;
 
 function removeWall(document: ArchitectureDocument, wallId: string): ArchitectureDocument {
   const next = cloneArchitectureDocument(document);
 
   delete next.walls[wallId];
   next.wallOrder = next.wallOrder.filter((existingWallId) => existingWallId !== wallId);
+
+  return repairTopology(syncLevelEntityIds(next));
+}
+
+function createBoundaryEdgeKey(a: string, b: string): string {
+  return a < b ? `${a}:${b}` : `${b}:${a}`;
+}
+
+function removeZone(document: ArchitectureDocument, zoneId: string): ArchitectureDocument {
+  const next = cloneArchitectureDocument(document);
+  const zone = next.zones[zoneId];
+
+  if (!zone) {
+    return next;
+  }
+
+  const boundaryEdges = new Set<string>();
+  for (let index = 0; index < zone.boundaryVertexIds.length; index += 1) {
+    const current = zone.boundaryVertexIds[index];
+    const nextIndex = (index + 1) % zone.boundaryVertexIds.length;
+    const following = zone.boundaryVertexIds[nextIndex];
+
+    if (current && following) {
+      boundaryEdges.add(createBoundaryEdgeKey(current, following));
+    }
+  }
+
+  for (const wallId of next.wallOrder) {
+    const wall = next.walls[wallId];
+
+    if (!wall) {
+      continue;
+    }
+
+    if (boundaryEdges.has(createBoundaryEdgeKey(wall.startVertexId, wall.endVertexId))) {
+      delete next.walls[wallId];
+    }
+  }
+
+  delete next.zones[zoneId];
+  next.wallOrder = next.wallOrder.filter((wallId) => Boolean(next.walls[wallId]));
+  next.zoneOrder = next.zoneOrder.filter((existingZoneId) => existingZoneId !== zoneId);
 
   return repairTopology(syncLevelEntityIds(next));
 }
@@ -36,6 +81,50 @@ function moveVertex(
   return repairTopology(syncLevelEntityIds(next));
 }
 
+function splitWall(
+  document: ArchitectureDocument,
+  wallId: string,
+  splitPoint: Point2,
+): ArchitectureDocument {
+  const next = cloneArchitectureDocument(document);
+  const wall = next.walls[wallId];
+
+  if (!wall) {
+    return next;
+  }
+
+  const midpointVertexId = crypto.randomUUID();
+  const newWallId = crypto.randomUUID();
+
+  next.vertices[midpointVertexId] = {
+    id: midpointVertexId,
+    x: splitPoint[0],
+    y: splitPoint[1],
+  };
+
+  next.walls[wallId] = {
+    ...wall,
+    endVertexId: midpointVertexId,
+  };
+
+  next.walls[newWallId] = {
+    ...wall,
+    id: newWallId,
+    startVertexId: midpointVertexId,
+  };
+
+  const insertIndex = next.wallOrder.indexOf(wallId);
+  if (insertIndex === -1) {
+    next.wallOrder.push(newWallId);
+  } else {
+    next.wallOrder.splice(insertIndex + 1, 0, newWallId);
+  }
+
+  return repairTopology(syncLevelEntityIds(next), REPAIR_EPSILON, {
+    collapseCollinear: false,
+  });
+}
+
 function deleteVertex(document: ArchitectureDocument, vertexId: string): ArchitectureDocument {
   const next = cloneArchitectureDocument(document);
   const connectedWallIds = next.wallOrder.filter((wallId) => {
@@ -57,7 +146,7 @@ function deleteVertex(document: ArchitectureDocument, vertexId: string): Archite
 function setWallProps(
   document: ArchitectureDocument,
   wallId: string,
-  patch: ArchitectureCommand & { type: 'SET_WALL_PROPS' }['patch']
+  patch: Extract<ArchitectureCommand, { type: 'SET_WALL_PROPS' }>['patch']
 ): ArchitectureDocument {
   const next = cloneArchitectureDocument(document);
   const wall = next.walls[wallId];
@@ -76,6 +165,26 @@ function setWallProps(
   return syncLevelEntityIds(next);
 }
 
+function setZoneProps(
+  document: ArchitectureDocument,
+  zoneId: string,
+  patch: Extract<ArchitectureCommand, { type: 'SET_ZONE_PROPS' }>['patch']
+): ArchitectureDocument {
+  const next = cloneArchitectureDocument(document);
+  const zone = next.zones[zoneId];
+
+  if (!zone) {
+    return next;
+  }
+
+  next.zones[zoneId] = {
+    ...zone,
+    ...patch,
+  };
+
+  return syncLevelEntityIds(next);
+}
+
 export function reduceArchitectureCommand(
   document: ArchitectureDocument,
   command: ArchitectureCommand
@@ -85,12 +194,18 @@ export function reduceArchitectureCommand(
       return applyDrawWall(document, command.start, command.end);
     case 'MOVE_VERTEX':
       return moveVertex(document, command.vertexId, command.to);
+    case 'SPLIT_WALL':
+      return splitWall(document, command.wallId, command.splitPoint);
     case 'DELETE_WALL':
       return removeWall(document, command.wallId);
+    case 'DELETE_ZONE':
+      return removeZone(document, command.zoneId);
     case 'DELETE_VERTEX':
       return deleteVertex(document, command.vertexId);
     case 'SET_WALL_PROPS':
       return setWallProps(document, command.wallId, command.patch);
+    case 'SET_ZONE_PROPS':
+      return setZoneProps(document, command.zoneId, command.patch);
     default: {
       const exhaustiveCheck: never = command;
       return exhaustiveCheck;

@@ -159,40 +159,6 @@ function computePolygonArea(points: Point2[]): number {
   return Math.abs(computeSignedArea(points));
 }
 
-function computePolygonCentroid(points: Point2[], epsilon: number): Point2 {
-  const signedArea = computeSignedArea(points);
-
-  if (Math.abs(signedArea) <= epsilon) {
-    const [sumX, sumY] = points.reduce<[number, number]>(
-      (sum, point) => [sum[0] + point[0], sum[1] + point[1]],
-      [0, 0]
-    );
-    const divisor = points.length || 1;
-
-    return [sumX / divisor, sumY / divisor];
-  }
-
-  let centroidX = 0;
-  let centroidY = 0;
-
-  for (let index = 0; index < points.length; index += 1) {
-    const current = points[index];
-    const next = points[(index + 1) % points.length];
-
-    if (!current || !next) {
-      continue;
-    }
-
-    const cross = (current[0] * next[1]) - (next[0] * current[1]);
-    centroidX += (current[0] + next[0]) * cross;
-    centroidY += (current[1] + next[1]) * cross;
-  }
-
-  const divisor = 6 * signedArea;
-
-  return [centroidX / divisor, centroidY / divisor];
-}
-
 function isPointOnSegment(
   point: Point2,
   start: Point2,

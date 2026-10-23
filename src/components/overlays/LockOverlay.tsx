@@ -1,5 +1,6 @@
 import { useStore } from '../../store/useStore.js';
 import { editorTheme } from '../../theme/editorTheme.js';
+import { enterSceneNavigation } from '../../services/navigation.js';
 
 export default function LockOverlay() {
   const pointerLocked = useStore((s) => s.pointerLocked);
@@ -10,6 +11,7 @@ export default function LockOverlay() {
   return (
     <div
       data-testid="lock-overlay"
+      onClick={() => { void enterSceneNavigation(); }}
       className="fixed inset-0 flex items-center justify-center z-50 cursor-pointer"
       style={{ background: editorTheme.overlayScrim, backdropFilter: 'blur(6px)' }}
     >

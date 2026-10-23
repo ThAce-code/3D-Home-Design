@@ -7,7 +7,7 @@
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit",
+    "lint": "tsc -b --pretty false",
     "test:unit": "vitest",
     "test:e2e": "playwright test",
     "dev:server": "npm --prefix server run dev",

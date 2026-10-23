@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand';
+import type { AppState } from '../useStore.js';
 import type { DockTab, TransformTool } from '../../types/camera.js';
 
 export interface UiSlice {
@@ -11,7 +12,7 @@ export interface UiSlice {
   setTransformTool: (tool: TransformTool) => void;
 }
 
-export const createUiSlice: StateCreator<UiSlice, [['zustand/immer', never]], [], UiSlice> = (set) => ({
+export const createUiSlice: StateCreator<AppState, [['zustand/immer', never]], [], UiSlice> = (set) => ({
   activeTab: 'building',
   dockOpen: false,
   transformTool: 'translate',

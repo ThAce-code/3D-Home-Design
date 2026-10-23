@@ -4,6 +4,8 @@ import type {
   DraftWallState,
   ArchitectureTool,
   ArchitectureViewportState,
+  VertexDragState,
+  WallDragState,
 } from './tools.js';
 import type { Point2 } from '../topology/math.js';
 import type { WallToolAxisLock, WallToolState, WallClosurePreviewCandidate } from './wallTool.js';
@@ -33,6 +35,8 @@ interface UpdateWallDraftPointerArgs {
 interface ArchitectureSceneKeyboardArgs {
   activeTool: ArchitectureTool;
   key: string;
+  vertexDrag?: VertexDragState | null;
+  wallDrag?: WallDragState | null;
 }
 
 interface ArchitectureScenePointEvent {
@@ -46,6 +50,8 @@ interface WallMeshPointerDownArgs {
   activeTool: ArchitectureTool;
   document: ArchitectureDocument;
   wallId: string;
+  currentSelection?: ArchitectureSelection;
+  shiftKey?: boolean;
   intersections: Array<{
     objectName: string;
     point: Point2;
@@ -55,6 +61,8 @@ interface WallMeshPointerDownArgs {
 interface ZoneMeshPointerDownArgs {
   activeTool: ArchitectureTool;
   zoneId: string;
+  currentSelection?: ArchitectureSelection;
+  shiftKey?: boolean;
 }
 
 export type ArchitectureInteractionCommand =
@@ -97,7 +105,36 @@ export type ArchitectureInteractionCommand =
     enabled: boolean;
   }
   | {
+    type: 'set-vertex-drag-numeric-entry-enabled';
+    enabled: boolean;
+  }
+  | {
+    type: 'set-wall-drag-numeric-entry-enabled';
+    enabled: boolean;
+  }
+  | {
     type: 'cancel-draft-wall';
+  }
+  | {
+    type: 'update-vertex-drag';
+    currentPosition: Point2;
+    snappedToVertexId: string | null;
+  }
+  | {
+    type: 'commit-vertex-drag';
+  }
+  | {
+    type: 'cancel-vertex-drag';
+  }
+  | {
+    type: 'update-wall-drag';
+    currentOffset: Point2;
+  }
+  | {
+    type: 'commit-wall-drag';
+  }
+  | {
+    type: 'cancel-wall-drag';
   };
 
 interface ArchitectureSceneEffects {
@@ -119,7 +156,15 @@ export interface ArchitectureInteractionCommandHandlers {
   updateDraftWall?: (currentPoint: Point2, snappedVertexId?: string | null) => void;
   setWallToolModifiers?: (modifiers: { shiftKey?: boolean; altKey?: boolean }) => void;
   setWallNumericEntryEnabled?: (enabled: boolean) => void;
+  setVertexDragNumericEntryEnabled?: (enabled: boolean) => void;
+  setWallDragNumericEntryEnabled?: (enabled: boolean) => void;
   cancelDraftWall?: () => void;
+  updateVertexDrag?: (currentPosition: Point2, snappedToVertexId?: string | null) => void;
+  commitVertexDrag?: () => void;
+  cancelVertexDrag?: () => void;
+  updateWallDrag?: (currentOffset: Point2) => void;
+  commitWallDrag?: () => void;
+  cancelWallDrag?: () => void;
 }
 
 function createEmptySelection(): ArchitectureSelection {
@@ -163,8 +208,32 @@ export function applyArchitectureInteractionCommands(
       case 'set-wall-numeric-entry-enabled':
         handlers.setWallNumericEntryEnabled?.(command.enabled);
         break;
+      case 'set-vertex-drag-numeric-entry-enabled':
+        handlers.setVertexDragNumericEntryEnabled?.(command.enabled);
+        break;
+      case 'set-wall-drag-numeric-entry-enabled':
+        handlers.setWallDragNumericEntryEnabled?.(command.enabled);
+        break;
       case 'cancel-draft-wall':
         handlers.cancelDraftWall?.();
+        break;
+      case 'update-vertex-drag':
+        handlers.updateVertexDrag?.(command.currentPosition, command.snappedToVertexId);
+        break;
+      case 'commit-vertex-drag':
+        handlers.commitVertexDrag?.();
+        break;
+      case 'cancel-vertex-drag':
+        handlers.cancelVertexDrag?.();
+        break;
+      case 'update-wall-drag':
+        handlers.updateWallDrag?.(command.currentOffset);
+        break;
+      case 'commit-wall-drag':
+        handlers.commitWallDrag?.();
+        break;
+      case 'cancel-wall-drag':
+        handlers.cancelWallDrag?.();
         break;
     }
   });
@@ -430,7 +499,74 @@ export function getArchitectureScenePointerMoveEffects({
 export function getArchitectureSceneKeyDownEffects({
   activeTool,
   key,
+  vertexDrag,
+  wallDrag,
 }: ArchitectureSceneKeyboardArgs): ArchitectureSceneEffects {
+  if (key === 'Tab' && vertexDrag) {
+    return {
+      shouldPreventDefault: true,
+      commands: [
+        {
+          type: 'set-vertex-drag-numeric-entry-enabled',
+          enabled: true,
+        },
+      ],
+    };
+  }
+
+  if (key === 'Tab' && wallDrag) {
+    return {
+      shouldPreventDefault: true,
+      commands: [
+        {
+          type: 'set-wall-drag-numeric-entry-enabled',
+          enabled: true,
+        },
+      ],
+    };
+  }
+
+  if (key === 'Escape') {
+    const commands: ArchitectureInteractionCommand[] = [];
+
+    if (vertexDrag) {
+      commands.push({
+        type: 'cancel-vertex-drag',
+      });
+    }
+
+    if (wallDrag) {
+      commands.push({
+        type: 'cancel-wall-drag',
+      });
+    }
+
+    if (activeTool === 'wall') {
+      commands.push(
+        {
+          type: 'set-wall-closure-preview',
+          candidate: null,
+        },
+        {
+          type: 'set-wall-numeric-entry-enabled',
+          enabled: false,
+        },
+        {
+          type: 'cancel-draft-wall',
+        },
+      );
+    }
+
+    if (activeTool === 'select') {
+      commands.push({
+        type: 'set-selection',
+        selection: createEmptySelection(),
+      });
+    }
+
+    return { commands };
+  }
+
   if (activeTool !== 'wall') {
     return { commands: [] };
   }
@@ -464,24 +600,6 @@ export function getArchitectureSceneKeyDownEffects({
         {
           type: 'set-wall-numeric-entry-enabled',
           enabled: true,
-        },
-      ],
-    };
-  }
-
-  if (key === 'Escape') {
-    return {
-      commands: [
-        {
-          type: 'set-wall-closure-preview',
-          candidate: null,
-        },
-        {
-          type: 'set-wall-numeric-entry-enabled',
-          enabled: false,
-        },
-        {
-          type: 'cancel-draft-wall',
         },
       ],
     };
@@ -542,6 +660,8 @@ export function getWallMeshPointerDownEffects({
   activeTool,
   document,
   wallId,
+  currentSelection = createEmptySelection(),
+  shiftKey = false,
   intersections,
 }: WallMeshPointerDownArgs): ArchitectureScenePointerEffects {
   if (activeTool === 'delete') {
@@ -567,6 +687,25 @@ export function getWallMeshPointerDownEffects({
     return {
       shouldStopPropagation: false,
       commands: [],
+    };
+  }
+
+  if (shiftKey) {
+    const isSelected = currentSelection.wallIds.includes(wallId);
+
+    return {
+      shouldStopPropagation: true,
+      commands: [
+        {
+          type: 'set-selection',
+          selection: {
+            ...currentSelection,
+            wallIds: isSelected
+              ? currentSelection.wallIds.filter((selectedWallId) => selectedWallId !== wallId)
+              : [...currentSelection.wallIds, wallId],
+          },
+        },
+      ],
     };
   }
 
@@ -604,11 +743,32 @@ export function getWallMeshPointerDownEffects({
 export function getZoneMeshPointerDownEffects({
   activeTool,
   zoneId,
+  currentSelection = createEmptySelection(),
+  shiftKey = false,
 }: ZoneMeshPointerDownArgs): ArchitectureScenePointerEffects {
   if (activeTool !== 'select') {
     return {
       shouldStopPropagation: false,
       commands: [],
+    };
+  }
+
+  if (shiftKey) {
+    const isSelected = currentSelection.zoneIds.includes(zoneId);
+
+    return {
+      shouldStopPropagation: true,
+      commands: [
+        {
+          type: 'set-selection',
+          selection: {
+            ...currentSelection,
+            zoneIds: isSelected
+              ? currentSelection.zoneIds.filter((selectedZoneId) => selectedZoneId !== zoneId)
+              : [...currentSelection.zoneIds, zoneId],
+          },
+        },
+      ],
     };
   }
 

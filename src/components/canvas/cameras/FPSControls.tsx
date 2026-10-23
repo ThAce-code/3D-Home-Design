@@ -1,6 +1,7 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useMemo } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { PointerLockControls } from '@react-three/drei';
+import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import { enterSceneNavigation } from '../../../services/navigation.js';
 import { useStore } from '../../../store/useStore.js';
 import * as THREE from 'three';
 
@@ -11,9 +12,9 @@ const FLY_SPEED = 8;
 const _keys = new Set<string>();
 
 export default function FPSControls() {
-  const controlsRef = useRef<any>(null);
   const altRef = useRef(false);
-  const { camera, gl } = useThree();
+  const { camera, gl, setEvents } = useThree();
+  const controls = useMemo(() => new PointerLockControls(camera), [camera]);
   const pointerLocked = useStore((s) => s.pointerLocked);
   const isFlying = useStore((s) => s.isFlying);
 
@@ -29,8 +30,8 @@ export default function FPSControls() {
     if (!altRef.current) return;
     altRef.current = false;
     useStore.getState().setAltUnlocked(false);
-    gl.domElement.requestPointerLock();
-  }, [gl]);
+    void enterSceneNavigation();
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -63,26 +64,42 @@ export default function FPSControls() {
   }, [handleAltDown, handleAltUp]);
 
   useEffect(() => {
-    const ctrl = controlsRef.current;
-    if (!ctrl) return;
-    const onLock = () => {
+    controls.connect(gl.domElement);
+    // Native lock state is authoritative, including a lock acquired while
+    // the controls' own effect subscriptions are still being installed.
+    const syncPointerLock = () => {
+      const locked = document.pointerLockElement === gl.domElement;
+      controls.isLocked = locked;
       const state = useStore.getState();
-      state.setPointerLocked(true);
-      if (!state.hasEnteredOnce) state.setHasEnteredOnce();
+      state.setPointerLocked(locked);
+      if (locked) {
+        state.setHasEnteredOnce();
+      } else {
+        if (!altRef.current) state.setAltUnlocked(false);
+        _keys.clear();
+      }
     };
-    const onUnlock = () => {
-      const state = useStore.getState();
-      state.setPointerLocked(false);
-      if (!altRef.current) state.setAltUnlocked(false);
-      _keys.clear();
-    };
-    ctrl.addEventListener('lock', onLock);
-    ctrl.addEventListener('unlock', onUnlock);
+    document.addEventListener('pointerlockchange', syncPointerLock);
+    syncPointerLock();
     return () => {
-      ctrl.removeEventListener('lock', onLock);
-      ctrl.removeEventListener('unlock', onUnlock);
+      document.removeEventListener('pointerlockchange', syncPointerLock);
+      controls.disconnect();
     };
-  }, []);
+  }, [controls, gl]);
+
+  useEffect(() => {
+    // Editing uses the actual cursor; FPS navigation uses the crosshair.
+    setEvents({
+      compute(event, state) {
+        const rect = gl.domElement.getBoundingClientRect();
+        state.pointer.set(
+          pointerLocked ? 0 : ((event.clientX - rect.left) / rect.width) * 2 - 1,
+          pointerLocked ? 0 : -((event.clientY - rect.top) / rect.height) * 2 + 1,
+        );
+        state.raycaster.setFromCamera(state.pointer, state.camera);
+      },
+    });
+  }, [gl, pointerLocked, setEvents]);
 
   useFrame((_, delta) => {
     if (!pointerLocked) return;
@@ -116,5 +133,5 @@ export default function FPSControls() {
     }
   });
 
-  return <PointerLockControls ref={controlsRef} camera={camera} domElement={gl.domElement} />;
+  return null;
 }

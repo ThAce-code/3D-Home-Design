@@ -7,7 +7,7 @@ import {
   Layers,
   Move,
 } from 'lucide-react';
-import type { MouseEvent as ReactMouseEvent } from 'react';
+import type { MouseEvent as ReactMouseEvent, SyntheticEvent } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import LiquidGlassButton from './components/LiquidGlassButton.js';
 import LiquidGlassNavbar from './components/LiquidGlassNavbar.js';
@@ -69,7 +69,7 @@ const LANDING_SURFACES = {
   titleGradient: 'linear-gradient(135deg, #191c1e 0%, #544434 100%)',
 } as const;
 
-function applyFallbackImage(event: ReactMouseEvent<HTMLImageElement> | Event, fallbackSrc: string) {
+function applyFallbackImage(event: SyntheticEvent<HTMLImageElement> | Event, fallbackSrc: string) {
   const image = event.currentTarget as HTMLImageElement;
   image.onerror = null;
   image.src = fallbackSrc;

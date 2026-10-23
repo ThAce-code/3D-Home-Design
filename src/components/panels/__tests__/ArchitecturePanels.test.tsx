@@ -12,6 +12,15 @@ import ArchitectureScene from '../../canvas/ArchitectureScene';
 import LeftPanel from '../../layout/LeftPanel';
 import PropertyPanel from '../PropertyPanel';
 
+vi.mock('@react-three/drei', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@react-three/drei')>();
+
+  return {
+    ...actual,
+    Html: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  };
+});
+
 function queryWallMesh(root: ParentNode, wallId: string) {
   return root.querySelector(`[name="wall:${wallId}"]`);
 }
@@ -67,12 +76,14 @@ describe('architecture shell panels', () => {
   let mountNode: HTMLDivElement;
   let root: Root;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     useStore.setState(useStore.getInitialState());
     useArchitectureDocumentStore.setState(useArchitectureDocumentStore.getInitialState());
     useArchitectureEditorStore.setState(useArchitectureEditorStore.getInitialState());
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     mountNode = document.createElement('div');
     document.body.appendChild(mountNode);
@@ -85,6 +96,7 @@ describe('architecture shell panels', () => {
     });
     mountNode.remove();
     consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
     useStore.setState(useStore.getInitialState());
     useArchitectureDocumentStore.setState(useArchitectureDocumentStore.getInitialState());
     useArchitectureEditorStore.setState(useArchitectureEditorStore.getInitialState());
@@ -121,7 +133,9 @@ describe('architecture shell panels', () => {
     });
 
     expect(mountNode.querySelector('[data-testid="wall-property-panel"]')).not.toBeNull();
-    expect(mountNode.textContent).toContain('w1');
+    expect(mountNode.textContent).toContain('墙体');
+    expect(mountNode.textContent).toContain('4.00 m');
+    expect(mountNode.textContent).not.toContain('w1');
   });
 
   it('renders the zone property panel after clicking a zone mesh in architecture mode', () => {
@@ -146,7 +160,9 @@ describe('architecture shell panels', () => {
     });
 
     expect(mountNode.querySelector('[data-testid="zone-property-panel"]')).not.toBeNull();
-    expect(mountNode.textContent).toContain('z1');
+    expect(mountNode.textContent).toContain('房间');
+    expect(mountNode.textContent).toContain('12.00 m²');
+    expect(mountNode.textContent).not.toContain('z1');
   });
 
   it('prefers the zone panel when a wall ray hit resolves to an interior ground point', () => {
@@ -186,6 +202,7 @@ describe('architecture shell panels', () => {
 
     expect(mountNode.querySelector('[data-testid="zone-property-panel"]')).not.toBeNull();
     expect(mountNode.querySelector('[data-testid="wall-property-panel"]')).toBeNull();
-    expect(mountNode.textContent).toContain('z1');
+    expect(mountNode.textContent).toContain('12.00 m²');
+    expect(mountNode.textContent).not.toContain('z1');
   });
 });

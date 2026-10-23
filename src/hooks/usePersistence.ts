@@ -5,7 +5,7 @@ import { saveState, loadState } from '../services/persistence.js';
 const SAVE_DEBOUNCE = 2000;
 
 export function usePersistence(enabled = true) {
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Load on startup
   useEffect(() => {

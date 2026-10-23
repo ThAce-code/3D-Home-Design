@@ -149,7 +149,7 @@ describe('LandingPage', () => {
       expect(anchor.classList.contains('liquid-glass-nav-link')).toBe(true);
       expect(anchor.classList.contains('liquid-glass-nav-link-ink')).toBe(true);
     });
-    expect(previewSection?.compareDocumentPosition(featuresSection as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(previewSection!.compareDocumentPosition(featuresSection as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('keeps the hero title split into the same three emphasis lines as the gemini reference', () => {

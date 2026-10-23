@@ -1,9 +1,9 @@
-import { Canvas } from '@react-three/fiber';
+import { Canvas, events } from '@react-three/fiber';
 import { Grid } from '@react-three/drei';
 import type { ReactNode } from 'react';
 import ArchitectureScene from './ArchitectureScene.js';
 import SceneDebugBridge from './SceneDebugBridge.js';
-import WallDraftHud from './WallDraftHud.js';
+import EditorStatusHud from './EditorStatusHud.js';
 import { editorTheme } from '../../theme/editorTheme.js';
 
 interface Props {
@@ -14,7 +14,18 @@ interface Props {
 export default function SceneRoot({ children, showArchitectureScene = false }: Props) {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <Canvas data-testid="scene-canvas" camera={{ position: [0, 1.7, 5], fov: 60 }} shadows>
+      <Canvas
+        data-testid="scene-canvas"
+        camera={{ position: [0, 1.7, 5], fov: 60 }}
+        events={(state) => ({
+          ...events(state),
+          // Handles are editing overlays: hit them before the wall above them.
+          filter: (items) => items.sort((a, b) => (
+            Number(b.object.name.startsWith('handle:')) - Number(a.object.name.startsWith('handle:'))
+          )),
+        })}
+        shadows
+      >
         <color attach="background" args={[editorTheme.background]} />
         <ambientLight intensity={1.05} />
         <hemisphereLight args={['#fff6ea', '#ceb18b', 0.85]} />
@@ -41,7 +52,7 @@ export default function SceneRoot({ children, showArchitectureScene = false }: P
         {showArchitectureScene ? <ArchitectureScene /> : null}
         {children}
       </Canvas>
-      <WallDraftHud />
+      <EditorStatusHud />
     </div>
   );
 }

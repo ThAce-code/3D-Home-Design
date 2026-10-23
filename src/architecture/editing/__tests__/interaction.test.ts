@@ -346,6 +346,81 @@ describe('wall draft interaction', () => {
     });
   });
 
+  it('builds select-tool escape commands that cancel active vertex drag and clear selection', () => {
+    const result = getArchitectureSceneKeyDownEffects({
+      activeTool: 'select',
+      key: 'Escape',
+      vertexDrag: {
+        vertexId: 'v1',
+        startPosition: [0, 0],
+        currentPosition: [2, 0],
+        snappedToVertexId: null,
+        numericEntryEnabled: false,
+      },
+    });
+
+    expect(result).toEqual({
+      commands: [
+        {
+          type: 'cancel-vertex-drag',
+        },
+        {
+          type: 'set-selection',
+          selection: {
+            vertexIds: [],
+            wallIds: [],
+            zoneIds: [],
+          },
+        },
+      ],
+    });
+  });
+
+  it('builds select-tool tab commands for active drag numeric entry', () => {
+    expect(getArchitectureSceneKeyDownEffects({
+      activeTool: 'select',
+      key: 'Tab',
+      vertexDrag: {
+        vertexId: 'v1',
+        startPosition: [0, 0],
+        currentPosition: [2, 0],
+        snappedToVertexId: null,
+        numericEntryEnabled: false,
+      },
+    })).toEqual({
+      shouldPreventDefault: true,
+      commands: [
+        {
+          type: 'set-vertex-drag-numeric-entry-enabled',
+          enabled: true,
+        },
+      ],
+    });
+
+    expect(getArchitectureSceneKeyDownEffects({
+      activeTool: 'select',
+      key: 'Tab',
+      wallDrag: {
+        wallId: 'w1',
+        startVertexId: 'v1',
+        endVertexId: 'v2',
+        startVertexOrigin: [0, 0],
+        endVertexOrigin: [4, 0],
+        grabOffset: [0, 0],
+        currentOffset: [0, 1],
+        numericEntryEnabled: false,
+      },
+    })).toEqual({
+      shouldPreventDefault: true,
+      commands: [
+        {
+          type: 'set-wall-drag-numeric-entry-enabled',
+          enabled: true,
+        },
+      ],
+    });
+  });
+
   it('builds delete commands when the delete tool clicks a wall mesh', () => {
     let document = createEmptyArchitectureDocument();
     document = applyDrawWall(document, [0, 0], [4, 0]);
@@ -440,6 +515,57 @@ describe('wall draft interaction', () => {
     ]);
   });
 
+  it('toggles wall selection on shift-click without clearing existing selection', () => {
+    let document = createEmptyArchitectureDocument();
+    document = applyDrawWall(document, [0, 0], [4, 0]);
+    document = applyDrawWall(document, [0, 1], [4, 1]);
+    const [firstWallId, secondWallId] = document.wallOrder;
+
+    expect(getWallMeshPointerDownEffects({
+      activeTool: 'select',
+      document,
+      wallId: secondWallId,
+      intersections: [],
+      currentSelection: {
+        vertexIds: [],
+        wallIds: [firstWallId],
+        zoneIds: [],
+      },
+      shiftKey: true,
+    }).commands).toEqual([
+      {
+        type: 'set-selection',
+        selection: {
+          vertexIds: [],
+          wallIds: [firstWallId, secondWallId],
+          zoneIds: [],
+        },
+      },
+    ]);
+
+    expect(getWallMeshPointerDownEffects({
+      activeTool: 'select',
+      document,
+      wallId: firstWallId,
+      intersections: [],
+      currentSelection: {
+        vertexIds: [],
+        wallIds: [firstWallId, secondWallId],
+        zoneIds: [],
+      },
+      shiftKey: true,
+    }).commands).toEqual([
+      {
+        type: 'set-selection',
+        selection: {
+          vertexIds: [],
+          wallIds: [secondWallId],
+          zoneIds: [],
+        },
+      },
+    ]);
+  });
+
   it('builds zone selection commands when the select tool clicks a zone mesh', () => {
     const result = getZoneMeshPointerDownEffects({
       activeTool: 'select',
@@ -469,6 +595,30 @@ describe('wall draft interaction', () => {
     expect(result.commands).toEqual([]);
   });
 
+  it('toggles zone selection on shift-click without clearing wall selection', () => {
+    const result = getZoneMeshPointerDownEffects({
+      activeTool: 'select',
+      zoneId: 'z-room',
+      currentSelection: {
+        vertexIds: [],
+        wallIds: ['w1'],
+        zoneIds: [],
+      },
+      shiftKey: true,
+    });
+
+    expect(result.commands).toEqual([
+      {
+        type: 'set-selection',
+        selection: {
+          vertexIds: [],
+          wallIds: ['w1'],
+          zoneIds: ['z-room'],
+        },
+      },
+    ]);
+  });
+
   it('applies interaction commands through shared handlers in order', () => {
     const handlers = {
       setSelection: vi.fn(),
@@ -481,6 +631,8 @@ describe('wall draft interaction', () => {
       setWallToolModifiers: vi.fn(),
       setWallNumericEntryEnabled: vi.fn(),
       cancelDraftWall: vi.fn(),
+      setVertexDragNumericEntryEnabled: vi.fn(),
+      setWallDragNumericEntryEnabled: vi.fn(),
     };
     const document = createEmptyArchitectureDocument();
 
@@ -505,6 +657,14 @@ describe('wall draft interaction', () => {
         {
           type: 'cancel-draft-wall',
         },
+        {
+          type: 'set-vertex-drag-numeric-entry-enabled',
+          enabled: true,
+        },
+        {
+          type: 'set-wall-drag-numeric-entry-enabled',
+          enabled: true,
+        },
       ],
       handlers,
     );
@@ -517,6 +677,8 @@ describe('wall draft interaction', () => {
     expect(handlers.replaceDocument).toHaveBeenCalledWith(document);
     expect(handlers.setWallNumericEntryEnabled).toHaveBeenCalledWith(true);
     expect(handlers.cancelDraftWall).toHaveBeenCalledTimes(1);
+    expect(handlers.setVertexDragNumericEntryEnabled).toHaveBeenCalledWith(true);
+    expect(handlers.setWallDragNumericEntryEnabled).toHaveBeenCalledWith(true);
     expect(handlers.setSelection.mock.invocationCallOrder[0]).toBeLessThan(
       handlers.replaceDocument.mock.invocationCallOrder[0],
     );
