@@ -137,6 +137,34 @@ test('restores deleted walls and room properties as one step', async ({ page }) 
   await expect.poll(() => documentState(page)).toEqual(before);
 });
 
+for (const selection of ['walls', 'zone'] as const) {
+  test(`restores keyboard-deleted ${selection} with one exact undo and redo`, async ({ page }) => {
+    await openRoom(page);
+    await click(page, 2, 1.5);
+    await page.getByRole('textbox', { name: '房间名称' }).fill('Living room');
+    await page.getByRole('combobox', { name: '房间类型' }).selectOption('living_room');
+    if (selection === 'walls') {
+      await click(page, 1, 0, 3);
+      await page.keyboard.down('Shift');
+      await click(page, 4, 1, 3);
+      await page.keyboard.up('Shift');
+      await expect.poll(() => page.evaluate(() => window.__architectureDebug!.getEditorState().selection.wallIds)).toEqual(['w1', 'w2']);
+    } else {
+      await click(page, 2, 1.5);
+    }
+    const before = await documentState(page);
+    const depth = await page.evaluate(() => window.__architectureDebug!.getDocument().pastDocuments.length);
+    await page.keyboard.press('Delete');
+    await expect.poll(async () => (await documentState(page)).wallOrder.length).toBe(selection === 'walls' ? 2 : 0);
+    const deleted = await documentState(page);
+    expect(await page.evaluate(() => window.__architectureDebug!.getDocument().pastDocuments.length)).toBe(depth + 1);
+    await page.keyboard.press('Control+z');
+    await expect.poll(() => documentState(page)).toEqual(before);
+    await page.keyboard.press('Control+y');
+    await expect.poll(() => documentState(page)).toEqual(deleted);
+  });
+}
+
 test('invalidates redo after a new edit branches from an undone state', async ({ page }) => {
   await openRoom(page);
   await splitWall(page);

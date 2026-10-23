@@ -1,5 +1,9 @@
 # V4 Architecture Undo/Redo
 
+Post-review integration: includes the four PR #5 fixes. Additional browser checks
+verify that keyboard deletion of a room or multiple selected walls creates one
+history step, and that undo/redo restores the exact document and room metadata.
+
 ## Milestone
 
 Add bounded, session-local history for the existing V4 architecture document.
@@ -35,10 +39,10 @@ This milestone does not add the remaining offset/trim/extend tools.
 
 ## Verified result
 
-- Chromium full regression: 31 tests passed, including seven architecture
+- Chromium full regression: 38 tests passed, including nine architecture
   history scenarios. The completed-wall undo/redo and exact-ID split scenarios
   also passed focused runs after extending their coverage.
-- Unit regression: 51 files / 268 tests passed, including delayed-load handling,
+- Unit regression: 52 files / 275 tests passed, including delayed-load handling,
   editable-field shortcut boundaries and exact topology/metadata restoration.
 - Production build, TypeScript checks and whitespace checks passed. The existing
   Three.js vendor-size warning remains.
