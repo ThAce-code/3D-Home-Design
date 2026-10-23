@@ -22,6 +22,42 @@ function createBoundaryEdgeKey(a: string, b: string): string {
   return a < b ? `${a}:${b}` : `${b}:${a}`;
 }
 
+function removeSelection(
+  document: ArchitectureDocument,
+  selection: Extract<ArchitectureCommand, { type: 'DELETE_SELECTION' }>,
+): ArchitectureDocument {
+  const next = cloneArchitectureDocument(document);
+  const wallIds = new Set(selection.wallIds);
+  const vertexIds = new Set(selection.vertexIds);
+  const boundaryEdges = new Set<string>();
+
+  // Resolve every selected zone against the original graph. Rebuilding after
+  // each deletion could merge adjacent zones and lose the remaining targets.
+  for (const zoneId of selection.zoneIds) {
+    const zone = document.zones[zoneId];
+    if (!zone) continue;
+    for (let index = 0; index < zone.boundaryVertexIds.length; index += 1) {
+      const a = zone.boundaryVertexIds[index];
+      const b = zone.boundaryVertexIds[(index + 1) % zone.boundaryVertexIds.length];
+      if (a && b) boundaryEdges.add(createBoundaryEdgeKey(a, b));
+    }
+    delete next.zones[zoneId];
+  }
+
+  for (const wall of Object.values(document.walls)) {
+    if (vertexIds.has(wall.startVertexId) || vertexIds.has(wall.endVertexId)
+      || boundaryEdges.has(createBoundaryEdgeKey(wall.startVertexId, wall.endVertexId))) {
+      wallIds.add(wall.id);
+    }
+  }
+  for (const wallId of wallIds) delete next.walls[wallId];
+  for (const vertexId of vertexIds) delete next.vertices[vertexId];
+  next.wallOrder = next.wallOrder.filter((wallId) => Boolean(next.walls[wallId]));
+  next.zoneOrder = next.zoneOrder.filter((zoneId) => Boolean(next.zones[zoneId]));
+
+  return repairTopology(syncLevelEntityIds(next));
+}
+
 function removeZone(document: ArchitectureDocument, zoneId: string): ArchitectureDocument {
   const next = cloneArchitectureDocument(document);
   const zone = next.zones[zoneId];
@@ -202,6 +238,8 @@ export function reduceArchitectureCommand(
       return removeZone(document, command.zoneId);
     case 'DELETE_VERTEX':
       return deleteVertex(document, command.vertexId);
+    case 'DELETE_SELECTION':
+      return removeSelection(document, command);
     case 'SET_WALL_PROPS':
       return setWallProps(document, command.wallId, command.patch);
     case 'SET_ZONE_PROPS':

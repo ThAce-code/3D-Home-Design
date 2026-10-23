@@ -42,6 +42,10 @@ declare global {
 }
 
 async function seedRectangleZone(page: Page) {
+  // Unlock the browser as well as the UI store before positioning the camera.
+  // Otherwise native pointer movement can still rotate the seeded camera.
+  await page.evaluate(() => document.exitPointerLock());
+  await expect.poll(() => getCanvasLockState(page)).toBe(false);
   return page.evaluate(async () => {
     const debug = window.__architectureDebug;
     if (!debug) {

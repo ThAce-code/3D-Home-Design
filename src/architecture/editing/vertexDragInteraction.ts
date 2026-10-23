@@ -14,6 +14,10 @@ export function resolveVertexDragSnap(args: {
   point: Point2;
   snappedToVertexId: string | null;
 } {
+  if (!args.viewport.snapEnabled) {
+    return { point: args.rawPoint, snappedToVertexId: null };
+  }
+
   const endpointSnap = findNearestEndpointSnap(
     args.document,
     args.dragVertexId,

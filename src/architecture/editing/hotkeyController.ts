@@ -27,16 +27,15 @@ export function createArchitectureHotkeyStoreController({
   return {
     deleteSelection() {
       const editorState = editorStore.getState();
-      const wallId = editorState.selection.wallIds[0];
-      const vertexId = editorState.selection.vertexIds[0];
+      const { wallIds, vertexIds, zoneIds } = editorState.selection;
 
-      if (!wallId && !vertexId) {
+      if (!wallIds.length && !vertexIds.length && !zoneIds.length) {
         return false;
       }
 
-      updateArchitectureDocumentStore(documentStore, (document) => reduceArchitectureCommand(document, wallId
-        ? { type: 'DELETE_WALL', wallId }
-        : { type: 'DELETE_VERTEX', vertexId: vertexId! }));
+      updateArchitectureDocumentStore(documentStore, (document) => reduceArchitectureCommand(document, {
+        type: 'DELETE_SELECTION', wallIds, vertexIds, zoneIds,
+      }));
       editorStore.getState().clearSelection();
       return true;
     },
