@@ -37,13 +37,16 @@ export function useArchitecturePersistence(enabled = true) {
       return;
     }
 
+    let active = true;
+    const initialDocument = useArchitectureDocumentStore.getState().document;
     loadArchitectureDocument().then((document) => {
-      if (!document) {
+      if (!active || !document || useArchitectureDocumentStore.getState().document !== initialDocument) {
         return;
       }
 
-      useArchitectureDocumentStore.getState().replaceDocument(document);
+      useArchitectureDocumentStore.getState().loadDocument(document);
     });
+    return () => { active = false; };
   }, [enabled]);
 
   useEffect(() => {

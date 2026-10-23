@@ -4,6 +4,7 @@ import type { DockTab, TransformTool } from '../types/camera.js';
 import { useArchitectureDocumentStore } from '../store/architectureDocumentStore.js';
 import { useArchitectureEditorStore } from '../store/architectureEditorStore.js';
 import { createArchitectureHotkeyStoreController } from '../architecture/editing/hotkeyController.js';
+import { architectureHistoryActions } from '../services/architectureHistory.js';
 
 const dockKeys: Record<string, DockTab> = {
   '1': 'building',
@@ -20,21 +21,24 @@ const architectureHotkeyController = createArchitectureHotkeyStoreController({
   documentStore: useArchitectureDocumentStore,
 });
 
-export function useGlobalHotkeys() {
+export function useGlobalHotkeys(architectureModeEnabled = true) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName;
-      const isInput = tag === 'INPUT' || tag === 'TEXTAREA';
+      const element = e.target instanceof HTMLElement ? e.target : null;
+      const isInput = Boolean(element?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])'));
+      const key = e.key.toLowerCase();
 
       // Undo / Redo
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      if (!isInput && !e.isComposing && !e.altKey && (e.ctrlKey || e.metaKey) && key === 'z' && !e.shiftKey) {
         e.preventDefault();
-        useStore.temporal.getState().undo();
+        if (architectureModeEnabled) architectureHistoryActions.perform('undo');
+        else useStore.temporal.getState().undo();
         return;
       }
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+      if (!isInput && !e.isComposing && !e.altKey && (e.ctrlKey || e.metaKey) && (key === 'y' || (key === 'z' && e.shiftKey))) {
         e.preventDefault();
-        useStore.temporal.getState().redo();
+        if (architectureModeEnabled) architectureHistoryActions.perform('redo');
+        else useStore.temporal.getState().redo();
         return;
       }
 
@@ -113,5 +117,5 @@ export function useGlobalHotkeys() {
       document.removeEventListener('pointerdown', handleRightClickPointerDown, true);
       document.removeEventListener('contextmenu', preventContextMenu, true);
     };
-  }, []);
+  }, [architectureModeEnabled]);
 }
