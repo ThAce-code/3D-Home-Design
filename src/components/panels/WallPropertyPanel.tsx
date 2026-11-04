@@ -5,6 +5,7 @@ import { distanceBetweenPoints } from '../../architecture/topology/math.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import { Ruler, Trash2 } from 'lucide-react';
 import type { WallKind } from '../../architecture/domain/wall.js';
+import { useEffect } from 'react';
 
 interface Props {
   wallId: string;
@@ -22,6 +23,10 @@ const wallKindLabels: Record<WallKind, string> = {
 export default function WallPropertyPanel({ wallId }: Props) {
   const document = useArchitectureDocumentStore((state) => state.document);
   const wall = document.walls[wallId];
+  useEffect(() => () => {
+    const store = useArchitectureDocumentStore.getState();
+    if (store.historyGroup?.id.startsWith(`wall:${wallId}:`)) store.endHistoryGroup();
+  }, [wallId]);
 
   if (!wall) {
     return null;
@@ -82,6 +87,9 @@ export default function WallPropertyPanel({ wallId }: Props) {
           <span className="w-16 text-xs" style={{ color: editorThemeVars.textMuted }}>厚度</span>
           <input
             type="number"
+            aria-label="墙体厚度"
+            onFocus={() => useArchitectureDocumentStore.getState().beginHistoryGroup(`wall:${wallId}:thickness`)}
+            onBlur={() => useArchitectureDocumentStore.getState().endHistoryGroup()}
             min="0.05"
             step="0.01"
             value={wall.thickness}
@@ -101,6 +109,9 @@ export default function WallPropertyPanel({ wallId }: Props) {
           <span className="w-16 text-xs" style={{ color: editorThemeVars.textMuted }}>高度</span>
           <input
             type="number"
+            aria-label="墙体高度"
+            onFocus={() => useArchitectureDocumentStore.getState().beginHistoryGroup(`wall:${wallId}:height`)}
+            onBlur={() => useArchitectureDocumentStore.getState().endHistoryGroup()}
             min="0.5"
             step="0.1"
             value={wall.height}

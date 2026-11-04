@@ -5,6 +5,7 @@ import type { ZoneKind } from '../../architecture/domain/zone.js';
 import { editorThemeVars } from '../../theme/editorTheme.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import { Bath, BedDouble, CircleHelp, CookingPot, DoorOpen, Home, Sofa, Trash2, Trees, Utensils } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface Props {
   zoneId: string;
@@ -61,6 +62,10 @@ function getZoneArea(document: ArchitectureDocument, zoneId: string): number | n
 export default function ZonePropertyPanel({ zoneId }: Props) {
   const document = useArchitectureDocumentStore((state) => state.document);
   const zone = document.zones[zoneId];
+  useEffect(() => () => {
+    const store = useArchitectureDocumentStore.getState();
+    if (store.historyGroup?.id.startsWith(`zone:${zoneId}:`)) store.endHistoryGroup();
+  }, [zoneId]);
 
   if (!zone) {
     return null;
@@ -110,11 +115,15 @@ export default function ZonePropertyPanel({ zoneId }: Props) {
           名称
           <input
             aria-label="房间名称"
+            onFocus={() => useArchitectureDocumentStore.getState().beginHistoryGroup(`zone:${zoneId}:name`)}
+            onBlur={() => {
+              handleNameChange((zone.name ?? '').trim());
+              useArchitectureDocumentStore.getState().endHistoryGroup();
+            }}
             type="text"
             value={zone.name ?? ''}
             placeholder="未命名房间"
             onChange={(event) => handleNameChange(event.target.value)}
-            onBlur={() => handleNameChange((zone.name ?? '').trim())}
             className="rounded-md px-2 py-1.5 text-sm outline-none"
             style={inputStyle}
           />
