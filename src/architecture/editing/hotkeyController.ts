@@ -28,13 +28,14 @@ export function createArchitectureHotkeyStoreController({
     deleteSelection() {
       const editorState = editorStore.getState();
       const { wallIds, vertexIds, zoneIds } = editorState.selection;
+      const openingIds = editorState.selection.openingIds ?? [];
 
-      if (!wallIds.length && !vertexIds.length && !zoneIds.length) {
+      if (!wallIds.length && !vertexIds.length && !zoneIds.length && !openingIds.length) {
         return false;
       }
 
       updateArchitectureDocumentStore(documentStore, (document) => reduceArchitectureCommand(document, {
-        type: 'DELETE_SELECTION', wallIds, vertexIds, zoneIds,
+        type: 'DELETE_SELECTION', wallIds, vertexIds, zoneIds, openingIds,
       }));
       editorStore.getState().clearSelection();
       return true;
@@ -46,6 +47,7 @@ export function createArchitectureHotkeyStoreController({
         editorState.selection.wallIds.length
         || editorState.selection.vertexIds.length
         || editorState.selection.zoneIds.length
+        || (editorState.selection.openingIds?.length ?? 0)
       ) {
         editorState.clearSelection();
       }

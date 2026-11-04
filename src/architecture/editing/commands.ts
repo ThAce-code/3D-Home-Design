@@ -1,3 +1,4 @@
+import type { Opening, OpeningKind } from '../domain/opening.js';
 import type { Wall } from '../domain/wall.js';
 import type { Zone } from '../domain/zone.js';
 import type { Point2 } from '../topology/math.js';
@@ -12,7 +13,7 @@ export type ArchitectureCommand =
   | { type: 'DELETE_WALL'; wallId: string }
   | { type: 'DELETE_ZONE'; zoneId: string }
   | { type: 'DELETE_VERTEX'; vertexId: string }
-  | { type: 'DELETE_SELECTION'; wallIds: string[]; vertexIds: string[]; zoneIds: string[] }
+  | { type: 'DELETE_SELECTION'; wallIds: string[]; vertexIds: string[]; zoneIds: string[]; openingIds?: string[] }
   | {
     type: 'SET_WALL_PROPS';
     wallId: string;
@@ -22,4 +23,19 @@ export type ArchitectureCommand =
     type: 'SET_ZONE_PROPS';
     zoneId: string;
     patch: Partial<Pick<Zone, 'kind' | 'name'>>;
-  };
+  }
+  | {
+    type: 'ADD_OPENING';
+    wallId: string;
+    kind: OpeningKind;
+    t: number;
+    width?: number;
+    height?: number;
+    sillHeight?: number;
+  }
+  | {
+    type: 'SET_OPENING_PROPS';
+    openingId: string;
+    patch: Partial<Pick<Opening, 'kind' | 't' | 'width' | 'height' | 'sillHeight'>>;
+  }
+  | { type: 'DELETE_OPENING'; openingId: string };

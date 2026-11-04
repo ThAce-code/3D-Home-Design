@@ -4,6 +4,7 @@ import {
   type ArchitectureDocumentControllerState,
   type StoreAccessor,
 } from './controllerStores.js';
+import type { Opening, OpeningKind } from '../domain/opening.js';
 import type { ZoneKind } from '../domain/zone.js';
 
 interface CreateWallPropertyStoreControllerArgs {
@@ -62,6 +63,45 @@ export function createZonePropertyStoreController({
       updateArchitectureDocumentStore(documentStore, (document) => reduceArchitectureCommand(document, {
         type: 'DELETE_ZONE',
         zoneId,
+      }));
+    },
+  };
+}
+
+interface CreateOpeningPropertyStoreControllerArgs {
+  documentStore: StoreAccessor<ArchitectureDocumentControllerState>;
+}
+
+export function createOpeningPropertyStoreController({
+  documentStore,
+}: CreateOpeningPropertyStoreControllerArgs) {
+  return {
+    addOpening(args: {
+      wallId: string;
+      kind: OpeningKind;
+      t?: number;
+    }) {
+      updateArchitectureDocumentStore(documentStore, (document) => reduceArchitectureCommand(document, {
+        type: 'ADD_OPENING',
+        wallId: args.wallId,
+        kind: args.kind,
+        t: args.t ?? 0.5,
+      }));
+    },
+    patchOpening(
+      openingId: string,
+      patch: Partial<Pick<Opening, 'kind' | 't' | 'width' | 'height' | 'sillHeight'>>,
+    ) {
+      updateArchitectureDocumentStore(documentStore, (document) => reduceArchitectureCommand(document, {
+        type: 'SET_OPENING_PROPS',
+        openingId,
+        patch,
+      }));
+    },
+    deleteOpening(openingId: string) {
+      updateArchitectureDocumentStore(documentStore, (document) => reduceArchitectureCommand(document, {
+        type: 'DELETE_OPENING',
+        openingId,
       }));
     },
   };
