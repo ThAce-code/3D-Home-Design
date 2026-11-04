@@ -12,9 +12,15 @@
 - V4 browser acceptance + review fixes
 - V4 architecture undo/redo (PR #6)
 
+## Status (2026-11-04)
+
+- PR #6 merged to `main` (architecture undo/redo).
+- Sections A–D implemented on `cursor/feat-liquid-glass-bd05`.
+- V7+ remains explicitly out of scope.
+
 ## This completion pass
 
-### A. Liquid Glass landing motion (lost local WIP, recreate)
+### A. Liquid Glass landing motion (lost local WIP, recreate) ✅
 
 - Shared refracting / frosted glass surface for navbar + Start Designing CTA
 - Remove backdrop-isolating wrapper filters
@@ -23,19 +29,19 @@
 - Day/night appearance + zh/en locale preferences on the homepage
 - Optional `/liquid-glass` lab route for material tuning
 
-### B. V4 Phase 3 — remaining edit tools
+### B. V4 Phase 3 — remaining edit tools ✅
 
 - **Offset wall**: parallel offset of selected wall(s) by typed/dragged distance
 - **Trim / Extend**: shorten or lengthen a wall to meet another wall/axis
 - Tool switching in the architecture toolbar; history via existing document commits
 
-### C. V5 — Residential semantics (MVP)
+### C. V5 — Residential semantics (MVP) ✅
 
 - **Openings** domain: doors/windows attached to walls (position along wall, width, height, sill)
 - Place / select / delete openings; mesh cutout or placeholder geometry
 - Zone kind/name already exist — expose presets in room properties and keep IDs stable
 
-### D. V6 — Presentation & delivery (MVP)
+### D. V6 — Presentation & delivery (MVP) ✅
 
 - Persistent room area / dimension labels in the editor
 - Screenshot export (PNG) of the canvas / plan view
