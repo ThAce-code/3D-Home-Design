@@ -4,9 +4,9 @@ import { applyArchitectureInteractionCommands } from '../../architecture/editing
 import { reduceArchitectureCommand } from '../../architecture/editing/reducers.js';
 import { getVertexDragCommitEffects } from '../../architecture/editing/vertexDragInteraction.js';
 import { getWallDragCommitEffects } from '../../architecture/editing/wallDragInteraction.js';
+import { getOffsetDragCommitEffects, getOffsetDistance, getWallNormal } from '../../architecture/editing/offsetInteraction.js';
 import { resolveWallNumericEntryPoint } from '../../architecture/editing/wallNumericEntry.js';
-import type { WallDragState } from '../../architecture/editing/tools.js';
-import { distanceBetweenPoints, type Point2 } from '../../architecture/topology/math.js';
+import { distanceBetweenPoints } from '../../architecture/topology/math.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import { useStore } from '../../store/useStore.js';
@@ -112,7 +112,7 @@ export default function EditorStatusHud() {
       return;
     }
 
-    setWallOffsetInput(getWallDragNormalOffset(wallDrag).toFixed(2));
+    setWallOffsetInput(getOffsetDistance(wallDrag).toFixed(2));
   }, [wallDrag, wallDragNumericEntryActive]);
 
   useEffect(() => {
@@ -186,22 +186,23 @@ export default function EditorStatusHud() {
     }
 
     const offset = Number.parseFloat(wallOffsetInput);
-    const normal = getWallDragNormal(wallDrag);
+    const normal = getWallNormal(wallDrag.startVertexOrigin, wallDrag.endVertexOrigin);
     if (!Number.isFinite(offset) || !normal) {
       return;
     }
 
+    const nextWallDrag = {
+      ...wallDrag,
+      currentOffset: [
+        normal[0] * offset,
+        normal[1] * offset,
+      ] as [number, number],
+    };
+
     applyArchitectureInteractionCommands(
-      getWallDragCommitEffects({
-        document,
-        wallDrag: {
-          ...wallDrag,
-          currentOffset: [
-            normal[0] * offset,
-            normal[1] * offset,
-          ],
-        },
-      }),
+      wallDrag.mode === 'offset'
+        ? getOffsetDragCommitEffects({ document, wallDrag: nextWallDrag })
+        : getWallDragCommitEffects({ document, wallDrag: nextWallDrag }),
       {
         replaceDocument,
         commitWallDrag,
@@ -460,11 +461,23 @@ function resolveHints({
   }
 
   if (wallDrag) {
+    const isOffset = wallDrag.mode === 'offset' || activeTool === 'offset';
     return [
       wallDrag.numericEntryEnabled
-        ? '墙体精确偏移 · Enter 确认 · Esc 取消'
-        : '墙体拖动中 · 释放放置 · Tab 输入偏移 · Esc 取消',
+        ? `${isOffset ? '平行偏移' : '墙体精确偏移'} · Enter 确认 · Esc 取消`
+        : `${isOffset ? '平行偏移中' : '墙体拖动中'} · 释放放置 · Tab 输入偏移 · Esc 取消`,
     ];
+  }
+
+  if (activeTool === 'offset') {
+    return ['点击墙体并拖动做平行偏移 · Tab 输入距离 · Esc 取消'];
+  }
+
+  if (activeTool === 'trim') {
+    if (selection.wallIds.length) {
+      return ['已选源墙 · 点击目标墙修剪/延伸 · 点击空白对齐水平轴 · Alt 对齐竖轴 · Esc 取消'];
+    }
+    return ['点击源墙，再点击目标墙或轴线完成修剪/延伸'];
   }
 
   if (activeTool === 'wall' && draftWall) {
@@ -502,23 +515,3 @@ function resolveHints({
   return [];
 }
 
-function getWallDragNormal(wallDrag: WallDragState): Point2 | null {
-  const dx = wallDrag.endVertexOrigin[0] - wallDrag.startVertexOrigin[0];
-  const dy = wallDrag.endVertexOrigin[1] - wallDrag.startVertexOrigin[1];
-  const length = Math.hypot(dx, dy);
-
-  if (length <= 1e-9) {
-    return null;
-  }
-
-  return [-dy / length, dx / length];
-}
-
-function getWallDragNormalOffset(wallDrag: WallDragState): number {
-  const normal = getWallDragNormal(wallDrag);
-  if (!normal) {
-    return 0;
-  }
-
-  return wallDrag.currentOffset[0] * normal[0] + wallDrag.currentOffset[1] * normal[1];
-}

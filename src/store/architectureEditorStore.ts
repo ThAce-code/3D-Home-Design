@@ -16,6 +16,7 @@ import {
   type WallDragState,
 } from '../architecture/editing/tools.js';
 import { createWallDragState } from '../architecture/editing/wallDragInteraction.js';
+import { createOffsetDragState } from '../architecture/editing/offsetInteraction.js';
 import {
   armWallTool,
   createDefaultWallToolState,
@@ -46,6 +47,7 @@ export interface ArchitectureEditorState {
   cancelVertexDrag: () => void;
   setVertexDragNumericEntryEnabled: (numericEntryEnabled: boolean) => void;
   startWallDrag: (document: ArchitectureDocument, wallId: string, grabPoint: Point2, grabHeight?: number) => void;
+  startOffsetDrag: (document: ArchitectureDocument, wallId: string, grabPoint: Point2, grabHeight?: number) => void;
   updateWallDrag: (currentOffset: Point2) => void;
   commitWallDrag: () => void;
   cancelWallDrag: () => void;
@@ -77,7 +79,7 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
     activeTool: tool,
     draftWall: tool === 'wall' ? state.draftWall : null,
     vertexDrag: tool === 'select' ? state.vertexDrag : null,
-    wallDrag: tool === 'select' ? state.wallDrag : null,
+    wallDrag: tool === 'select' || tool === 'offset' ? state.wallDrag : null,
     cursorPoint: tool === 'wall' ? state.cursorPoint : null,
     toolState: {
       ...state.toolState,
@@ -163,6 +165,20 @@ export const useArchitectureEditorStore = create<ArchitectureEditorState>()((set
 
     return {
       activeTool: 'select',
+      draftWall: null,
+      vertexDrag: null,
+      wallDrag: wallDrag ? { ...wallDrag, grabHeight } : null,
+    };
+  }),
+  startOffsetDrag: (document, wallId, grabPoint, grabHeight = 0) => set(() => {
+    const wallDrag = createOffsetDragState({
+      document,
+      wallId,
+      grabPoint,
+    });
+
+    return {
+      activeTool: 'offset',
       draftWall: null,
       vertexDrag: null,
       wallDrag: wallDrag ? { ...wallDrag, grabHeight } : null,

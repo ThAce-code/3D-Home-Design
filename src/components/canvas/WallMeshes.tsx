@@ -20,6 +20,7 @@ export default function WallMeshes() {
   const setHover = useArchitectureEditorStore((state) => state.setHover);
   const clearHover = useArchitectureEditorStore((state) => state.clearHover);
   const startWallDrag = useArchitectureEditorStore((state) => state.startWallDrag);
+  const startOffsetDrag = useArchitectureEditorStore((state) => state.startOffsetDrag);
   const walls = buildWallMeshDescriptors(document);
   const wallShapes = useMemo(() => walls.map((wall) => {
     const shape = new THREE.Shape();
@@ -67,9 +68,16 @@ export default function WallMeshes() {
                 rotation={[-Math.PI / 2, 0, 0]}
                 onPointerDown={(event) => {
                   const shiftKey = event.shiftKey ?? event.nativeEvent?.shiftKey ?? false;
+                  const point = event.point ?? (event.nativeEvent as PointerEvent & { point?: THREE.Vector3 })?.point;
+                  if (activeTool === 'offset' && point) {
+                    event.stopPropagation?.();
+                    meshController.handleWallPointerDown(wall.wallId, event);
+                    startOffsetDrag(document, wall.wallId, [point.x, point.z], point.y);
+                    return;
+                  }
+
                   if (activeTool === 'select' && isSelected && !shiftKey) {
                     event.stopPropagation?.();
-                    const point = event.point ?? (event.nativeEvent as PointerEvent & { point?: THREE.Vector3 })?.point;
                     if (point) {
                       startWallDrag(document, wall.wallId, [point.x, point.z], point.y);
                     }
@@ -79,7 +87,7 @@ export default function WallMeshes() {
                   meshController.handleWallPointerDown(wall.wallId, event);
                 }}
                 onPointerEnter={() => {
-                  if (activeTool === 'select') {
+                  if (activeTool === 'select' || activeTool === 'offset' || activeTool === 'trim') {
                     setHover({ ...createEmptyHover(), wallId: wall.wallId });
                   }
                 }}

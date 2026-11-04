@@ -1,4 +1,4 @@
-import { SquarePen, Pointer, Hand, Eraser } from 'lucide-react';
+import { SquarePen, Pointer, Hand, Eraser, MoveHorizontal, Scissors } from 'lucide-react';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import type { ArchitectureTool } from '../../architecture/editing/tools.js';
 import { createArchitectureToolStoreController } from '../../architecture/editing/toolController.js';
@@ -7,6 +7,8 @@ import { editorThemeVars } from '../../theme/editorTheme.js';
 const tools: { tool: ArchitectureTool; icon: typeof Pointer; label: string }[] = [
   { tool: 'select', icon: Pointer, label: '选择' },
   { tool: 'wall', icon: SquarePen, label: '墙体' },
+  { tool: 'offset', icon: MoveHorizontal, label: '偏移' },
+  { tool: 'trim', icon: Scissors, label: '修剪' },
   { tool: 'pan', icon: Hand, label: '平移' },
   { tool: 'delete', icon: Eraser, label: '删除' },
 ];

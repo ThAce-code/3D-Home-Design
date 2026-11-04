@@ -24,6 +24,15 @@ import {
   getWallDragOffsetForPoint,
   resolveWallDragSnap,
 } from './wallDragInteraction.js';
+import {
+  getOffsetDragCommitEffects,
+  getOffsetDragOffsetForPoint,
+  getOffsetDistance,
+  projectOffsetOntoNormal,
+  getWallNormal,
+  resolveOffsetDragSnap,
+} from './offsetInteraction.js';
+import type { ArchitectureSelection } from './tools.js';
 
 interface ArchitectureSceneControllerState {
   activeTool: ArchitectureTool;
@@ -31,6 +40,7 @@ interface ArchitectureSceneControllerState {
   draftWall: DraftWallState | null;
   vertexDrag?: VertexDragState | null;
   wallDrag?: WallDragState | null;
+  selection?: ArchitectureSelection;
   viewport: ArchitectureViewportState;
   wallTool: WallToolState;
 }
@@ -45,6 +55,7 @@ interface ArchitectureEditorControllerState {
   draftWall: DraftWallState | null;
   vertexDrag?: VertexDragState | null;
   wallDrag?: WallDragState | null;
+  selection?: ArchitectureSelection;
   viewport: ArchitectureViewportState;
   toolState: {
     wall: WallToolState;
@@ -80,6 +91,10 @@ interface ArchitectureScenePointEvent {
     x: number;
     z: number;
   };
+  altKey?: boolean;
+  nativeEvent?: {
+    altKey?: boolean;
+  };
   stopPropagation?: () => void;
 }
 
@@ -111,6 +126,8 @@ export function createArchitectureSceneController({
         point,
         viewport: state.viewport,
         wallTool: state.wallTool,
+        currentSelection: state.selection,
+        altKey: event.altKey ?? event.nativeEvent?.altKey ?? false,
       });
 
       if (effects.shouldStopPropagation) {
@@ -141,6 +158,24 @@ export function createArchitectureSceneController({
 
       if (state.wallDrag) {
         if (state.wallDrag.numericEntryEnabled) return;
+        if (state.wallDrag.mode === 'offset') {
+          const rawOffset = getOffsetDragOffsetForPoint({
+            wallDrag: state.wallDrag,
+            currentPoint: point,
+          });
+          const normal = getWallNormal(state.wallDrag.startVertexOrigin, state.wallDrag.endVertexOrigin);
+          const distance = resolveOffsetDragSnap({
+            distance: normal
+              ? rawOffset[0] * normal[0] + rawOffset[1] * normal[1]
+              : 0,
+            viewport: state.viewport,
+          });
+          handlers.updateWallDrag?.(
+            normal ? projectOffsetOntoNormal([normal[0] * distance, normal[1] * distance], normal) : [0, 0],
+          );
+          return;
+        }
+
         const rawOffset = getWallDragOffsetForPoint({
           wallDrag: state.wallDrag,
           currentPoint: point,
@@ -192,6 +227,36 @@ export function createArchitectureSceneController({
 
       if (state.wallDrag) {
         if (state.wallDrag.numericEntryEnabled) return;
+        if (state.wallDrag.mode === 'offset') {
+          let currentOffset = state.wallDrag.currentOffset;
+          if (point) {
+            const rawOffset = getOffsetDragOffsetForPoint({
+              wallDrag: state.wallDrag,
+              currentPoint: point,
+            });
+            const normal = getWallNormal(state.wallDrag.startVertexOrigin, state.wallDrag.endVertexOrigin);
+            const distance = resolveOffsetDragSnap({
+              distance: normal
+                ? rawOffset[0] * normal[0] + rawOffset[1] * normal[1]
+                : getOffsetDistance(state.wallDrag),
+              viewport: state.viewport,
+            });
+            currentOffset = normal
+              ? projectOffsetOntoNormal([normal[0] * distance, normal[1] * distance], normal)
+              : [0, 0];
+          }
+
+          const commands = getOffsetDragCommitEffects({
+            document: state.document,
+            wallDrag: {
+              ...state.wallDrag,
+              currentOffset,
+            },
+          });
+          applyArchitectureInteractionCommands(commands, handlers);
+          return;
+        }
+
         const currentOffset = point
           ? resolveWallDragSnap({
             rawOffset: getWallDragOffsetForPoint({
@@ -266,6 +331,7 @@ export function createArchitectureSceneStoreController({
         draftWall: editorState.draftWall,
         vertexDrag: editorState.vertexDrag ?? null,
         wallDrag: editorState.wallDrag ?? null,
+        selection: editorState.selection,
         viewport: editorState.viewport,
         wallTool: editorState.toolState.wall,
       };
