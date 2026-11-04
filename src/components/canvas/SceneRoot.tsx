@@ -17,6 +17,7 @@ export default function SceneRoot({ children, showArchitectureScene = false }: P
       <Canvas
         data-testid="scene-canvas"
         camera={{ position: [0, 1.7, 5], fov: 60 }}
+        gl={{ preserveDrawingBuffer: true }}
         events={(state) => ({
           ...events(state),
           // Handles are editing overlays: hit them before the wall above them.

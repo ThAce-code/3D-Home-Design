@@ -1,4 +1,5 @@
 import type { Level } from './level.js';
+import type { Opening } from './opening.js';
 import type { Vertex } from './vertex.js';
 import type { Wall } from './wall.js';
 import type { Zone, ZoneTombstone } from './zone.js';
@@ -9,6 +10,8 @@ export interface ArchitectureDocument {
   vertices: Record<string, Vertex>;
   walls: Record<string, Wall>;
   wallOrder: string[];
+  openings: Record<string, Opening>;
+  openingOrder: string[];
   zones: Record<string, Zone>;
   zoneOrder: string[];
   zoneTombstones: ZoneTombstone[];
@@ -40,6 +43,8 @@ export function createEmptyArchitectureDocument(): ArchitectureDocument {
     vertices: {},
     walls: {},
     wallOrder: [],
+    openings: {},
+    openingOrder: [],
     zones: {},
     zoneOrder: [],
     zoneTombstones: [],
@@ -73,6 +78,13 @@ export function cloneArchitectureDocument(document: ArchitectureDocument): Archi
       ])
     ),
     wallOrder: [...document.wallOrder],
+    openings: Object.fromEntries(
+      Object.entries(document.openings ?? {}).map(([openingId, opening]) => [
+        openingId,
+        { ...opening },
+      ])
+    ),
+    openingOrder: [...(document.openingOrder ?? [])],
     zones: Object.fromEntries(
       Object.entries(document.zones).map(([zoneId, zone]) => [
         zoneId,

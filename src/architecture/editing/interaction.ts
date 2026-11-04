@@ -13,6 +13,7 @@ import { reduceArchitectureCommand } from './reducers.js';
 import { resolveWallDraftSnap } from '../geometry/wallDraftSnap.js';
 import { findZoneIdContainingPoint } from '../geometry/zoneSelection.js';
 import { isPointNearWallFootprint } from '../geometry/wallSelection.js';
+import { getTrimExtendCommitEffects } from './trimExtendInteraction.js';
 
 interface AdvanceWallDraftInteractionArgs {
   activeTool: ArchitectureTool;
@@ -350,6 +351,11 @@ export function updateWallDraftPointer({
   };
 }
 
+interface ArchitectureScenePointerDownArgs extends AdvanceWallDraftInteractionArgs {
+  currentSelection?: ArchitectureSelection;
+  altKey?: boolean;
+}
+
 export function getArchitectureScenePointerDownEffects({
   activeTool,
   document,
@@ -357,7 +363,9 @@ export function getArchitectureScenePointerDownEffects({
   point,
   viewport,
   wallTool,
-}: AdvanceWallDraftInteractionArgs): ArchitectureScenePointerEffects {
+  currentSelection = createEmptySelection(),
+  altKey = false,
+}: ArchitectureScenePointerDownArgs): ArchitectureScenePointerEffects {
   if (activeTool === 'select') {
     const zoneId = findZoneIdContainingPoint(document, point);
     if (!zoneId) {
@@ -378,6 +386,28 @@ export function getArchitectureScenePointerDownEffects({
           },
         },
       ],
+    };
+  }
+
+  if (activeTool === 'trim') {
+    const sourceWallId = currentSelection.wallIds[0];
+    if (!sourceWallId) {
+      return {
+        shouldStopPropagation: false,
+        commands: [],
+      };
+    }
+
+    return {
+      shouldStopPropagation: true,
+      commands: getTrimExtendCommitEffects({
+        document,
+        wallId: sourceWallId,
+        axis: {
+          point,
+          axis: altKey ? 'vertical' : 'horizontal',
+        },
+      }),
     };
   }
 
@@ -557,7 +587,7 @@ export function getArchitectureSceneKeyDownEffects({
       );
     }
 
-    if (activeTool === 'select') {
+    if (activeTool === 'select' || activeTool === 'offset' || activeTool === 'trim') {
       commands.push({
         type: 'set-selection',
         selection: createEmptySelection(),
@@ -678,6 +708,48 @@ export function getWallMeshPointerDownEffects({
         {
           type: 'set-selection',
           selection: createEmptySelection(),
+        },
+      ],
+    };
+  }
+
+  if (activeTool === 'trim') {
+    const sourceWallId = currentSelection.wallIds[0];
+    if (!sourceWallId || sourceWallId === wallId) {
+      return {
+        shouldStopPropagation: true,
+        commands: [
+          {
+            type: 'set-selection',
+            selection: {
+              ...createEmptySelection(),
+              wallIds: [wallId],
+            },
+          },
+        ],
+      };
+    }
+
+    return {
+      shouldStopPropagation: true,
+      commands: getTrimExtendCommitEffects({
+        document,
+        wallId: sourceWallId,
+        targetWallId: wallId,
+      }),
+    };
+  }
+
+  if (activeTool === 'offset') {
+    return {
+      shouldStopPropagation: true,
+      commands: [
+        {
+          type: 'set-selection',
+          selection: {
+            ...createEmptySelection(),
+            wallIds: [wallId],
+          },
         },
       ],
     };

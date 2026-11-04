@@ -4,11 +4,13 @@ import { useArchitectureDocumentStore } from '../../store/architectureDocumentSt
 import { createArchitectureSceneStoreController } from '../../architecture/editing/sceneController.js';
 import WallMeshes from './WallMeshes.js';
 import ZoneMeshes from './ZoneMeshes.js';
+import OpeningMeshes from './OpeningMeshes.js';
 import DraftWallPreview from './DraftWallPreview.js';
 import EditHandles from './EditHandles.js';
 import VertexDragPreview from './VertexDragPreview.js';
 import WallDragPreview from './WallDragPreview.js';
 import WallDimensionLabels from './WallDimensionLabels.js';
+import ZoneAreaLabels from './ZoneAreaLabels.js';
 
 const sceneController = createArchitectureSceneStoreController({
   editorStore: useArchitectureEditorStore,
@@ -43,8 +45,10 @@ export default function ArchitectureScene() {
       </mesh>
       <ZoneMeshes />
       <WallMeshes />
+      <OpeningMeshes />
       <EditHandles />
       <WallDimensionLabels />
+      <ZoneAreaLabels />
       <DraftWallPreview />
       <VertexDragPreview />
       <WallDragPreview />

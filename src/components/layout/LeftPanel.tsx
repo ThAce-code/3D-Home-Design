@@ -22,7 +22,9 @@ export default function LeftPanel({ architectureModeEnabled = false }: Props) {
   const activeTab = useStore((s) => s.activeTab);
   const dockOpen = useStore((s) => s.dockOpen);
 
-  const Panel = architectureModeEnabled ? BuildingToolPanel : panelMap[activeTab];
+  const Panel = architectureModeEnabled
+    ? (activeTab === 'export' ? ExportPanel : BuildingToolPanel)
+    : panelMap[activeTab];
 
   return (
     <div

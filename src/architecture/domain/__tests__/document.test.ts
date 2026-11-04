@@ -17,6 +17,13 @@ describe('createEmptyArchitectureDocument', () => {
 
     expect(doc.zoneTombstones).toEqual([]);
   });
+
+  it('starts with empty openings collections', () => {
+    const doc = createEmptyArchitectureDocument();
+
+    expect(doc.openings).toEqual({});
+    expect(doc.openingOrder).toEqual([]);
+  });
 });
 
 describe('cloneArchitectureDocument', () => {

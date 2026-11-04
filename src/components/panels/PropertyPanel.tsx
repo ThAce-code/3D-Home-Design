@@ -4,6 +4,7 @@ import type { TransformTool } from '../../types/camera.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import WallPropertyPanel from './WallPropertyPanel.js';
 import ZonePropertyPanel from './ZonePropertyPanel.js';
+import OpeningPropertyPanel from './OpeningPropertyPanel.js';
 import { editorThemeVars } from '../../theme/editorTheme.js';
 
 const tools: { value: TransformTool; icon: typeof Move; label: string }[] = [
@@ -27,6 +28,11 @@ export default function PropertyPanel({ architectureModeEnabled = false }: Props
   const setTransformTool = useStore((s) => s.setTransformTool);
 
   if (architectureModeEnabled) {
+    const openingId = architectureSelection.openingIds?.[0];
+    if (openingId) {
+      return <OpeningPropertyPanel openingId={openingId} />;
+    }
+
     const wallId = architectureSelection.wallIds[0];
     if (wallId) {
       return <WallPropertyPanel wallId={wallId} />;

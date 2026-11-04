@@ -45,6 +45,7 @@ export function createWallDragState(args: {
     ],
     currentOffset: [0, 0],
     numericEntryEnabled: false,
+    mode: 'free',
   };
 }
 

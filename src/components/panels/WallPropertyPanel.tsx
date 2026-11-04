@@ -1,10 +1,14 @@
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
-import { createWallPropertyStoreController } from '../../architecture/editing/propertyController.js';
+import {
+  createOpeningPropertyStoreController,
+  createWallPropertyStoreController,
+} from '../../architecture/editing/propertyController.js';
 import { editorThemeVars } from '../../theme/editorTheme.js';
 import { distanceBetweenPoints } from '../../architecture/topology/math.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
-import { Ruler, Trash2 } from 'lucide-react';
+import { DoorOpen, PanelTop, Ruler, Trash2 } from 'lucide-react';
 import type { WallKind } from '../../architecture/domain/wall.js';
+import { createEmptySelection } from '../../architecture/editing/tools.js';
 import { useEffect } from 'react';
 
 interface Props {
@@ -12,6 +16,10 @@ interface Props {
 }
 
 const wallPropertyController = createWallPropertyStoreController({
+  documentStore: useArchitectureDocumentStore,
+});
+
+const openingPropertyController = createOpeningPropertyStoreController({
   documentStore: useArchitectureDocumentStore,
 });
 
@@ -47,6 +55,23 @@ export default function WallPropertyPanel({ wallId }: Props) {
     wallPropertyController.deleteWall(wallId);
     useArchitectureEditorStore.getState().clearSelection();
   };
+
+  const handleAddOpening = (kind: 'door' | 'window') => {
+    const beforeIds = new Set(Object.keys(useArchitectureDocumentStore.getState().document.openings));
+    openingPropertyController.addOpening({ wallId, kind, t: 0.5 });
+    const after = useArchitectureDocumentStore.getState().document;
+    const createdId = after.openingOrder.find((id) => !beforeIds.has(id));
+    if (createdId) {
+      useArchitectureEditorStore.getState().setSelection({
+        ...createEmptySelection(),
+        openingIds: [createdId],
+      });
+    }
+  };
+
+  const wallOpenings = document.openingOrder
+    .map((id) => document.openings[id])
+    .filter((opening) => opening?.wallId === wallId);
 
   return (
     <div
@@ -139,6 +164,42 @@ export default function WallPropertyPanel({ wallId }: Props) {
             <option value="partition">{wallKindLabels.partition}</option>
           </select>
         </label>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-xs" style={{ color: editorThemeVars.textMuted }}>
+            门窗 {wallOpenings.length > 0 ? `(${wallOpenings.length})` : ''}
+          </span>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              aria-label="添加门"
+              onClick={() => handleAddOpening('door')}
+              className="flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs"
+              style={{
+                background: editorThemeVars.field,
+                color: editorThemeVars.text,
+                border: `1px solid ${editorThemeVars.fieldBorder}`,
+              }}
+            >
+              <DoorOpen size={14} />
+              添加门
+            </button>
+            <button
+              type="button"
+              aria-label="添加窗"
+              onClick={() => handleAddOpening('window')}
+              className="flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs"
+              style={{
+                background: editorThemeVars.field,
+                color: editorThemeVars.text,
+                border: `1px solid ${editorThemeVars.fieldBorder}`,
+              }}
+            >
+              <PanelTop size={14} />
+              添加窗
+            </button>
+          </div>
+        </div>
 
         <button
           type="button"
