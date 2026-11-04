@@ -4,7 +4,7 @@ import {
   type WallToolState,
 } from './wallTool.js';
 
-export type ArchitectureTool = 'select' | 'wall' | 'pan' | 'delete';
+export type ArchitectureTool = 'select' | 'wall' | 'pan' | 'delete' | 'offset' | 'trim';
 
 export interface DraftWallState {
   startPoint: Point2;
@@ -20,6 +20,8 @@ export interface VertexDragState {
   numericEntryEnabled: boolean;
 }
 
+export type WallDragMode = 'free' | 'offset';
+
 export interface WallDragState {
   wallId: string;
   startVertexId: string;
@@ -30,18 +32,21 @@ export interface WallDragState {
   grabHeight?: number;
   currentOffset: Point2;
   numericEntryEnabled: boolean;
+  mode?: WallDragMode;
 }
 
 export interface ArchitectureSelection {
   vertexIds: string[];
   wallIds: string[];
   zoneIds: string[];
+  openingIds?: string[];
 }
 
 export interface ArchitectureHover {
   vertexId: string | null;
   wallId: string | null;
   zoneId: string | null;
+  openingId?: string | null;
 }
 
 export interface ArchitectureViewportState {

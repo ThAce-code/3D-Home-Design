@@ -29,6 +29,11 @@ vi.mock('@react-three/drei', () => ({
     gridSpy(props);
     return <div data-testid="mock-grid" />;
   },
+  Html: ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => (
+    <div data-testid="mock-html" {...props}>
+      {children}
+    </div>
+  ),
 }));
 
 vi.mock('../SceneDebugBridge', () => ({

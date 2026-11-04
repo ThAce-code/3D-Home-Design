@@ -3,11 +3,25 @@ import {
   syncLevelEntityIds,
   type ArchitectureDocument,
 } from '../domain/document.js';
+import { clampOpeningT, createOpeningDefaults } from '../domain/opening.js';
 import type { ArchitectureCommand } from './commands.js';
 import { applyDrawWall, repairTopology } from '../topology/repair.js';
 import type { Point2 } from '../topology/math.js';
 
 const REPAIR_EPSILON = 1e-6;
+
+function pruneOrphanOpenings(document: ArchitectureDocument): ArchitectureDocument {
+  const next = cloneArchitectureDocument(document);
+  next.openingOrder = next.openingOrder.filter((openingId) => {
+    const opening = next.openings[openingId];
+    if (!opening || !next.walls[opening.wallId]) {
+      delete next.openings[openingId];
+      return false;
+    }
+    return true;
+  });
+  return next;
+}
 
 function removeWall(document: ArchitectureDocument, wallId: string): ArchitectureDocument {
   const next = cloneArchitectureDocument(document);
@@ -15,7 +29,7 @@ function removeWall(document: ArchitectureDocument, wallId: string): Architectur
   delete next.walls[wallId];
   next.wallOrder = next.wallOrder.filter((existingWallId) => existingWallId !== wallId);
 
-  return repairTopology(syncLevelEntityIds(next));
+  return pruneOrphanOpenings(repairTopology(syncLevelEntityIds(next)));
 }
 
 function createBoundaryEdgeKey(a: string, b: string): string {
@@ -52,10 +66,14 @@ function removeSelection(
   }
   for (const wallId of wallIds) delete next.walls[wallId];
   for (const vertexId of vertexIds) delete next.vertices[vertexId];
+  for (const openingId of selection.openingIds ?? []) {
+    delete next.openings[openingId];
+  }
   next.wallOrder = next.wallOrder.filter((wallId) => Boolean(next.walls[wallId]));
   next.zoneOrder = next.zoneOrder.filter((zoneId) => Boolean(next.zones[zoneId]));
+  next.openingOrder = next.openingOrder.filter((openingId) => Boolean(next.openings[openingId]));
 
-  return repairTopology(syncLevelEntityIds(next));
+  return pruneOrphanOpenings(repairTopology(syncLevelEntityIds(next)));
 }
 
 function removeZone(document: ArchitectureDocument, zoneId: string): ArchitectureDocument {
@@ -93,7 +111,7 @@ function removeZone(document: ArchitectureDocument, zoneId: string): Architectur
   next.wallOrder = next.wallOrder.filter((wallId) => Boolean(next.walls[wallId]));
   next.zoneOrder = next.zoneOrder.filter((existingZoneId) => existingZoneId !== zoneId);
 
-  return repairTopology(syncLevelEntityIds(next));
+  return pruneOrphanOpenings(repairTopology(syncLevelEntityIds(next)));
 }
 
 function moveVertex(
@@ -176,7 +194,7 @@ function deleteVertex(document: ArchitectureDocument, vertexId: string): Archite
   delete next.vertices[vertexId];
   next.wallOrder = next.wallOrder.filter((wallId) => !connectedWallIds.includes(wallId));
 
-  return repairTopology(syncLevelEntityIds(next));
+  return pruneOrphanOpenings(repairTopology(syncLevelEntityIds(next)));
 }
 
 function setWallProps(
@@ -221,6 +239,56 @@ function setZoneProps(
   return syncLevelEntityIds(next);
 }
 
+function addOpening(
+  document: ArchitectureDocument,
+  command: Extract<ArchitectureCommand, { type: 'ADD_OPENING' }>,
+): ArchitectureDocument {
+  if (!document.walls[command.wallId]) {
+    return document;
+  }
+
+  const next = cloneArchitectureDocument(document);
+  const defaults = createOpeningDefaults(command.kind);
+  const openingId = crypto.randomUUID();
+  next.openings[openingId] = {
+    id: openingId,
+    wallId: command.wallId,
+    kind: command.kind,
+    t: clampOpeningT(command.t),
+    width: command.width ?? defaults.width,
+    height: command.height ?? defaults.height,
+    sillHeight: command.sillHeight ?? defaults.sillHeight,
+  };
+  next.openingOrder.push(openingId);
+  return next;
+}
+
+function setOpeningProps(
+  document: ArchitectureDocument,
+  openingId: string,
+  patch: Extract<ArchitectureCommand, { type: 'SET_OPENING_PROPS' }>['patch'],
+): ArchitectureDocument {
+  const next = cloneArchitectureDocument(document);
+  const opening = next.openings[openingId];
+  if (!opening) {
+    return next;
+  }
+
+  next.openings[openingId] = {
+    ...opening,
+    ...patch,
+    t: patch.t === undefined ? opening.t : clampOpeningT(patch.t),
+  };
+  return next;
+}
+
+function removeOpening(document: ArchitectureDocument, openingId: string): ArchitectureDocument {
+  const next = cloneArchitectureDocument(document);
+  delete next.openings[openingId];
+  next.openingOrder = next.openingOrder.filter((id) => id !== openingId);
+  return next;
+}
+
 export function reduceArchitectureCommand(
   document: ArchitectureDocument,
   command: ArchitectureCommand
@@ -244,6 +312,12 @@ export function reduceArchitectureCommand(
       return setWallProps(document, command.wallId, command.patch);
     case 'SET_ZONE_PROPS':
       return setZoneProps(document, command.zoneId, command.patch);
+    case 'ADD_OPENING':
+      return addOpening(document, command);
+    case 'SET_OPENING_PROPS':
+      return setOpeningProps(document, command.openingId, command.patch);
+    case 'DELETE_OPENING':
+      return removeOpening(document, command.openingId);
     default: {
       const exhaustiveCheck: never = command;
       return exhaustiveCheck;

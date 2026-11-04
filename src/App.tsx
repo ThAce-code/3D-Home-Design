@@ -3,6 +3,7 @@ import LandingPage from './app/LandingPage.js';
 import { useAppRoute } from './app/router.js';
 
 const EditorApp = lazy(() => import('./app/EditorApp.js'));
+const LiquidGlassDemoPage = lazy(() => import('./app/LiquidGlassDemoPage.js'));
 
 export default function App() {
   const route = useAppRoute();
@@ -21,6 +22,24 @@ export default function App() {
         }
       >
         <EditorApp />
+      </Suspense>
+    );
+  }
+
+  if (route === 'liquid-glass') {
+    return (
+      <Suspense
+        fallback={
+          <div
+            data-app-theme="landing"
+            data-testid="liquid-glass-loading"
+            className="flex h-screen w-screen items-center justify-center bg-[#f7f9fb] text-[#191c1e]"
+          >
+            Loading liquid glass…
+          </div>
+        }
+      >
+        <LiquidGlassDemoPage />
       </Suspense>
     );
   }

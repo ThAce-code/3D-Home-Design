@@ -1,9 +1,11 @@
 import { useSyncExternalStore } from 'react';
 
-export type AppRoute = 'landing' | 'editor';
+export type AppRoute = 'landing' | 'editor' | 'liquid-glass';
 
 function normalizeRoute(pathname: string): AppRoute {
-  return pathname.startsWith('/editor') ? 'editor' : 'landing';
+  if (pathname.startsWith('/editor')) return 'editor';
+  if (pathname.startsWith('/liquid-glass')) return 'liquid-glass';
+  return 'landing';
 }
 
 function subscribe(onStoreChange: () => void) {
@@ -16,10 +18,10 @@ function getSnapshot() {
 }
 
 export function useAppRoute() {
-  return useSyncExternalStore(subscribe, getSnapshot, () => 'landing');
+  return useSyncExternalStore(subscribe, getSnapshot, () => 'landing' as AppRoute);
 }
 
-export function navigateTo(pathname: '/' | '/editor') {
+export function navigateTo(pathname: '/' | '/editor' | '/liquid-glass') {
   if (window.location.pathname === pathname) {
     return;
   }
