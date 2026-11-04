@@ -1,7 +1,7 @@
 import { useArchitectureDocumentStore } from '../../store/architectureDocumentStore.js';
 import { createZonePropertyStoreController } from '../../architecture/editing/propertyController.js';
-import type { ArchitectureDocument } from '../../architecture/domain/document.js';
 import type { ZoneKind } from '../../architecture/domain/zone.js';
+import { getZoneArea } from '../../architecture/geometry/zoneArea.js';
 import { editorThemeVars } from '../../theme/editorTheme.js';
 import { useArchitectureEditorStore } from '../../store/architectureEditorStore.js';
 import { Bath, BedDouble, CircleHelp, CookingPot, DoorOpen, Home, Sofa, Trash2, Trees, Utensils } from 'lucide-react';
@@ -26,38 +26,6 @@ const zoneKindOptions: Array<{ value: ZoneKind; label: string; icon: typeof Home
   { value: 'room', label: '房间', icon: Home },
   { value: 'unknown', label: '未分类', icon: CircleHelp },
 ];
-
-function getZoneArea(document: ArchitectureDocument, zoneId: string): number | null {
-  const zone = document.zones[zoneId];
-
-  if (!zone || zone.boundaryVertexIds.length < 3) {
-    return null;
-  }
-
-  const points = zone.boundaryVertexIds.map((vertexId) => {
-    const vertex = document.vertices[vertexId];
-
-    return vertex ? [vertex.x, vertex.y] as const : null;
-  });
-
-  if (points.some((point) => point === null)) {
-    return null;
-  }
-
-  let signedArea = 0;
-  for (let index = 0; index < points.length; index += 1) {
-    const current = points[index];
-    const next = points[(index + 1) % points.length];
-
-    if (!current || !next) {
-      return null;
-    }
-
-    signedArea += (current[0] * next[1]) - (next[0] * current[1]);
-  }
-
-  return Math.abs(signedArea) / 2;
-}
 
 export default function ZonePropertyPanel({ zoneId }: Props) {
   const document = useArchitectureDocumentStore((state) => state.document);
