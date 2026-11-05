@@ -4,6 +4,7 @@ import { useAppRoute } from './app/router.js';
 
 const EditorApp = lazy(() => import('./app/EditorApp.js'));
 const LiquidGlassDemoPage = lazy(() => import('./app/LiquidGlassDemoPage.js'));
+const LandingRedesignDemoPage = lazy(() => import('./app/LandingRedesignDemoPage.js'));
 
 export default function App() {
   const route = useAppRoute();
@@ -30,6 +31,14 @@ export default function App() {
     return (
       <Suspense fallback={null}>
         <LiquidGlassDemoPage />
+      </Suspense>
+    );
+  }
+
+  if (route === 'landing-demo') {
+    return (
+      <Suspense fallback={null}>
+        <LandingRedesignDemoPage />
       </Suspense>
     );
   }
