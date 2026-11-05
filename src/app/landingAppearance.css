@@ -1,0 +1,61 @@
+/* Theme motion affects the backdrop sibling, never a glass ancestor. */
+.landing-night-reveal {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 82% 10%, rgba(27,72,99,.7), transparent 55%), linear-gradient(160deg, rgba(5,14,30,.88), rgba(6,23,35,.93));
+  pointer-events: none;
+}
+[data-appearance] { transition: color .6s ease, background-color .6s ease; }
+[data-app-theme='landing'][lang='zh-CN'] {
+  --landing-font-body: 'Manrope', 'Microsoft YaHei', sans-serif;
+  --landing-font-headline: 'Space Grotesk', 'Microsoft YaHei', sans-serif;
+}
+[data-app-theme='landing'][lang='zh-CN'] h1 {
+  font-size: clamp(2rem, 7vw, 6rem);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+[data-app-theme='landing'][data-appearance='dark'] {
+  color-scheme: dark;
+  --landing-color-surface: #0c1827;
+  --landing-color-on-surface: #eff8fa;
+  --landing-color-on-surface-variant: #bed0da;
+  --landing-color-secondary: #89e6de;
+  --landing-color-surface-container-low: #162639;
+  --landing-color-surface-container-high: #293c50;
+}
+[data-app-theme='landing'][data-appearance='dark'] .glass-panel { background: rgba(16,33,48,.8); border-color: rgba(191,226,239,.18); }
+[data-app-theme='landing'][data-appearance='dark'] :is(.landing-liquid-brand, .landing-liquid-links a, .landing-liquid-mobile-menu a) { text-shadow: 0 1px 3px #091220, 0 0 8px #091220; }
+[data-app-theme='landing'][data-appearance='dark'] .landing-liquid-brand span span, [data-app-theme='landing'][data-appearance='dark'] .landing-start-button { color: #eff8fa; }
+[data-app-theme='landing'][data-appearance='dark'] .landing-start-arrow { color: #a3fff1; background: rgba(38,220,214,.16); }
+[data-app-theme='landing'][data-appearance='dark'] .landing-liquid-account { color: #ffdc9b; background: rgba(255,181,72,.14); }
+[data-app-theme='landing'][data-appearance='dark'] footer { background: #101e2e; }
+[data-app-theme='landing'][data-appearance='dark'] footer :is(span,p,a,button) { color: #bed0da; }
+[data-app-theme='landing'][data-appearance='dark'] .landing-liquid-nav :is(a,button):focus-visible,
+[data-app-theme='landing'][data-appearance='dark'] .landing-start-button:focus-visible { outline-color: #8ef7e8; }
+.landing-theme-toggle, .landing-language-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  border-radius: 99px;
+  cursor: pointer;
+  background: rgba(255,255,255,.14);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,.5);
+}
+.landing-theme-toggle { position: relative; width: 44px; overflow: hidden; color: #8b5400; }
+.landing-sky-orbit { position: absolute; top: 11px; left: 11px; width: 22px; height: 66px; transform-origin: 50% 50%; }
+.landing-sun { position: absolute; top: 0; }
+.landing-moon { position: absolute; bottom: 0; transform: rotate(180deg); }
+[data-app-theme='landing'][data-appearance='dark'] .landing-theme-toggle { color: #b4dbff; background: rgba(37,80,121,.45); }
+.landing-language-toggle { gap: 5px; padding: 0 10px; font-size: 12px; font-weight: 600; color: inherit; }
+.landing-language-toggle span:not(.selected) { opacity: .55; }
+.landing-language-toggle .selected { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+[data-app-theme='landing'][data-appearance='dark'] .landing-liquid-links a:hover, [data-app-theme='landing'][data-appearance='dark'] .landing-liquid-mobile-menu a:hover { color: #a3fff1; background: rgba(255,255,255,.12); }
+@media (max-width: 639px) {
+  .landing-liquid-brand-content > span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-appearance] { transition: none; }
+}

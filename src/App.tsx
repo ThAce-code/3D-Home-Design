@@ -28,17 +28,7 @@ export default function App() {
 
   if (route === 'liquid-glass') {
     return (
-      <Suspense
-        fallback={
-          <div
-            data-app-theme="landing"
-            data-testid="liquid-glass-loading"
-            className="flex h-screen w-screen items-center justify-center bg-[#f7f9fb] text-[#191c1e]"
-          >
-            Loading liquid glass…
-          </div>
-        }
-      >
+      <Suspense fallback={null}>
         <LiquidGlassDemoPage />
       </Suspense>
     );

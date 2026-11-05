@@ -94,156 +94,78 @@
     0 24px 80px -56px rgba(72, 48, 30, 0.45);
 }
 
-/* Liquid Glass shared surface lives in src/app/liquid-glass/liquid-glass.css.
-   Critical: never put CSS `filter` on `.liquid-glass-wrapper` — it isolates backdrop-filter. */
-
-[data-app-theme='landing'] .hero-liquid-glass-button {
-  min-width: 0;
-  width: max-content;
-  max-width: 100%;
-  min-height: 56px;
-  padding: 6px 8px 6px 22px;
-}
-
-[data-app-theme='landing'] .hero-liquid-glass-button .liquid-glass-cta-label,
-[data-app-theme='landing'] .liquid-glass-label {
-  font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-}
-
-[data-app-theme='landing'] .hero-liquid-glass-button .liquid-glass-depth-ring,
-[data-app-theme='landing'] .hero-liquid-glass-button .liquid-glass-inner-ring {
-  opacity: 0.35;
-}
-
-[data-app-theme='landing'] .hero-liquid-glass-button:focus-visible {
-  outline: 2px solid #26dcd6;
-  outline-offset: 3px;
-}
-
-[data-app-theme='landing'] .liquid-glass-navbar-shell {
-  border-radius: 32px;
-}
-
-[data-app-theme='landing'] .liquid-glass-navbar-links-panel {
-  justify-self: start;
-  justify-content: flex-start;
-}
-
-[data-app-theme='landing'] .liquid-glass-navbar-links-panel-left-heavy {
-  transform: translateX(-14rem);
-}
-
-[data-app-theme='landing'] .liquid-glass-nav-link {
-  font-family: var(--landing-font-headline);
-  font-size: clamp(1rem, 0.92rem + 0.35vw, 1.2rem);
-  font-weight: 650;
-  letter-spacing: -0.035em;
-  line-height: 1;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55), 0 0 16px rgba(255, 255, 255, 0.22);
-  transition:
-    color 180ms ease,
-    transform 180ms ease,
-    text-shadow 180ms ease;
-}
-
-[data-app-theme='landing'] .liquid-glass-nav-link-ink {
-  color: #111111;
-}
-
-[data-app-theme='landing'] .liquid-glass-nav-link:hover,
-[data-app-theme='landing'] .liquid-glass-nav-link:focus-visible {
-  color: #b8893d;
-  outline: none;
-  text-shadow: 0 0 18px rgba(216, 191, 138, 0.28), 0 1px 0 rgba(255, 255, 255, 0.4);
-  transform: translateY(-1px);
-}
-
-[data-app-theme='landing'] .liquid-glass-nav-link:focus-visible {
-  box-shadow: 0 0 0 2px rgba(38, 220, 214, 0.55);
-  border-radius: 6px;
-}
-
-[data-app-theme='landing'] .landing-auth-button {
+[data-app-theme='landing'] .liquid-glass-wrapper {
   position: relative;
   display: inline-flex;
+}
+
+[data-app-theme='landing'] .liquid-glass-shell {
+  --landing-liquid-bg: rgba(255, 255, 255, 0.05);
+  --landing-liquid-border: rgba(51, 51, 51, 0.12);
+  position: relative;
+  display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  background: rgba(245, 158, 11, 0.82);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  cursor: pointer;
-  transition:
-    transform 220ms cubic-bezier(0.2, 0, 0, 1),
-    background-color 220ms ease,
-    box-shadow 220ms ease;
+  overflow: hidden;
+  background: var(--landing-liquid-bg);
+  backdrop-filter: blur(12px) saturate(1.6) contrast(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(1.6) contrast(1.05);
+  border: 3px double var(--landing-liquid-border);
   box-shadow:
-    inset 2px 2px 5px rgba(255, 255, 255, 0.58),
-    inset -3px -3px 6px rgba(150, 76, 8, 0.34),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.34),
-    0 6px 16px rgba(245, 158, 11, 0.2);
+    inset 2px -2px 1px -1px rgba(255, 255, 255, 0.9),
+    inset -2px 2px 1px -1px rgba(255, 255, 255, 0.9),
+    inset 6px -6px 1px -6px rgba(255, 255, 255, 0.55),
+    inset -6px 6px 1px -6px rgba(255, 255, 255, 0.55),
+    inset 0 0 2px rgba(0, 0, 0, 0.55),
+    0 6px 12px rgba(0, 0, 0, 0.08);
 }
 
-[data-app-theme='landing'] .landing-auth-button-circle {
-  width: 52px;
-  height: 52px;
-  padding: 0;
-  border-radius: 50%;
-}
-
-[data-app-theme='landing'] .landing-auth-button::after {
+[data-app-theme='landing'] .liquid-glass-shell::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   background: linear-gradient(
     45deg,
-    rgba(255, 255, 255, 0.36) 0%,
-    transparent 30%,
-    transparent 70%,
-    rgba(255, 255, 255, 0.26) 100%
+    rgba(255, 255, 255, 0.7) 0%,
+    transparent 25%,
+    transparent 75%,
+    rgba(255, 255, 255, 0.7) 100%
   );
+  pointer-events: none;
+  z-index: 3;
+}
+
+[data-app-theme='landing'] .liquid-glass-shell .liquid-glass-depth-ring {
+  position: absolute;
+  inset: 8px;
+  z-index: 1;
+  border: 1px solid rgba(0, 0, 0, 0.8);
+  border-radius: inherit;
+  filter: blur(6px);
   pointer-events: none;
 }
 
-[data-app-theme='landing'] .landing-auth-button:hover,
-[data-app-theme='landing'] .landing-auth-button:focus-visible {
-  background: rgba(248, 165, 28, 0.9);
-  outline: none;
-  transform: translateY(-2px);
-  box-shadow:
-    inset 2px 2px 6px rgba(255, 255, 255, 0.72),
-    inset -3px -3px 6px rgba(150, 76, 8, 0.28),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.42),
-    0 8px 24px rgba(245, 158, 11, 0.28);
-}
-
-[data-app-theme='landing'] .landing-auth-button:active {
-  transform: translateY(1px);
-  box-shadow:
-    inset 2px 2px 4px rgba(255, 255, 255, 0.36),
-    inset -2px -2px 4px rgba(150, 76, 8, 0.42),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
-    0 2px 8px rgba(245, 158, 11, 0.14);
-}
-
-[data-app-theme='landing'] .landing-auth-button-icon {
-  position: relative;
-  z-index: 1;
-  color: #fffdf8;
-  filter: drop-shadow(0 1px 2px rgba(150, 70, 0, 0.35));
-  transition: transform 180ms ease;
-}
-
-[data-app-theme='landing'] .landing-auth-button:hover .landing-auth-button-icon,
-[data-app-theme='landing'] .landing-auth-button:focus-visible .landing-auth-button-icon {
-  transform: scale(1.05);
+[data-app-theme='landing'] .liquid-glass-shell .liquid-glass-inner-ring {
+  position: absolute;
+  inset: 4px;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: inherit;
+  filter: blur(1px);
+  pointer-events: none;
 }
 
 [data-app-theme='landing'] .landing-hero-subtitle {
   margin-bottom: clamp(3.25rem, 5vw, 4.5rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-app-theme='landing'] *,
+  [data-app-theme='landing'] *::before,
+  [data-app-theme='landing'] *::after {
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @keyframes panel-pop {
@@ -267,84 +189,4 @@
 ::-webkit-scrollbar-thumb {
   background: var(--editor-accent-strong);
   border-radius: 4px;
-}
-
-
-[data-app-theme='landing'] .landing-pref-button {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 40px;
-  min-height: 40px;
-  padding: 0 10px;
-  border: 1px solid rgba(25, 28, 30, 0.12);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.28);
-  color: #191c1e;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  cursor: pointer;
-  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, color 180ms ease;
-}
-
-[data-app-theme='landing'] .landing-pref-button:hover,
-[data-app-theme='landing'] .landing-pref-button:focus-visible {
-  outline: none;
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.48);
-  border-color: rgba(38, 220, 214, 0.45);
-}
-
-[data-app-theme='landing'] .landing-pref-button:focus-visible {
-  box-shadow: 0 0 0 2px rgba(38, 220, 214, 0.55);
-}
-
-[data-app-theme='landing'] .landing-pref-button-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-[data-app-theme='landing'][data-landing-appearance='night'] {
-  --landing-color-surface: #0d1416;
-  --landing-color-on-surface: #f4f7f8;
-  --landing-color-on-surface-variant: #c5d0d2;
-  --landing-color-surface-container-low: #152024;
-  --landing-color-surface-container-high: #1d2a2e;
-  --landing-color-outline-variant: #3a4a4e;
-}
-
-[data-app-theme='landing'] .landing-night-veil {
-  background: linear-gradient(180deg, rgba(6, 12, 14, 0.28) 0%, rgba(6, 12, 14, 0.45) 45%, rgba(6, 12, 14, 0.72) 100%);
-  pointer-events: none;
-}
-
-[data-app-theme='landing'][data-landing-appearance='night'] .glass-panel {
-  background: rgb(18 28 32 / 0.62);
-  border-color: rgb(255 255 255 / 0.12);
-}
-
-[data-app-theme='landing'][data-landing-appearance='night'] .liquid-glass-nav-link-ink {
-  color: #f4f7f8;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45), 0 0 14px rgba(0, 0, 0, 0.3);
-}
-
-[data-app-theme='landing'][data-landing-appearance='night'] .landing-pref-button {
-  border-color: rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.08);
-  color: #f4f7f8;
-}
-
-[data-app-theme='landing'][data-landing-appearance='night'] footer {
-  background: #0b1113;
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-[data-app-theme='landing'][data-landing-appearance='night'] footer span,
-[data-app-theme='landing'][data-landing-appearance='night'] footer p,
-[data-app-theme='landing'][data-landing-appearance='night'] footer a,
-[data-app-theme='landing'][data-landing-appearance='night'] footer button {
-  color: #9aa7ab;
 }
