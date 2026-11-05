@@ -1,5 +1,9 @@
-import type { MouseEvent as ReactMouseEvent, SyntheticEvent } from 'react';
-import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import { Menu, Moon, Sun, UserRound, X } from 'lucide-react';
+import { motion, useMotionValueEvent, useReducedMotion, useScroll } from 'motion/react';
+import LiquidGlass from '../liquid-glass/LiquidGlass.js';
+import { useLandingPreferences } from '../landingPreferences.js';
+import './landing-liquid-glass.css';
 
 type LiquidGlassNavbarProps = {
   logoSrc: string;
@@ -9,133 +13,117 @@ type LiquidGlassNavbarProps = {
   onAuthAction: () => void;
 };
 
-const BRAND_GRADIENT = 'linear-gradient(90deg, #26dcd6 0%, #ff9f1c 100%)';
+const LINKS = [['#preview', 'Gallery'], ['#docs', 'Docs'], ['#experience', 'Experience'], ['#footer', 'Studio']];
+const SETTLE = { type: 'spring', stiffness: 240, damping: 30 } as const;
 
 export default function LiquidGlassNavbar({
-  logoSrc,
-  logoFallbackSrc,
-  onLogoError,
-  onNavigateHome,
-  onAuthAction,
+  logoSrc, logoFallbackSrc, onLogoError, onNavigateHome, onAuthAction,
 }: LiquidGlassNavbarProps) {
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const hoverState = useMotionValue(0);
-
-  const smoothX = useSpring(mouseX, { stiffness: 150, damping: 20 });
-  const smoothY = useSpring(mouseY, { stiffness: 150, damping: 20 });
-  const smoothHover = useSpring(hoverState, { stiffness: 100, damping: 15 });
-
-  const handleMouseMove = (event: ReactMouseEvent<HTMLElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    mouseX.set(event.clientX - rect.left);
-    mouseY.set(event.clientY - rect.top);
-  };
-
-  const pullX = useTransform(smoothX, (value) => {
-    const width = typeof window === 'undefined' ? 1 : window.innerWidth;
-    return ((value - width / 2) / (width / 2)) * 10;
+  const reduceMotion = useReducedMotion();
+  const { theme, locale, setTheme, setLocale, setOrigin } = useLandingPreferences();
+  const labels = locale === 'zh' ? ['作品', '文档', '体验', '工作室'] : LINKS.map(link => link[1]);
+  const authLabel = locale === 'zh' ? '登录 / 注册' : 'Sign in / Sign up';
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [compact, setCompact] = useState(() => window.scrollY > 100);
+  const [viewport, setViewport] = useState(() => window.innerWidth);
+  const navRef = useRef<HTMLElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const { scrollY } = useScroll();
+  // Hysteresis keeps the shell from oscillating at the scroll threshold.
+  useMotionValueEvent(scrollY, 'change', (y) => {
+    setCompact((current) => current ? y > 48 : y > 100);
   });
 
-  const pullY = useTransform(smoothY, (value) => {
-    const height = typeof window === 'undefined' ? 1 : 96;
-    return ((value - height / 2) / (height / 2)) * 8;
-  });
+  useEffect(() => {
+    const resize = () => {
+      setViewport(window.innerWidth);
+      if (window.innerWidth >= 1024) setMenuOpen(false);
+    };
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
 
-  const activePullX = useTransform(() => pullX.get() * smoothHover.get());
-  const activePullY = useTransform(() => pullY.get() * smoothHover.get());
+  useEffect(() => {
+    if (!menuOpen) return;
+    const dismiss = (event: PointerEvent) => {
+      if (!navRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', dismiss);
+    return () => document.removeEventListener('pointerdown', dismiss);
+  }, [menuOpen]);
 
-  const sheenOpacity = useTransform(smoothHover, [0, 1], [0, 0.65]);
-  const backgroundSheen = useMotionTemplate`radial-gradient(circle 250px at ${smoothX}px ${smoothY}px, rgba(255,255,255,${sheenOpacity}), transparent 80%)`;
+  const mobile = viewport < 1024;
+  const width = Math.min(compact ? 900 : 1280, viewport - (mobile ? 24 : 48));
 
   return (
-    <motion.nav
-      data-testid="landing-nav"
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => hoverState.set(1)}
-      onMouseLeave={() => hoverState.set(0)}
-      style={{ paddingLeft: '32px', paddingRight: '32px', y: 16 }}
-      className="fixed top-0 z-50 flex h-24 w-full items-center justify-center"
-    >
-      <div className="liquid-glass-wrapper h-full w-full max-w-[1920px]">
-        <motion.div
-          data-testid="liquid-glass-navbar"
-          className="liquid-glass-shell liquid-glass-navbar-shell relative h-full w-full overflow-hidden px-8"
-          style={{ x: activePullX, y: activePullY }}
-        >
-          <span aria-hidden="true" className="liquid-glass-depth-ring" />
-          <span aria-hidden="true" className="liquid-glass-inner-ring" />
-          <motion.div
-            aria-hidden="true"
-            className="liquid-glass-highlight absolute inset-0 rounded-inherit pointer-events-none"
-            style={{ background: backgroundSheen, mixBlendMode: 'overlay' }}
-          />
-
-          <div className="relative z-10 grid h-full w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-6">
-            <button type="button" onClick={onNavigateHome} className="group flex items-center gap-3">
-              <span data-testid="liquid-glass-navbar-brand" className="flex items-center gap-3 justify-self-start">
-                <img
-                  src={logoSrc}
-                  alt="Facility Design Logo"
-                  className="h-16 w-16 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-110"
-                  onError={(event) => onLogoError(event, logoFallbackSrc)}
-                />
-                <span
-                  className="text-xl font-bold tracking-tighter text-transparent font-headline"
-                  style={{
-                    backgroundImage: BRAND_GRADIENT,
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                  }}
-                >
-                  Facility Design
-                </span>
-              </span>
-            </button>
-            <div
-              data-testid="liquid-glass-navbar-links"
-              className="liquid-glass-navbar-links-panel liquid-glass-navbar-links-panel-left-heavy hidden items-center gap-10 md:flex"
-            >
-              <a className="liquid-glass-nav-link liquid-glass-nav-link-ink" href="#preview">
-                Gallery
-              </a>
-              <a className="liquid-glass-nav-link liquid-glass-nav-link-ink" href="#docs">
-                Docs
-              </a>
-              <a className="liquid-glass-nav-link liquid-glass-nav-link-ink" href="#experience">
-                Experience
-              </a>
-              <a className="liquid-glass-nav-link liquid-glass-nav-link-ink" href="#footer">
-                Studio
-              </a>
-            </div>
-            <div data-testid="liquid-glass-navbar-cta" className="flex items-center justify-self-end">
-              <button
-                type="button"
-                onClick={onAuthAction}
-                aria-label="Sign in / Sign up"
-                className="landing-auth-button landing-auth-button-circle"
-              >
-                <svg
-                  aria-hidden="true"
-                  className="landing-auth-button-icon"
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </motion.nav>
+    <nav ref={navRef} data-testid="landing-nav" aria-label={locale === 'zh' ? '主导航' : 'Main navigation'}
+      className="landing-liquid-nav"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && menuOpen) {
+          setMenuOpen(false);
+          menuButton.current?.focus();
+        }
+      }}>
+      <LiquidGlass
+        data-testid="liquid-glass-navbar"
+        data-compact={compact}
+        radius={32}
+        tone={theme}
+        sheen
+        className="landing-liquid-nav-surface"
+        initial={false}
+        animate={{ width, height: mobile || compact ? 64 : 80 }}
+        transition={reduceMotion ? { duration: 0 } : SETTLE}
+      >
+        <button type="button" onClick={onNavigateHome} className="landing-liquid-brand" aria-label={locale === 'zh' ? '返回首页' : 'Facility Design home'}>
+          <span data-testid="liquid-glass-navbar-brand" className="landing-liquid-brand-content">
+            <img src={logoSrc} alt="" width="40" height="40" onError={(event) => onLogoError(event, logoFallbackSrc)} />
+            <span>Facility Design</span>
+          </span>
+        </button>
+        <div data-testid="liquid-glass-navbar-links" className="landing-liquid-links">
+          {LINKS.map(([href], index) => <a key={href} href={href}>{labels[index]}</a>)}
+        </div>
+        <div data-testid="liquid-glass-navbar-cta" className="landing-liquid-actions">
+          <motion.button type="button" data-testid="landing-theme-toggle" className="landing-theme-toggle"
+            aria-label={locale === 'zh' ? '切换昼夜模式' : 'Toggle day / night'} aria-pressed={theme === 'dark'}
+            title={locale === 'zh' ? (theme === 'dark' ? '切换日间' : '切换夜间') : (theme === 'dark' ? 'Switch to day' : 'Switch to night')}
+            whileTap={reduceMotion ? undefined : { scale: 0.9 }}
+            onClick={(event) => {
+              const rect = event.currentTarget.getBoundingClientRect();
+              setOrigin({ x: (rect.x + rect.width / 2) / window.innerWidth * 100, y: (rect.y + rect.height / 2) / window.innerHeight * 100 });
+              setTheme(theme === 'light' ? 'dark' : 'light');
+            }}>
+            <motion.span className="landing-sky-orbit" initial={false}
+              animate={{ rotate: theme === 'dark' ? 180 : 0 }} transition={{ duration: reduceMotion ? 0 : 0.7, type: 'tween', ease: [0.34, 1.56, 0.64, 1] }}>
+              <Sun className="landing-sun" size={22} aria-hidden="true" />
+              <Moon className="landing-moon" size={22} aria-hidden="true" />
+            </motion.span>
+          </motion.button>
+          <button type="button" data-testid="landing-language-toggle" className="landing-language-toggle"
+            aria-label={locale === 'zh' ? 'Switch to English' : '切换为中文'} onClick={() => setLocale(locale === 'en' ? 'zh' : 'en')}>
+            <span className={locale === 'zh' ? 'selected' : ''}>中</span><span aria-hidden="true">/</span><span className={locale === 'en' ? 'selected' : ''}>EN</span>
+          </button>
+          <button ref={menuButton} type="button" aria-label={locale === 'zh' ? '导航菜单' : 'Navigation menu'} aria-expanded={menuOpen}
+            aria-controls="landing-mobile-menu" onClick={() => setMenuOpen(!menuOpen)} className="landing-liquid-menu-toggle">
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <motion.button type="button" onClick={onAuthAction} aria-label={authLabel}
+            className="landing-liquid-account" whileHover={reduceMotion ? undefined : { y: -1 }}
+            whileTap={reduceMotion ? undefined : { scale: 0.94 }} transition={SETTLE}>
+            <UserRound size={20} aria-hidden="true" />
+          </motion.button>
+        </div>
+      </LiquidGlass>
+      {menuOpen ? (
+        <LiquidGlass id="landing-mobile-menu" radius={24} tone={theme}
+          className="landing-liquid-mobile-menu"
+          initial={reduceMotion ? false : { y: -8 }} animate={{ y: 0 }} transition={SETTLE}>
+          {LINKS.map(([href], index) => (
+            <a key={href} href={href} onClick={() => setMenuOpen(false)}>{labels[index]}</a>
+          ))}
+        </LiquidGlass>
+      ) : null}
+    </nav>
   );
 }

@@ -1,0 +1,129 @@
+/*
+ * Liquid Glass surface.
+ * Never put filter, opacity < 1, mask or clip-path on an ancestor of .lg: any of them makes that
+ * ancestor the backdrop root and the glass stops seeing the page behind it.
+ */
+
+@property --lg-angle {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 135deg;
+}
+
+/* Layered so Tailwind utilities (absolute, fixed, ...) on the same element still win. */
+@layer components {
+  .lg {
+    --lg-tint: rgba(255, 255, 255, 0.1);
+    --lg-ink: #14171a;
+    --lg-rim-strong: rgba(255, 255, 255, 0.95);
+    --lg-rim-soft: rgba(255, 255, 255, 0.22);
+    --lg-glow: 0.7;
+    position: relative;
+    background-color: var(--lg-tint);
+    color: var(--lg-ink);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.45),
+      inset 0 -1px 1px rgba(255, 255, 255, 0.12),
+      inset 0 0 18px rgba(255, 255, 255, 0.1),
+      0 12px 32px -12px rgba(15, 20, 25, 0.28),
+      0 2px 6px rgba(15, 20, 25, 0.08);
+    transition:
+      --lg-angle 0.35s ease-out,
+      background-color 0.35s ease,
+      color 0.35s ease;
+  }
+
+  .lg[data-lg-mode='frost'] {
+    --lg-tint: rgba(255, 255, 255, 0.28);
+  }
+
+  .lg[data-lg-tone='dark'] {
+    --lg-tint: rgba(18, 22, 26, 0.32);
+    --lg-ink: #f5f7f8;
+    --lg-rim-strong: rgba(255, 255, 255, 0.7);
+    --lg-rim-soft: rgba(255, 255, 255, 0.12);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.22),
+      inset 0 0 18px rgba(255, 255, 255, 0.05),
+      0 12px 32px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  .lg[data-lg-tone='dark'][data-lg-mode='frost'] {
+    --lg-tint: rgba(18, 22, 26, 0.5);
+  }
+
+  .lg-filter-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  /* Specular rim: a hairline ring whose brightest point faces the pointer, with a weaker opposite glint. */
+  .lg-rim {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: conic-gradient(
+      from var(--lg-angle),
+      var(--lg-rim-strong) 0deg,
+      var(--lg-rim-soft) 55deg,
+      transparent 110deg,
+      var(--lg-rim-soft) 160deg,
+      rgba(255, 255, 255, 0.55) 180deg,
+      var(--lg-rim-soft) 200deg,
+      transparent 250deg,
+      var(--lg-rim-soft) 305deg,
+      var(--lg-rim-strong) 360deg
+    );
+    opacity: var(--lg-glow);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    pointer-events: none;
+  }
+
+  .lg-sheen {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      circle 140px at var(--lg-px, 50%) var(--lg-py, 0%),
+      rgba(255, 255, 255, 0.32),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  @media (hover: hover) {
+    .lg-has-sheen:hover > .lg-sheen {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lg {
+      transition: none;
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .lg, .lg[data-lg-mode='frost'] {
+      background-color: #f7f9fb !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
+    .lg[data-lg-tone='dark'] {
+      background-color: #12161a !important;
+    }
+  }
+}

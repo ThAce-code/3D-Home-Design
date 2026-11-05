@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@keyframes panel-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+/* Custom scrollbar — 暗夜翡翠 */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #28A375;
+  border-radius: 4px;
+}

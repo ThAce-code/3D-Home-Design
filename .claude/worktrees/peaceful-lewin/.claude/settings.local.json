@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npx vitest:*)",
+      "mcp__MiniMax__understand_image",
+      "mcp__MiniMax__web_search",
+      "Bash(npx vite:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(git checkout:*)",
+      "Bash(cd D:\\\\\\\\3D-Home-Design\\\\\\\\.claude\\\\\\\\worktrees\\\\\\\\peaceful-lewin)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(cd /d \"D:\\\\3D-Home-Design\\\\.claude\\\\worktrees\\\\peaceful-lewin\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(kill %1)"
+    ]
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true
+  }
+}

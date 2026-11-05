@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <style>body { margin: 0; overflow: hidden; background: #1a1a2e; }</style>
+</head>
+<body>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "/__thumb/vendor/three/build/three.module.js",
+      "three/addons/": "/__thumb/vendor/three/addons/"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    window.__ready = false;
+    window.__bboxResult = null;
+
+    const params = new URLSearchParams(location.search);
+    const uuid = params.get('uuid');
+
+    if (!uuid) {
+      console.error('No uuid provided');
+      window.__ready = true;
+    } else {
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf0f0f0);
+
+      // 灯光
+      const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambient);
+      const directional = new THREE.DirectionalLight(0xffffff, 0.8);
+      directional.position.set(5, 10, 7);
+      scene.add(directional);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(256, 256);
+      renderer.setPixelRatio(1);
+      document.body.appendChild(renderer.domElement);
+
+      const loader = new GLTFLoader();
+      loader.load(
+        `/__thumb/model/${uuid}`,
+        (gltf) => {
+          const model = gltf.scene;
+          scene.add(model);
+
+          // 计算 bbox
+          const box = new THREE.Box3().setFromObject(model);
+          const bboxMin = box.min.toArray();
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          const bboxSize = size.toArray();
+
+          // autoScale: only normalize extreme sizes
+          const maxDim = Math.max(size.x, size.y, size.z);
+          let autoScale = 1;
+          if (maxDim > 0 && (maxDim > 5 || maxDim < 0.1)) {
+            autoScale = 1.5 / maxDim;
+          }
+
+          window.__bboxResult = { bboxMin, bboxSize, autoScale };
+
+          // 居中模型
+          const center = new THREE.Vector3();
+          box.getCenter(center);
+          model.position.sub(center);
+
+          // 相机：45° 俯视
+          const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+          const distance = maxDim * 2;
+          camera.position.set(distance * 0.7, distance * 0.7, distance * 0.7);
+          camera.lookAt(0, 0, 0);
+
+          // 渲染 1 帧
+          renderer.render(scene, camera);
+          window.__ready = true;
+        },
+        undefined,
+        (error) => {
+          console.error('GLB load error:', error);
+          window.__ready = true;
+        }
+      );
+    }
+  </script>
+</body>
+</html>

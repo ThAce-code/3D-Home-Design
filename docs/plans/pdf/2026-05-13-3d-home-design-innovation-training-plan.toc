@@ -1,0 +1,36 @@
+\contentsline {section}{\numberline {1}项目基本信息}{3}{section.1}%
+\contentsline {section}{\numberline {2}立项依据}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}项目背景}{3}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}研究意义}{3}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}国内外现状分析}{4}{subsection.2.3}%
+\contentsline {section}{\numberline {3}项目目标与研究内容}{4}{section.3}%
+\contentsline {subsection}{\numberline {3.1}总体目标}{4}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}主要研究内容}{5}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}浏览器端建筑编辑内核}{5}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}建造与装饰两阶段交互范式}{5}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}WebGL 3D 场景渲染与交互}{5}{subsubsection.3.2.3}%
+\contentsline {subsubsection}{\numberline {3.2.4}家具模型资产管理}{5}{subsubsection.3.2.4}%
+\contentsline {subsubsection}{\numberline {3.2.5}场景状态管理与本地持久化}{6}{subsubsection.3.2.5}%
+\contentsline {subsection}{\numberline {3.3}拟解决的关键问题}{6}{subsection.3.3}%
+\contentsline {section}{\numberline {4}项目特色与创新点}{6}{section.4}%
+\contentsline {subsection}{\numberline {4.1}面向普通消费者的零安装 Web 3D 家居设计工具}{6}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}建筑编辑与家具布置分离的交互模式}{6}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}面向 Web 端实时编辑的住宅空间数据模型}{7}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}开放的 GLB 模型导入与资产管理机制}{7}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}工程化验证充分，具备持续迭代基础}{7}{subsection.4.5}%
+\contentsline {section}{\numberline {5}研究方案与技术路线}{7}{section.5}%
+\contentsline {subsection}{\numberline {5.1}总体技术路线}{7}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}技术选型}{8}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}研究方法}{9}{subsection.5.3}%
+\contentsline {section}{\numberline {6}项目实施计划}{9}{section.6}%
+\contentsline {section}{\numberline {7}可行性分析}{10}{section.7}%
+\contentsline {subsection}{\numberline {7.1}技术可行性}{10}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}团队可行性}{11}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}资源可行性}{11}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}风险与应对}{11}{subsection.7.4}%
+\contentsline {subsection}{\numberline {7.5}应用前景与转化潜力}{11}{subsection.7.5}%
+\contentsline {section}{\numberline {8}预期成果}{12}{section.8}%
+\contentsline {section}{\numberline {9}团队分工}{12}{section.9}%
+\contentsline {section}{\numberline {10}经费预算}{13}{section.10}%
+\contentsline {section}{\numberline {11}参考文献}{13}{section.11}%
+\contentsline {section}{\numberline {12}其他说明}{14}{section.12}%

@@ -1,6 +1,6 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import LandingPage from '../LandingPage';
 
@@ -9,6 +9,11 @@ describe('LandingPage', () => {
   let root: Root;
 
   beforeEach(() => {
+    vi.stubGlobal('ResizeObserver', class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    });
     class MockIntersectionObserver implements IntersectionObserver {
       readonly root = null;
       readonly rootMargin = '0px';
@@ -44,6 +49,7 @@ describe('LandingPage', () => {
       root.unmount();
     });
     mountNode.remove();
+    vi.unstubAllGlobals();
     window.history.replaceState({}, '', '/');
   });
 
@@ -97,59 +103,32 @@ describe('LandingPage', () => {
     expect(heroLiquidCta?.textContent).toContain('Start Designing');
   });
 
-  it('scopes the demo-style motion structure to the hero CTA only', () => {
-    act(() => {
-      root.render(<LandingPage />);
-    });
-
-    const heroLiquidCta = mountNode.querySelector('[data-testid="liquid-glass-button"]');
-    const navbarCta = mountNode.querySelector('[data-testid="liquid-glass-navbar-cta"] button');
-
-    expect(heroLiquidCta?.classList.contains('hero-liquid-glass-button')).toBe(true);
-    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-track')).not.toBeNull();
-    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-fill')).not.toBeNull();
-    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-shell-fill')).not.toBeNull();
-    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-ink')).not.toBeNull();
-    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-orb')).not.toBeNull();
-    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-play-icon')).not.toBeNull();
-    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-slot-start')).not.toBeNull();
-    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-slot-end')).not.toBeNull();
-    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-label')).not.toBeNull();
-
-    expect(heroLiquidCta?.querySelector('.liquid-glass-hero-cta-content')?.children).toHaveLength(3);
-    expect(navbarCta?.querySelector('.liquid-glass-hero-cta-ink')).toBeNull();
+  it('uses shared glass surfaces and a native, keyboard-focusable CTA', () => {
+    act(() => { root.render(<LandingPage />); });
+    const cta = mountNode.querySelector<HTMLButtonElement>('[data-testid="liquid-glass-button"]');
+    const surface = mountNode.querySelector('[data-testid="liquid-glass-button-surface"]');
+    const nav = mountNode.querySelector('[data-testid="liquid-glass-navbar"]');
+    expect(cta?.tagName).toBe('BUTTON');
+    expect(cta?.type).toBe('button');
+    expect(surface?.contains(cta!)).toBe(true);
+    expect(surface?.classList.contains('lg')).toBe(true);
+    expect(nav?.classList.contains('lg')).toBe(true);
+    expect(surface?.querySelector('.lg-rim')).not.toBeNull();
+    expect(nav?.querySelector('.lg-rim')).not.toBeNull();
+    expect(mountNode.querySelector('.liquid-glass-hero-cta-fill')).toBeNull();
   });
 
-  it('keeps the liquid glass contrast layer outside the blur shell and left-biases the navbar links', () => {
-    act(() => {
-      root.render(<LandingPage />);
-    });
-
-    const liquidWrappers = mountNode.querySelectorAll('.liquid-glass-wrapper');
-    const heroLiquidCta = mountNode.querySelector('[data-testid="liquid-glass-button"]');
-    const navbarShell = mountNode.querySelector('[data-testid="liquid-glass-navbar"]');
-    const navbarLinks = mountNode.querySelector('[data-testid="liquid-glass-navbar-links"]');
-    const navAnchors = Array.from(mountNode.querySelectorAll('[data-testid="landing-nav"] a'));
-    const navbarCta = mountNode.querySelector('[data-testid="liquid-glass-navbar-cta"] button');
-    const navbarCtaIcon = navbarCta?.querySelector('.landing-auth-button-icon');
-    const previewSection = mountNode.querySelector('[data-testid="landing-preview"]');
-    const featuresSection = mountNode.querySelector('[data-testid="landing-features"]');
-
-    expect(liquidWrappers).toHaveLength(2);
-    expect(heroLiquidCta?.parentElement?.classList.contains('liquid-glass-wrapper')).toBe(true);
-    expect(navbarShell?.parentElement?.classList.contains('liquid-glass-wrapper')).toBe(true);
-    expect(navbarLinks?.classList.contains('liquid-glass-navbar-links-panel')).toBe(true);
-    expect(navbarLinks?.classList.contains('liquid-glass-navbar-links-panel-left-heavy')).toBe(true);
-    expect(navbarCta?.classList.contains('landing-auth-button')).toBe(true);
-    expect(navbarCta?.classList.contains('landing-auth-button-circle')).toBe(true);
-    expect(navbarCta?.getAttribute('aria-label')).toBe('Sign in / Sign up');
-    expect(navbarCtaIcon).not.toBeNull();
-    expect(navAnchors).toHaveLength(4);
-    navAnchors.forEach((anchor) => {
-      expect(anchor.classList.contains('liquid-glass-nav-link')).toBe(true);
-      expect(anchor.classList.contains('liquid-glass-nav-link-ink')).toBe(true);
-    });
-    expect(previewSection!.compareDocumentPosition(featuresSection as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  it('opens the mobile links and closes them with Escape while restoring focus', () => {
+    act(() => { root.render(<LandingPage />); });
+    const toggle = mountNode.querySelector<HTMLButtonElement>('[aria-controls="landing-mobile-menu"]')!;
+    act(() => { toggle.click(); });
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    const menu = mountNode.querySelector('#landing-mobile-menu')!;
+    expect(menu.querySelectorAll('a')).toHaveLength(4);
+    act(() => { menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+    expect(mountNode.querySelector('#landing-mobile-menu')).toBeNull();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(toggle);
   });
 
   it('keeps the hero title split into the same three emphasis lines as the gemini reference', () => {

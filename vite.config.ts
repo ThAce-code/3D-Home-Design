@@ -9,8 +9,13 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Assign the common runtime before editor dependencies to avoid eager 3D imports.
+          if (id.includes('commonjsHelpers') || id.includes('vite/preload-helper')) return 'react-vendor'
           if (id.includes('node_modules')) {
-            if (id.includes('three') || id.includes('@react-three/')) {
+            if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) {
+              return 'react-vendor'
+            }
+            if (/[\\/]node_modules[\\/](three|three-[^\\/]+|@react-three)[\\/]/.test(id)) {
               return 'three-vendor'
             }
             if (id.includes('motion')) {

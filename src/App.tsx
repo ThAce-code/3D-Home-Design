@@ -3,6 +3,7 @@ import LandingPage from './app/LandingPage.js';
 import { useAppRoute } from './app/router.js';
 
 const EditorApp = lazy(() => import('./app/EditorApp.js'));
+const LiquidGlassDemoPage = lazy(() => import('./app/LiquidGlassDemoPage.js'));
 
 export default function App() {
   const route = useAppRoute();
@@ -21,6 +22,14 @@ export default function App() {
         }
       >
         <EditorApp />
+      </Suspense>
+    );
+  }
+
+  if (route === 'liquid-glass') {
+    return (
+      <Suspense fallback={null}>
+        <LiquidGlassDemoPage />
       </Suspense>
     );
   }
