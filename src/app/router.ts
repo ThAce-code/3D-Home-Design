@@ -1,10 +1,13 @@
 import { useSyncExternalStore } from 'react';
 
-export type AppRoute = 'landing' | 'editor' | 'liquid-glass';
+export type AppRoute = 'landing' | 'editor' | 'liquid-glass' | 'landing-demo';
 
 function normalizeRoute(pathname: string): AppRoute {
   if (pathname.startsWith('/editor')) {
     return 'editor';
+  }
+  if (pathname.startsWith('/landing-demo')) {
+    return 'landing-demo';
   }
   return pathname.startsWith('/liquid-glass') ? 'liquid-glass' : 'landing';
 }
@@ -22,7 +25,7 @@ export function useAppRoute() {
   return useSyncExternalStore(subscribe, getSnapshot, () => 'landing');
 }
 
-export function navigateTo(pathname: '/' | '/editor' | '/liquid-glass') {
+export function navigateTo(pathname: '/' | '/editor' | '/liquid-glass' | '/landing-demo') {
   if (window.location.pathname === pathname) {
     return;
   }
