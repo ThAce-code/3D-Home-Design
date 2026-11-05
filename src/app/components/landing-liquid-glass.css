@@ -1,0 +1,119 @@
+/* Share the laboratory's optics without filtering ancestors of the glass. */
+.landing-liquid-nav {
+  position: fixed;
+  inset: 16px 0 auto;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.landing-liquid-nav-surface {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+  padding: 0 20px;
+  pointer-events: auto;
+}
+.landing-liquid-brand { justify-self: start; border-radius: 999px; cursor: pointer; }
+.landing-liquid-brand-content { display: flex; align-items: center; gap: 10px; }
+.landing-liquid-brand img { width: 40px; height: 40px; object-fit: contain; }
+.landing-liquid-brand span span {
+  font-family: var(--landing-font-headline);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.7px;
+  white-space: nowrap;
+  color: #23443f;
+}
+.landing-liquid-links { display: flex; align-items: center; gap: 8px; }
+.landing-liquid-brand, .landing-liquid-links a, .landing-liquid-mobile-menu a {
+  text-shadow: 0 1px 2px rgba(255,255,255,0.95), 0 0 8px rgba(255,255,255,0.8);
+}
+.landing-liquid-links a {
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+.landing-liquid-actions { display: flex; align-items: center; gap: 6px; justify-self: end; }
+.landing-liquid-account, .landing-liquid-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.landing-liquid-account {
+  color: #633b05;
+  background: rgba(255, 181, 72, 0.32);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.75), inset 0 0 0 1px rgba(255,255,255,0.4);
+}
+.landing-liquid-menu-toggle { display: none; }
+.landing-liquid-nav :is(a, button):focus-visible, .landing-start-button:focus-visible {
+  outline: 2px solid #006a66;
+  outline-offset: 4px;
+}
+.landing-liquid-mobile-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 12px;
+  right: 12px;
+  display: grid;
+  padding: 12px;
+  pointer-events: auto;
+}
+.landing-liquid-mobile-menu a { padding: 12px 16px; border-radius: 14px; }
+.landing-start-surface { display: inline-flex; }
+.landing-start-button {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  min-height: 72px;
+  padding: 10px 12px 10px 30px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: #142b28;
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: -0.4px;
+  cursor: pointer;
+}
+.landing-start-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  color: #005d58;
+  background: rgba(38,220,214,0.22);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.8), inset 0 0 0 1px rgba(255,255,255,0.4);
+}
+.landing-start-surface[data-disabled] { opacity: 0.6; }
+.landing-start-button:disabled { cursor: not-allowed; }
+@media (hover: hover) {
+  .landing-liquid-links a:hover, .landing-liquid-mobile-menu a:hover, .landing-liquid-menu-toggle:hover {
+    background: rgba(255,255,255,0.4);
+    color: #006a66;
+  }
+}
+@media (max-width: 1023px) {
+  .landing-liquid-nav-surface { display: flex; justify-content: space-between; gap: 8px; padding: 0 12px; }
+  .landing-liquid-links { display: none; }
+  .landing-liquid-menu-toggle { display: inline-flex; }
+}
+@media (max-width: 380px) {
+  .landing-liquid-brand-content { gap: 5px; }
+  .landing-liquid-brand span span { font-size: 14px; }
+  .landing-liquid-brand img { width: 32px; height: 32px; }
+  .landing-start-button { min-height: 64px; padding-left: 22px; gap: 14px; font-size: 18px; }
+  .landing-start-arrow { width: 42px; height: 42px; }
+}

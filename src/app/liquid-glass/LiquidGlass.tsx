@@ -1,155 +1,116 @@
+import type { CSSProperties, ReactNode } from 'react';
+import { motion, useReducedMotion, type HTMLMotionProps } from 'motion/react';
 import {
-  forwardRef,
-  useId,
-  useImperativeHandle,
-  useRef,
-  type ButtonHTMLAttributes,
-  type CSSProperties,
-  type HTMLAttributes,
-  type PropsWithChildren,
-  type ReactNode,
-} from 'react';
-import { useDisplacementMap } from './useDisplacementMap.js';
-import { usePointerHighlight } from './usePointerHighlight.js';
-import { usePrefersReducedTransparency } from './media.js';
+  supportsSvgBackdropFilter,
+  useLiquidGlassFilter,
+  useLiquidGlassSettings,
+  useSpecularTracking,
+  type LiquidGlassSettings,
+} from './useLiquidGlass.js';
 import './liquid-glass.css';
 
-export type LiquidGlassVariant = 'default' | 'navbar' | 'cta' | 'panel';
-export type LiquidGlassAppearance = 'day' | 'night';
-
-type CommonProps = {
-  variant?: LiquidGlassVariant;
-  appearance?: LiquidGlassAppearance;
-  refraction?: boolean;
-  pointerHighlight?: boolean;
-  radius?: number;
-  wrapperClassName?: string;
-  contentClassName?: string;
-  testId?: string;
-  beforeContent?: ReactNode;
+export type LiquidGlassProps = Omit<HTMLMotionProps<'div'>, 'children'> & {
+  children?: ReactNode;
+  /** Corner radius in px, or `pill` for fully rounded ends. Must match the rendered shape. */
+  radius?: number | 'pill';
+  tone?: 'light' | 'dark';
+  /** Overrides the tone's tint colour, e.g. a low-alpha brand colour. */
+  tint?: string;
+  /** Opt this surface out of refraction (it still gets frost, rim and highlight). */
+  refract?: boolean;
+  /** Soft light that follows the pointer across the surface on hover. */
+  sheen?: boolean;
+  settings?: Partial<LiquidGlassSettings>;
 };
 
-export type LiquidGlassDivProps = PropsWithChildren<
-  CommonProps & HTMLAttributes<HTMLDivElement> & { as?: 'div' }
->;
+export default function LiquidGlass({
+  children,
+  radius = 24,
+  tone = 'light',
+  tint,
+  refract = true,
+  sheen = false,
+  settings: overrides,
+  className = '',
+  style,
+  ...motionProps
+}: LiquidGlassProps) {
+  const settings = { ...useLiquidGlassSettings(), ...overrides };
+  const reduceMotion = useReducedMotion();
+  const { ref, filterId, size, mapUrl, ready } = useLiquidGlassFilter(radius, settings.bezel);
+  useSpecularTracking(ref, settings.specular && !reduceMotion);
 
-export type LiquidGlassButtonProps = PropsWithChildren<
-  CommonProps & ButtonHTMLAttributes<HTMLButtonElement> & { as: 'button' }
->;
+  const svgSupported = supportsSvgBackdropFilter();
+  const wantsRefraction = settings.refract && refract && svgSupported;
+  const refracting = wantsRefraction && ready;
+  // Preparation only happens before first paint; resizing keeps the refraction pipeline active.
+  const mode = refracting ? 'refract' : wantsRefraction ? 'preparing' : 'frost';
+  const backdropFilter = refracting
+    ? `url(#${filterId})`
+    : `blur(${settings.blur + (wantsRefraction ? 0 : 9)}px) saturate(${settings.saturation})`;
 
-export type LiquidGlassProps = LiquidGlassDivProps | LiquidGlassButtonProps;
-
-const LiquidGlass = forwardRef<HTMLDivElement | HTMLButtonElement, LiquidGlassProps>(function LiquidGlass(
-  props,
-  forwardedRef,
-) {
-  const {
-    children,
-    className = '',
-    wrapperClassName = '',
-    contentClassName = '',
-    variant = 'default',
-    appearance = 'day',
-    as = 'div',
-    refraction = true,
-    pointerHighlight = true,
-    radius = 28,
-    testId,
-    beforeContent,
-    style,
-    onPointerMove,
-    onPointerEnter,
-    onPointerLeave,
-    ...rest
-  } = props as LiquidGlassProps & { as?: 'div' | 'button' };
-
-  const surfaceRef = useRef<HTMLDivElement | HTMLButtonElement | null>(null);
-  useImperativeHandle(forwardedRef, () => surfaceRef.current as HTMLDivElement | HTMLButtonElement);
-
-  const reducedTransparency = usePrefersReducedTransparency();
-  const displacement = useDisplacementMap(surfaceRef, {
-    radius,
-    enabled: refraction && !reducedTransparency,
-  });
-  const highlight = usePointerHighlight(surfaceRef, { enabled: pointerHighlight });
-  const reactId = useId().replace(/:/g, '');
-  const filterDomId = `lg-displace-${reactId}`;
-  const surfaceClassName = ['liquid-glass-surface', className].filter(Boolean).join(' ');
-
-  const pointerHandlers = {
-    onPointerMove: (event: React.PointerEvent<HTMLElement>) => {
-      highlight.onPointerMove(event as never);
-      onPointerMove?.(event as never);
-    },
-    onPointerEnter: (event: React.PointerEvent<HTMLElement>) => {
-      highlight.onPointerEnter(event as never);
-      onPointerEnter?.(event as never);
-    },
-    onPointerLeave: (event: React.PointerEvent<HTMLElement>) => {
-      highlight.onPointerLeave();
-      onPointerLeave?.(event as never);
-    },
-  };
-
-  const dataAttrs = {
-    'data-testid': testId,
-    'data-lg-variant': variant,
-    'data-lg-appearance': appearance,
-    'data-lg-reduced-transparency': reducedTransparency ? 'true' : 'false',
-    'data-lg-refraction': displacement.enabled ? 'true' : 'false',
-  } as const;
-
-  const layers = (
-    <>
-      {displacement.enabled && displacement.mapUrl ? (
-        <>
-          <svg width={0} height={0} className="absolute" aria-hidden="true" focusable="false">
-            <filter id={filterDomId} x="-8%" y="-8%" width="116%" height="116%" colorInterpolationFilters="sRGB">
-              <feImage href={displacement.mapUrl} result="map" preserveAspectRatio="none" width={displacement.width} height={displacement.height} />
-              <feDisplacementMap in="SourceGraphic" in2="map" scale={28} xChannelSelector="R" yChannelSelector="G" />
-            </filter>
-          </svg>
-          <span aria-hidden="true" className="liquid-glass-refraction" style={{ filter: `url(#${filterDomId})` }} />
-        </>
-      ) : (
-        <span aria-hidden="true" className="liquid-glass-refraction" hidden />
-      )}
-      <span aria-hidden="true" className="liquid-glass-depth-ring" />
-      <span aria-hidden="true" className="liquid-glass-inner-ring" />
-      <span aria-hidden="true" className="liquid-glass-highlight" style={highlight.highlightStyle} />
-      {beforeContent}
-      <span className={['liquid-glass-content', contentClassName].filter(Boolean).join(' ')}>{children}</span>
-    </>
-  );
+  const scale = settings.refraction;
+  const dispersion = settings.dispersion;
 
   return (
-    <span className={['liquid-glass-wrapper', wrapperClassName].filter(Boolean).join(' ')}>
-      {as === 'button' ? (
-        <button
-          {...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
-          {...pointerHandlers}
-          {...dataAttrs}
-          ref={surfaceRef as React.RefObject<HTMLButtonElement>}
-          type={(rest as ButtonHTMLAttributes<HTMLButtonElement>).type ?? 'button'}
-          className={[surfaceClassName, 'liquid-glass-cta-button'].filter(Boolean).join(' ')}
-          style={style as CSSProperties | undefined}
-        >
-          {layers}
-        </button>
-      ) : (
-        <div
-          {...(rest as HTMLAttributes<HTMLDivElement>)}
-          {...pointerHandlers}
-          {...dataAttrs}
-          ref={surfaceRef as React.RefObject<HTMLDivElement>}
-          className={surfaceClassName}
-          style={style as CSSProperties | undefined}
-        >
-          {layers}
-        </div>
-      )}
-    </span>
+    <motion.div
+      ref={ref}
+      {...motionProps}
+      data-lg-mode={mode}
+      data-lg-tone={tone}
+      className={`lg ${sheen ? 'lg-has-sheen' : ''} ${className}`.trim()}
+      style={{
+        borderRadius: radius === 'pill' ? 9999 : radius,
+        backdropFilter,
+        WebkitBackdropFilter: backdropFilter,
+        ...(tint ? ({ '--lg-tint': tint } as CSSProperties) : null),
+        ...style,
+      }}
+    >
+      {svgSupported && size && mapUrl ? (
+        <svg aria-hidden="true" className="lg-filter-defs" width="0" height="0">
+          <filter
+            id={filterId}
+            x="0"
+            y="0"
+            width={size.width}
+            height={size.height}
+            filterUnits="userSpaceOnUse"
+            primitiveUnits="userSpaceOnUse"
+            colorInterpolationFilters="sRGB"
+          >
+            <feGaussianBlur in="SourceGraphic" stdDeviation={settings.blur} result="blurred" />
+            <feImage
+              href={mapUrl}
+              x="0"
+              y="0"
+              width={size.width}
+              height={size.height}
+              preserveAspectRatio="none"
+              result="map"
+            />
+            {dispersion > 0 ? (
+              <>
+                {/* Chromatic aberration: each channel bends by a slightly different amount. */}
+                <feDisplacementMap in="blurred" in2="map" scale={scale} xChannelSelector="R" yChannelSelector="G" result="dispR" />
+                <feColorMatrix in="dispR" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="red" />
+                <feDisplacementMap in="blurred" in2="map" scale={scale * (1 + dispersion)} xChannelSelector="R" yChannelSelector="G" result="dispG" />
+                <feColorMatrix in="dispG" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="green" />
+                <feDisplacementMap in="blurred" in2="map" scale={scale * (1 + dispersion * 2)} xChannelSelector="R" yChannelSelector="G" result="dispB" />
+                <feColorMatrix in="dispB" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blue" />
+                <feComposite in="red" in2="green" operator="arithmetic" k2="1" k3="1" result="redGreen" />
+                <feComposite in="redGreen" in2="blue" operator="arithmetic" k2="1" k3="1" result="displaced" />
+              </>
+            ) : (
+              <feDisplacementMap in="blurred" in2="map" scale={scale} xChannelSelector="R" yChannelSelector="G" result="displaced" />
+            )}
+            <feColorMatrix in="displaced" type="saturate" values={String(settings.saturation)} />
+          </filter>
+        </svg>
+      ) : null}
+      {children}
+      <span aria-hidden="true" className="lg-rim" />
+      {sheen ? <span aria-hidden="true" className="lg-sheen" /> : null}
+    </motion.div>
   );
-});
-
-export default LiquidGlass;
+}

@@ -91,6 +91,11 @@ describe('App route shell', () => {
   let root: Root;
 
   beforeEach(() => {
+    vi.stubGlobal('ResizeObserver', class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    });
     class MockIntersectionObserver implements IntersectionObserver {
       readonly root = null;
       readonly rootMargin = '0px';
@@ -129,6 +134,7 @@ describe('App route shell', () => {
       root.unmount();
     });
     mountNode.remove();
+    vi.unstubAllGlobals();
     window.history.replaceState({}, '', '/');
   });
 
